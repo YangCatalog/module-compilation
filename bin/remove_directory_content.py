@@ -13,30 +13,35 @@
 # either express or implied.
 
 
-import os, shutil, argparse
+import argparse
+import os
+import shutil
 
 __author__ = 'bclaise@cisco.com'
 
-def remove_directory_content(d, debug_level):
+def remove_directory_content(directory: str, debug_level: int = 0):
     """
-    :param d: the directory from which the content should be removed
-    :return: none
+    Empty content of the directory passed as an argument.
+
+    Arguments:
+        :param directory    (str) Path to the directory from which the content should be removed
+        :param debug_level  (int) debug level; If > 0 print some debug statements to the console
     """
-    if not os.path.isdir(d):
+    if not os.path.isdir(directory):
         return
-    for the_file in os.listdir(d):
-        file_path = os.path.join(d, the_file)
+    for filename in os.listdir(directory):
+        file_path = os.path.join(directory, filename)
         try:
             if os.path.isfile(file_path):
                 os.unlink(file_path)
                 if debug_level > 0:
-                    print("DEBUG: removing the file " + file_path)
-            elif os.path.isdir(file_path) and not os.path.islink(file_path): 
+                    print('DEBUG: removing the file {}'.format(file_path))
+            elif os.path.isdir(file_path) and not os.path.islink(file_path):
                 shutil.rmtree(file_path)
                 if debug_level > 0:
-                    print("DEBUG: removing the subdirectory " + file_path)
+                    print('DEBUG: removing the subdirectory {}'.format(file_path))
         except Exception as e:
-            print("Exception: " + str(e))
+            print('Exception: %s' % e)
 
 
 if __name__ == "__main__":
@@ -49,5 +54,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.debug > 0:
-        print("DEBUG: attempting to remove the " + args.dir + " directory content")
+        print('DEBUG: attempting to remove the {} directory content'.format(args.dir))
     remove_directory_content(args.dir, args.debug)
