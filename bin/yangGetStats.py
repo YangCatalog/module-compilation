@@ -35,7 +35,7 @@ from matplotlib.dates import date2num
 # ----------------------------------------------------------------------
 def list_of_files_in_dir(srcdir, extension, debug_level):
     """
-    Returns the list of file in a directory   
+    Returns the list of file in a directory
     :param srcdir: directory to search for files
     :param extension: file extension to search for
     :param debug_level: If > 0 print(some debug statements to the console
@@ -56,7 +56,7 @@ def list_of_files_in_dir(srcdir, extension, debug_level):
 
 def list_of_files_in_dir_created_after_date(files, srcdir, d, debug_level):
     """
-    only select the files created wihin the number of days selected   
+    only select the files created wihin the number of days selected
     :param files: list of files
     :param srcdir: directory to search for files
     :param d: number of days
@@ -141,8 +141,8 @@ def write_dictionary_file_in_json(in_dict, path, file_name):
     """
     Create a file, in json, with my directory data
     For testing purposes.
-    # status: in progress. 
-    
+    # status: in progress.
+
     :param in_dict: The dictionary
     :param path: The directory where the json file with be created
     :param file_name: The file name to be created
@@ -306,7 +306,7 @@ if __name__ == "__main__":
     backup_prefix = ['HydrogenODLPageCompilation_', 'HeliumODLPageCompilation_',
                      'LithiumODLPageCompilation_', 'IETFCiscoAuthorsYANGPageCompilation_',
                      'IETFDraftYANGPageCompilation_',
-                     'IEEEStandardYANGPageCompilation_', 'IEEEExperimentalYANGPageCompilation_']
+                     'IEEEStandardYANGPageCompilation_', 'IEEEStandardDraftYANGPageCompilation_', 'IEEEExperimentalYANGPageCompilation_']
     # !!! there are two IEEE IEEEExperimentalYANGPageCompilation and IEEEStandardYANGPageCompilation_
     for prefix in backup_prefix:
         print('')

@@ -17,22 +17,18 @@ __copyright__ = "Copyright(c) 2015-2018, Cisco Systems, Inc.,  Copyright The IET
 __license__ = "Apache V2.0"
 __email__ = "bclaise@cisco.com"
 
+import argparse
+import configparser
 import os
 import shutil
 import time
-import argparse
-import configparser
 from datetime import datetime
-
 
 # ----------------------------------------------------------------------
 # Functions
 # ----------------------------------------------------------------------
 
 
-
-    
-    
 # ----------------------------------------------------------------------
 # Main
 # ----------------------------------------------------------------------
@@ -44,10 +40,10 @@ if __name__ == "__main__":
     web_private = config.get('Web-Section', 'private-directory')
     backup_directory = config.get('Directory-Section', 'backup')
     parser = argparse.ArgumentParser(description='Move file to the their creation time')
-    parser.add_argument("--documentpath", default= web_private + '/',
+    parser.add_argument("--documentpath", default=web_private + '/',
                         help="The optional directory where to find the file to backup. "
                              "Default is '" + web_private + "'")
-    parser.add_argument("--backuppath", default= backup_directory + '/',
+    parser.add_argument("--backuppath", default=backup_directory + '/',
                         help="The optional directory where to backup the file. "
                              "Default is '" + backup_directory + "'")
     parser.add_argument("--debug", type=int, default=0, help="Debug level; the default is 0")
@@ -56,8 +52,9 @@ if __name__ == "__main__":
     debug_level = args.debug
 
 name_to_backup = ['IETFYANGPageMain.html', 'HydrogenODLPageCompilation.html', 'HeliumODLPageCompilation.html', 'LithiumODLPageCompilation.html',
-                 'IETFCiscoAuthorsYANGPageCompilation.html', 'IETFYANGOutOfRFC.html', 'IETFDraftYANGPageCompilation.html',
-                 'IEEEStandardYANGPageCompilation.html','IEEEExperimentalYANGPageCompilation.html', 'YANGPageMain.html', 'IETFYANGRFC.html']
+                  'IETFCiscoAuthorsYANGPageCompilation.html', 'IETFYANGOutOfRFC.html', 'IETFDraftYANGPageCompilation.html',
+                  'IEEEStandardYANGPageCompilation.html', 'IEEEStandardDraftYANGPageCompilation.html',
+                  'IEEEExperimentalYANGPageCompilation.html', 'YANGPageMain.html', 'IETFYANGRFC.html']
 # name_to_backup = ['temp.html']
 for file in name_to_backup:
     file_no_extension = file.split(".")[0]
@@ -79,4 +76,4 @@ for file in name_to_backup:
             print("new file name: " + new_full_path_file)
         shutil.copy2(full_path_file, new_full_path_file)
     else:
-        print("*** file " + full_path_file + " not present!")
+        print('*** file {} not present!'.format(full_path_file))

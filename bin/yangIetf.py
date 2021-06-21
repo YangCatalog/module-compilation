@@ -22,7 +22,6 @@ import configparser
 import datetime
 import json
 import os
-import shutil
 import time
 
 import HTML
@@ -33,6 +32,10 @@ from extract_emails import extract_email_string
 from extractors.dratfExtractor import DraftExtractor
 from extractors.rfcExtractor import RFCExtractor
 from fileHasher import FileHasher
+from parsers.confdcParser import ConfdcParser
+from parsers.pyangParser import PyangParser
+from parsers.yangdumpProParser import YangdumpProParser
+from parsers.yanglintParser import YanglintParser
 from remove_directory_content import remove_directory_content
 from versions import ValidatorsVersions
 
@@ -46,75 +49,6 @@ versions = validators_versions.get_versions()
 # ----------------------------------------------------------------------
 # Functions
 # ----------------------------------------------------------------------
-
-
-def run_pyang(pyang_exec, model, ietf, yangpath, debug_level):
-    """
-    Run PYANG on the YANG model, with or without the --ietf flag
-    :param model: The file name for the model
-    :param ietf: a boolean, True for the --ietf pyang flag, False for no --ietf pyang flag
-    :param yangpath
-    :param debug_level
-    :return: the outcome of the PYANG compilation
-    """
-    os.chdir(yangpath)
-    if ietf:
-        bash_command = pyang_exec + " --path=\"$MODULES\" --ietf " + model + " 2>&1"
-    else:
-        bash_command = pyang_exec + " --path=\"$MODULES\" " + model + " 2>&1"
-    if debug_level:
-        print("DEBUG: " + " in run_pyang: bash_command contains " + bash_command)
-    return os.popen(bash_command).read()
-
-
-def run_confd(confdc_exec, model, yangpath, debug_level):
-    """
-    Run confdc on the YANG model
-    :param model: The file name for the model
-    :param yangpath:
-    :return: the outcome of the PYANG compilationf
-    """
-    os.chdir(yangpath)
-    bash_command = confdc_exec + " --yangpath " + confdc_yangpath + " -w TAILF_MUST_NEED_DEPENDENCY -c " + model + " 2>&1"
-    if debug_level:
-        print("DEBUG: " + " in run_confd: bash_command contains " + bash_command)
-    return os.popen(bash_command).read()
-
-
-def run_yumadumppro(model, yangpath, debug_level):
-    """
-    Run run_yumadump-pro on the YANG model
-    yangdump-pro  --config=/etc/yumapro/yangdump-pro.conf module.yang
-    :param model: The file name for the model
-    :param yangpath: The directory where the model is
-    :param configfilepath: for the --config=/etc/yumapro/yangdump-pro.conf
-    :return: the outcome of the PYANG compilation
-    """
-    os.chdir(yangpath)
-    bash_command = "yangdump-pro --quiet-mode --config=/etc/yumapro/yangdump-pro.conf " + model + " 2>&1"
-    if debug_level:
-        print("DEBUG: " + " in yangdump-pro: bash_command contains " + bash_command)
-    result = os.popen(bash_command).read()
-    result = result.rstrip()
-    result = result.lstrip()
-    result = result.replace(model, '')
-    if "*** 0 Errors, 0 Warnings" in result:
-        result = ""
-    return result
-
-
-def run_yanglint(model, yangpath, debug_level):
-    """
-    Run yanglint on the YANG model
-    :param model: The file name for the model
-    :param yangpath: The directory where the model is
-    :return: the outcome of the PYANG compilationf
-    """
-    os.chdir(yangpath)
-    bash_command = "yanglint -i -p $MODULES " + model + " 2>&1"
-    if debug_level:
-        print("DEBUG: " + " in run_yanglint: bash_command contains " + bash_command)
-    return os.popen(bash_command).read()
 
 
 def generate_html_table(l, h, htmlpath, file_name):
@@ -603,6 +537,7 @@ if __name__ == "__main__":
 
     ietf_directory = config.get('Directory-Section', 'ietf-directory')
     temp_dir = config.get('Directory-Section', 'temp')
+    modules_directory = config.get('Directory-Section', 'modules-directory')
     pyang_exec = config.get('Tool-Section', 'pyang-exec')
     confdc_exec = config.get('Tool-Section', 'confdc-exec')
     confdc_yangpath = config.get('Tool-Section', 'confdc-yangpath')
@@ -734,6 +669,12 @@ if __name__ == "__main__":
     yang_draft_dict = draftExtractor.inverted_draft_yang_dict
     yang_example_draft_dict = draftExtractor.inverted_draft_yang_example_dict
 
+    # Initialize parsers
+    pyangParser = PyangParser(pyang_exec, modules_directory, args.debug)
+    confdcParser = ConfdcParser(confdc_exec, modules_directory, args.debug)
+    yumadumpProParser = YangdumpProParser(args.debug)
+    yanglintParser = YanglintParser(modules_directory, args.debug)
+
     # YANG modules from drafts: PYANG validation, dictionary generation, dictionary inversion, and page generation
     # Load compilation results from .json file, if any exists
     try:
@@ -751,15 +692,15 @@ if __name__ == "__main__":
         yang_file_compilation = dictionary_existing.get(yang_file, None)
 
         if old_file_hash is None or old_file_hash != file_hash or args.forcecompilation or yang_file_compilation is None:
-            draft_name, email, compilation = "", "", ""
-            result_pyang, result_no_ietf_flag, result_confd, result_yuma, result_yanglint = "", "", "", "", ""
+            draft_name, email, compilation = '', '', ''
+            result_pyang, result_no_ietf_flag, result_confd, result_yuma, result_yanglint = '', '', '', '', ''
             ietf_flag = True
-            result_pyang = run_pyang(pyang_exec, yang_file, ietf_flag, args.yangpath, debug_level)
+            result_pyang = pyangParser.run_pyang_ietf(yang_file_path, ietf_flag)
             ietf_flag = False
-            result_no_ietf_flag = run_pyang(pyang_exec, yang_file, ietf_flag, args.yangpath, debug_level)
-            result_confd = run_confd(confdc_exec, yang_file, args.yangpath, debug_level)
-            result_yuma = run_yumadumppro(yang_file, args.yangpath, debug_level)
-            result_yanglint = run_yanglint(yang_file, args.yangpath, debug_level)
+            result_no_ietf_flag = pyangParser.run_pyang_ietf(yang_file_path, ietf_flag)
+            result_confd = confdcParser.run_confdc(yang_file_path, args.yangpath)
+            result_yuma = yumadumpProParser.run_yumadumppro(yang_file_path, args.yangpath)
+            result_yanglint = yanglintParser.run_yanglint(yang_file_path, args.yangpath)
             draft_name = yang_draft_dict[yang_file]
             url = draft_name.split(".")[0]
             rev_num = url.split("-")[-1]
@@ -827,9 +768,9 @@ if __name__ == "__main__":
             draft_name, email, compilation = "", "", ""
             result_pyang, result_no_ietf_flag = "", ""
             ietf_flag = True
-            result_pyang = run_pyang(pyang_exec, yang_file, ietf_flag, args.allyangexamplepath, debug_level)
+            result_pyang = pyangParser.run_pyang_ietf(yang_file_path, ietf_flag)
             ietf_flag = False
-            result_no_ietf_flag = run_pyang(pyang_exec, yang_file, ietf_flag, args.allyangexamplepath, debug_level)
+            result_no_ietf_flag = pyangParser.run_pyang_ietf(yang_file_path, ietf_flag)
             draft_name = yang_example_draft_dict[yang_file]
             url = draft_name.split(".")[0]
             rev_num = url.split("-")[-1]
@@ -993,6 +934,7 @@ if __name__ == "__main__":
     dictionary = {}
     dictionary_no_submodules = {}
     for yang_file in yang_draft_dict:
+        yang_file_path = args.allyangpath + yang_file
         cisco_email = extract_email_string(args.draftpath + yang_draft_dict[yang_file], "@cisco.com", debug_level)
         tailf_email = extract_email_string(args.draftpath + yang_draft_dict[yang_file], "@tail-f.com", debug_level)
         if tailf_email:
@@ -1006,12 +948,12 @@ if __name__ == "__main__":
             result_pyang, result_no_ietf_flag, result_confd, result_yuma, result_yanglint = "", "", "", "", ""
             # print("PYANG compilation of " + yang_file)
             ietf_flag = True
-            result_pyang = run_pyang(pyang_exec, yang_file, ietf_flag, args.allyangpath, debug_level)
+            result_pyang = pyangParser.run_pyang_ietf(yang_file_path, ietf_flag)
             ietf_flag = False
-            result_no_ietf_flag = run_pyang(pyang_exec, yang_file, ietf_flag, args.allyangpath, debug_level)
-            result_confd = run_confd(confdc_exec, yang_file, args.yangpath, debug_level)
-            result_yuma = run_yumadumppro(yang_file, args.yangpath, debug_level)
-            result_yanglint = run_yanglint(yang_file, args.yangpath, debug_level)
+            result_no_ietf_flag = pyangParser.run_pyang_ietf(yang_file_path, ietf_flag)
+            result_confd = confdcParser.run_confdc(yang_file_path, args.yangpath)
+            result_yuma = yumadumpProParser.run_yumadumppro(yang_file_path, args.yangpath)
+            result_yanglint = yanglintParser.run_yanglint(yang_file_path, args.yangpath)
             draft_name = yang_draft_dict[yang_file]
             url = draft_name.split(".")[0]
             rev_num = url.split("-")[-1]

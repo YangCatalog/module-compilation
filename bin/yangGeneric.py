@@ -26,6 +26,10 @@ import requests
 from filelock import FileLock
 
 from fileHasher import FileHasher
+from parsers.confdcParser import ConfdcParser
+from parsers.pyangParser import PyangParser
+from parsers.yangdumpProParser import YangdumpProParser
+from parsers.yanglintParser import YanglintParser
 from versions import ValidatorsVersions
 from yangIetf import check_yangcatalog_data, push_to_confd
 
@@ -38,12 +42,6 @@ __email__ = "bclaise@cisco.com"
 # ----------------------------------------------------------------------
 # Functions
 # ----------------------------------------------------------------------
-def list_all_subdirs(dir):
-    subdirs = []
-    for direc in glob(dir + "/*/"):
-        subdirs.append(direc)
-        subdirs.extend(list_all_subdirs(direc))
-    return subdirs
 
 
 def list_of_yang_modules_in_subdir(srcdir: str, debug_level: int):
@@ -63,124 +61,6 @@ def list_of_yang_modules_in_subdir(srcdir: str, debug_level: int):
                     print(os.path.join(root, f))
                 ll.append(os.path.join(root, f))
     return ll
-
-
-def run_pyang(pyang_exec, p, model, pyang_param, allinclu, take_pyang_param_into_account=True, debug_level=True):
-    """
-    Run PYANG on the YANG model, with or without the --lint flag
-    :p: the path where to look for the models
-    :param model: The file name for the model
-    :param pyang_param: a boolean, True for the --lint pyang flag, False for no --lint pyang flag
-    :allinclu: if True, the YANG module path is p. If false, the default one
-    :param take_pyang_param_into_account: a boolean,
-        True: take pyang_param into account, i.e. --lint or --ietf
-        False: generate pyang without arguments
-    :param debug_level: If > 0 print some debug statements to the console
-    :return: the outcome of the PYANG compilation
-    """
-    # PYANG search path is indicated by the -p parameter which can occur multiple times
-    #    The following directories are always added to the search path:
-    #        1. current directory
-    #        2. $YANG_MODPATH
-    #        3. $HOME/yang/modules
-    #        4. $YANG_INSTALL/yang/modules OR if $YANG_INSTALL is unset <the default installation directory>/yang/modules (on Unix systems: /usr/share/yang/modules)
-    directory = os.path.dirname(model)
-    filename = model.split("/")[-1]
-    if filename.startswith('example'):
-        take_pyang_param_into_account = False
-    os.chdir(directory)
-    if pyang_param and take_pyang_param_into_account and allinclu:
-        bash_command = " --lint -p " + p + " " + filename + " 2>&1"
-    elif pyang_param and take_pyang_param_into_account and not allinclu:
-        bash_command = " --lint -p " + modules_directory + " " + filename + " 2>&1"
-    elif not pyang_param and take_pyang_param_into_account and allinclu:
-        bash_command = " --ietf -p " + p + " " + filename + " 2>&1"
-    elif not pyang_param and take_pyang_param_into_account and not allinclu:
-        bash_command = " --ietf -p " + modules_directory + " " + filename + " 2>&1"
-    elif allinclu:
-        bash_command = " -p " + p + " " + filename + " 2>&1"
-    else:
-        bash_command = " -p " + modules_directory + " " + filename + " 2>&1"
-    bash_command = pyang_exec + bash_command
-    if debug_level:
-        print("DEBUG: " + " in run_pyang: bash_command contains " + bash_command)
-    return os.popen(bash_command).read()
-
-
-def run_confd(confdc_exec, p, model, allinclu, debug_level):
-    """
-    Run confdc on the YANG model
-    :p: the path where to look for the models
-    :param model: The file name for the model
-    :allinclu: if True, the YANG module path is p. If false, the default one
-    :param debug_level: If > 0 print some debug statements to the console
-    :return: the outcome of the PYANG compilation
-    """
-    # Note: confd doesn't include YANG module recursively and doesn't follow symbolic links
-    # Every single time there is a new directory with YANG modules, I need to add it to the bash_command
-    directory = os.path.dirname(model)
-    os.chdir(directory)
-    if allinclu:
-        bash_command = confdc_exec + " --yangpath " + p + " -w TAILF_MUST_NEED_DEPENDENCY -c " + model + " 2>&1"
-    else:
-        subdirs = list_all_subdirs(modules_directory)
-        yangpath = ':'.join(subdirs)
-        bash_command = confdc_exec + " --yangpath " + yangpath + " --yangpath " + non_ietf_directory + "/bbf/install/yang/common --yangpath " + non_ietf_directory + \
-            "/bbf/install/yang/interface --yangpath " + non_ietf_directory + "/bbf/install/yang/networking -w TAILF_MUST_NEED_DEPENDENCY -c " + model + " 2>&1"
-    if debug_level:
-        print("DEBUG: " + " in run_confd: bash_command contains " + bash_command)
-    return os.popen(bash_command).read()
-
-
-def run_yumadumppro(p, model, allinclu, debug_level):
-    """
-    Run run_yumadump-pro on the YANG model
-    yangdump-pro  --config=/etc/yumapro/yangdump-pro.conf module.yang
-    :p: the path where to look for the models
-    :param model: The file name for the model, including the full path
-    :allinclu: if True, the YANG module path is p. If false, the default one
-    :return: the outcome of the PYANG compilation
-    """
-    directory = os.path.dirname(model)
-    os.chdir(directory)
-    if allinclu:
-        bash_command = "yangdump-pro --quiet-mode --config=/etc/yumapro/yangdump-pro-allinclusive.conf " + model + " 2>&1"
-    else:
-
-        bash_command = "yangdump-pro --quiet-mode --config=/etc/yumapro/yangdump-pro.conf " + model + " 2>&1"
-    if debug_level:
-        print("DEBUG: " + " in yangdump-pro: bash_command contains " + bash_command)
-    result = os.popen(bash_command).read()
-    result = result.rstrip()
-    result = result.lstrip()
-    result = result.replace(model, '')
-    if "*** 0 Errors, 0 Warnings" in result:
-        result = ""
-    return result
-
-
-def run_yanglint(p, model, allinclu, debug_level):
-    """
-    Run yanglint on the YANG model
-    :p: the path where to look for the models
-    :param model: The file name for the model , including the full path
-    :allinclu: if True, the YANG module path is p. If false, the default one
-    :return: the outcome of the PYANG compilationf
-    """
-    directory = os.path.dirname(model)
-    os.chdir(directory)
-    if allinclu:
-        bash_command = "yanglint -i -p " + p + " " + model + " 2>&1"
-    else:
-        bash_command = "yanglint -i -p " + modules_directory + "/ " + model + " 2>&1"
-    if debug_level:
-        print("DEBUG: " + " in run_yanglint: bash_command contains " + bash_command)
-    try:
-        result_yanglint = os.popen(bash_command).read()
-    except:
-        result_yanglint = 'libyang err : ERROR occured while running command: {}'.format(bash_command)
-
-    return result_yanglint
 
 
 def generate_html_table(l, h, htmlpath, file_name, txt=""):
@@ -525,8 +405,8 @@ if __name__ == "__main__":
                              "Otherwise, the YANG validators look in " + modules_directory + ". "
                                                                                              "Default is False")
     parser.add_argument("--prefix", default="", help="Prefix for generating HTML file name"
-                                                     "Example: MEF, IEEEStandards, IEEEExperimental"
-                                                     "Default is NULL")
+                                                     "Example: MEF, IEEEStandard, IEEEExperimental"
+                                                     "Default is ''")
     parser.add_argument("--debug", type=int, default=0, help="Debug level; the default is 0")
     parser.add_argument("--forcecompilation", type=bool, default=False,
                         help="Optional flag that determines wheter compilation should be run "
@@ -571,6 +451,12 @@ if __name__ == "__main__":
     dictionary_no_submodules = {}
     updated_modules = []
 
+    # Initialize parsers
+    pyangParser = PyangParser(pyang_exec, modules_directory, args.debug)
+    confdcParser = ConfdcParser(confdc_exec, modules_directory, args.debug)
+    yumadumpProParser = YangdumpProParser(args.debug)
+    yanglintParser = YanglintParser(modules_directory, args.debug)
+
     # Load compilation results from .json file, if any exists
     try:
         with open('{}/{}.json'.format(args.htmlpath, args.prefix), 'r') as f:
@@ -587,22 +473,18 @@ if __name__ == "__main__":
         yang_file_compilation = dictionary_existing.get(yang_file_with_revision, None)
 
         if old_file_hash is None or old_file_hash != file_hash or args.forcecompilation or yang_file_compilation is None:
-            compilation = ""
-            # print('PYANG compilation of ' + yang_file)
-            result_pyang = run_pyang(pyang_exec, args.rootdir, yang_file, args.lint, args.allinclusive, True, args.debug)
-            result_no_pyang_param = run_pyang(pyang_exec, args.rootdir, yang_file, args.lint, args.allinclusive, False, args.debug)
-            result_confd = run_confd(confdc_exec, args.rootdir, yang_file, args.allinclusive, args.debug)
-            result_yuma = run_yumadumppro(args.rootdir, yang_file, args.allinclusive, args.debug)
+            compilation = ''
+            result_pyang = pyangParser.run_pyang_lint(args.rootdir, yang_file, args.lint, args.allinclusive, True)
+            result_no_pyang_param = pyangParser.run_pyang_lint(args.rootdir, yang_file, args.lint, args.allinclusive, False)
+            result_confd = confdcParser.run_confdc(yang_file, args.rootdir, args.allinclusive)
+            result_yuma = yumadumpProParser.run_yumadumppro(yang_file, args.rootdir, args.allinclusive)
             # if want to populate the document location from Github, must uncomment the following 3 lines
             # the difficulty: find back the exact Github location, while everything is already copied in my local
             # directories: maybe Carl's catalog service will help
             # draft_name = yang_file
             # draft_name = "https://github.com/MEF-GIT/YANG-public/tree/master/src/model/draft" + yang_file
             # draft_name_url = '<a href="' + draft_name + '">' + yang_file + '</a>'
-            #
-            # determine the status, based on the different compilers
-            # remove the draft name from result_yuma
-            result_yanglint = run_yanglint(args.rootdir, yang_file, args.allinclusive, args.debug)
+            result_yanglint = yanglintParser.run_yanglint(yang_file, args.rootdir, args.allinclusive)
 
             # if want to populate the document location from github, must uncomment the following line
             #        dictionary[yang_file] = (draft_name_url, compilation, result, result_no_pyang_param)
@@ -616,7 +498,8 @@ if __name__ == "__main__":
 
             yang_file_compilation = [
                 compilation, result_pyang, result_no_pyang_param, result_confd, result_yuma, result_yanglint]
-            updated_hashes[yang_file] = file_hash
+            if compilation != 'UNKNOWN':
+                updated_hashes[yang_file] = file_hash
 
         if yang_file_with_revision != '':
             dictionary[yang_file_with_revision] = yang_file_compilation

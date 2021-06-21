@@ -27,12 +27,11 @@ mkdir -p $IETFDIR/rfc
 cd $IETFDIR
 
 date +"%c: Retrieving current IETF drafts" >> $LOG
-rsync -avz --include 'draft-*.txt' --exclude '*' --delete rsync.ietf.org::internet-drafts my-id-mirror  >> $LOG 2>&1
+rsync -avz --include 'draft-*.txt' --exclude '*' --delete rsync.ietf.org::internet-drafts my-id-mirror >> $LOG 2>&1
 date +"%c: Retrieving archived IETF drafts" >> $LOG
-rsync -avz --include 'draft-*.txt' --exclude '*' --delete rsync.ietf.org::id-archive my-id-archive-mirror  >> $LOG 2>&1
+rsync -avz --include 'draft-*.txt' --exclude '*' --delete rsync.ietf.org::id-archive my-id-archive-mirror >> $LOG 2>&1
 date +"%c: Retrieving IETF RFCs" >> $LOG
-rsync -avlz --delete --delete-excluded --exclude=dummy.txt --exclude="std-*.txt" --exclude="bcp-*.txt" --exclude="rfc-retrieval.txt" --exclude="rfc-index*.txt" --exclude="RFCs_for_errata.txt" --exclude="rfc-ref.txt" --exclude="rfcxx00.txt" --exclude="*index*" --include="*.txt"  --exclude="*" ftp.rfc-editor.org::rfcs rfc  >> $LOG 2>&1
-
+rsync -avlz --delete --delete-excluded --exclude=dummy.txt --exclude="std-*.txt" --exclude="bcp-*.txt" --exclude="rfc-retrieval.txt" --exclude="rfc-index*.txt" --exclude="RFCs_for_errata.txt" --exclude="rfc-ref.txt" --exclude="rfcxx00.txt" --exclude="*index*" --include="*.txt" --exclude="*" ftp.rfc-editor.org::rfcs rfc >> $LOG 2>&1
 
 #remove the drafts with xym.py error, but that don't contain YANG data modules
 date +"%c: Removing bad IETF drafts" >> $LOG
@@ -40,12 +39,10 @@ python $BIN/yang-exclude-bad-drafts.py >> $LOG 2>&1
 python $BIN/yang-exclude-bad-drafts.py --dstdir $IETFDIR/my-id-archive-mirror >> $LOG 2>&1
 
 #copy the current content to the -old files
-if [ -f $WEB_PRIVATE/IETFDraftYANGPageCompilation.html ]
-then
+if [ -f $WEB_PRIVATE/IETFDraftYANGPageCompilation.html ]; then
 	cp $WEB_PRIVATE/IETFDraftYANGPageCompilation.html $WEB_PRIVATE/IETFDraftYANGPageCompilation-old.html
 fi
-if [ -f $WEB_PRIVATE/IETFCiscoAuthorsYANGPageCompilation.html ]
-then
+if [ -f $WEB_PRIVATE/IETFCiscoAuthorsYANGPageCompilation.html ]; then
 	cp $WEB_PRIVATE/IETFCiscoAuthorsYANGPageCompilation.html $WEB_PRIVATE/IETFCiscoAuthorsYANGPageCompilation-old.html
 fi
 
@@ -76,27 +73,27 @@ ln -f -s $IETFDIR/YANG-rfc $MODULES/YANG-rfc
 
 # Try to flatten a little the IETF structure
 rm -f $MODULES/ieee.draft
-ln -f -s $NONIETFDIR/yangmodels/yang/standard/ieee/draft/ $MODULES/ieee.draft
+# ln -f -s $NONIETFDIR/yangmodels/yang/standard/ieee/draft/ $MODULES/ieee.draft
 rm -f $MODULES/ieee.published
 ln -f -s $NONIETFDIR/yangmodels/yang/standard/ieee/published/ $MODULES/ieee.published
 rm -f $MODULES/ieee.1588.draft
-ln -f -s $NONIETFDIR/yangmodels/yang/standard/ieee/draft/1588/ $MODULES/ieee.1588.draft
+# ln -f -s $NONIETFDIR/yangmodels/yang/standard/ieee/draft/1588/ $MODULES/ieee.1588.draft
 rm -f $MODULES/ieee.1588.published
 ln -f -s $NONIETFDIR/yangmodels/yang/standard/ieee/published/1588/ $MODULES/ieee.1588.published
 rm -f $MODULES/ieee.802.1.draft
-ln -f -s $NONIETFDIR/yangmodels/yang/standard/ieee/draft/802.1/ $MODULES/ieee.802.1.draft
+# ln -f -s $NONIETFDIR/yangmodels/yang/standard/ieee/draft/802.1/ $MODULES/ieee.802.1.draft
 rm -f $MODULES/ieee.802.1.published
 ln -f -s $NONIETFDIR/yangmodels/yang/standard/ieee/published/802.1/ $MODULES/ieee.802.1.published
 rm -f $MODULES/ieee.802.draft
-ln -f -s $NONIETFDIR/yangmodels/yang/standard/ieee/draft/802/ $MODULES/ieee.802.draft
+# ln -f -s $NONIETFDIR/yangmodels/yang/standard/ieee/draft/802/ $MODULES/ieee.802.draft
 rm -f $MODULES/ieee.802.published
 ln -f -s $NONIETFDIR/yangmodels/yang/standard/ieee/published/802/ $MODULES/ieee.802.published
 rm -f $MODULES/ieee.802.3.draft
-ln -f -s $NONIETFDIR/yangmodels/yang/standard/ieee/draft/802.3/ $MODULES/ieee.802.3.draft
+# ln -f -s $NONIETFDIR/yangmodels/yang/standard/ieee/draft/802.3/ $MODULES/ieee.802.3.draft
 rm -f $MODULES/ieee.802.3.published
 ln -f -s $NONIETFDIR/yangmodels/yang/standard/ieee/published/802.3/ $MODULES/ieee.802.3.published
 rm -f $MODULES/ieee.802.11.draft
-ln -f -s $NONIETFDIR/yangmodels/yang/standard/ieee/draft/802.11/ $MODULES/ieee.802.11.draft
+# ln -f -s $NONIETFDIR/yangmodels/yang/standard/ieee/draft/802.11/ $MODULES/ieee.802.11.draft
 rm -f $MODULES/ieee.802.11.published
 ln -f -s $NONIETFDIR/yangmodels/yang/standard/ieee/published/802.11/ $MODULES/ieee.802.11.published
 
@@ -112,11 +109,10 @@ python $BIN/yangIetf.py >> $LOG 2>&1
 # python $BIN/yangIetf.py --draftpath $IETFDIR/my-id-archive-mirror/ >> $LOG 2>&1
 date +"%c: Finished extracting all YANG modules from IETF documents" >> $LOG
 
-#clean up of the .fxs files created by confdc
-rm -f $IETFDIR/YANG/*.fxs >> $LOG 2>&1
-rm -f $IETFDIR/YANG-rfc/*.fxs >> $LOG 2>&1
-#clean up of the .fxs files created by confdc
-#find $NONIETFDIR/ -name *.fxs ! -name fujitsu-optical-channel-interfaces.fxs -print | xargs -r rm >> $LOG 2>&1
+# Clean up of the .fxs files created by confdc
+date +"%c: cleaning up the now useless .fxs files" >> $LOG
+find $IETFDIR/ -name *.fxs ! -name fujitsu-optical-channel-interfaces.fxs -print | xargs -r rm >> $LOG 2>&1
+find $NONIETFDIR/ -name *.fxs ! -name fujitsu-optical-channel-interfaces.fxs -print | xargs -r rm >> $LOG 2>&1
 
 # move all IETF YANG modules to the web part
 # TODO better using a symbolic link ?
@@ -126,7 +122,7 @@ cp --preserve $IETFDIR/YANG/*.yang $WEB/YANG-modules >> $LOG 2>&1
 date +"%c: IETF YANG modules copied to $WEB/YANG-modules" >> $LOG
 
 # Generate the report for RFC-ed YANG modules, and ftp the files.
-python $BIN/yangGeneric.py --metadata "RFC-produced YANG models: Oh gosh, not all of them correctly passed `$PYANG -v` with --ietf :-( " --prefix RFCStandard --rootdir "$IETFDIR/YANG-rfc/" >> $LOG 2>&1
+python $BIN/yangGeneric.py --metadata "RFC-produced YANG models: Oh gosh, not all of them correctly passed $($PYANG -v) with --ietf :-( " --prefix RFCStandard --rootdir "$IETFDIR/YANG-rfc/" >> $LOG 2>&1
 date +"%c: All RFC processed" >> $LOG
 
 #Generate the diff files
@@ -152,7 +148,7 @@ tar cvfz $WEB_DOWNLOADABLES/YANG-v11.tgz *yang >> $LOG 2>&1
 date +"%c: YANG v1.1 tarball files generated" >> $LOG
 
 python $BIN/gatherIETFdependentModules.py >> $LOG 2>&1
-date +"%c:dependencies copied" >> $LOG
+date +"%c: dependencies copied" >> $LOG
 
 date +"%c: End of the script!" >> $LOG
 cd $BIN

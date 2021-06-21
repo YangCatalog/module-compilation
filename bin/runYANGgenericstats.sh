@@ -46,15 +46,15 @@ date +"%c: forking all sub-processes" >>$LOG
 
 declare -a PIDS
 # ETSI v2.6.1
-(python $BIN/yangGeneric.py --metadata "ETSI Complete Report: YANG Data Models compilation from https://github.com/YangModels/yang/tree/master/standard/etsi@3587cb0" --lint True --prefix ETSI261 --rootdir "$NONIETFDIR/yangmodels/yang/standard/etsi/NFV-SOL006-v2.6.1/" >>$LOG 2>&1) &
+(python $BIN/yangGeneric.py --metadata "ETSI Complete Report: YANG Data Models compilation from https://github.com/etsi-forge/nfv-sol006/tree/v2.6.1" --lint True --prefix ETSI261 --rootdir "$NONIETFDIR/yangmodels/yang/standard/etsi/NFV-SOL006-v2.6.1/" >>$LOG 2>&1) &
 PIDS+=("$!")
 
 # ETSI v2.7.1
-(python $BIN/yangGeneric.py --metadata "ETSI Complete Report: YANG Data Models compilation from https://github.com/YangModels/yang/tree/master/standard/etsi@fbb7924" --lint True --prefix ETSI271 --rootdir "$NONIETFDIR/yangmodels/yang/standard/etsi/NFV-SOL006-v2.7.1/" >>$LOG 2>&1) &
+(python $BIN/yangGeneric.py --metadata "ETSI Complete Report: YANG Data Models compilation from https://github.com/etsi-forge/nfv-sol006/tree/v2.7.1" --lint True --prefix ETSI271 --rootdir "$NONIETFDIR/yangmodels/yang/standard/etsi/NFV-SOL006-v2.7.1/" >>$LOG 2>&1) &
 PIDS+=("$!")
 
 # BBF
-(python $BIN/yangGeneric.py --metadata "BBF Complete Report: YANG Data Models compilation from https://github.com/YangModels/yang/tree/master/standard/bbf@7abc8b9" --lint True --prefix BBF --rootdir "$TMP/bbf/" >>$LOG 2>&1) &
+(python $BIN/yangGeneric.py --metadata "BBF Complete Report: YANG Data Models compilation from https://github.com/BroadbandForum/yang/tree/master" --lint True --prefix BBF --rootdir "$TMP/bbf/" >>$LOG 2>&1) &
 PIDS+=("$!")
 
 # Standard MEF
@@ -65,12 +65,16 @@ PIDS+=("$!")
 (python $BIN/yangGeneric.py --metadata "MEF: Draft YANG Data Models compilation from https://github.com/MEF-GIT/YANG-public/tree/master/src/model/draft/" --lint True --prefix MEFExperimental --rootdir "$NONIETFDIR/mef/YANG-public/src/model/draft/" >>$LOG 2>&1) &
 PIDS+=("$!")
 
-# Standard IEEE
-(python $BIN/yangGeneric.py --metadata "IEEE: YANG Data Models compilation from https://github.com/YangModels/yang/tree/master/standard/ieee :  The 'standard/ieee' branch is intended for approved PARs, for drafts as well as published standards. " --lint True --prefix IEEEStandard --rootdir "$NONIETFDIR/yangmodels/yang/standard/ieee/" >>$LOG 2>&1) &
+# Standard IEEE published
+(python $BIN/yangGeneric.py --metadata "IEEE: YANG Data Models compilation from https://github.com/YangModels/yang/tree/master/standard/ieee/published: The 'standard/ieee/published' branch is intended for published standards modules (with approved PARs)." --lint True --prefix IEEEStandard --rootdir "$NONIETFDIR/yangmodels/yang/standard/ieee/published/" --forcecompilation True >>$LOG 2>&1) &
+PIDS+=("$!")
+
+# Standard IEEE drafts
+(python $BIN/yangGeneric.py --metadata "IEEE: YANG Data Models compilation from https://github.com/YangModels/yang/tree/master/standard/ieee/draft: The 'standard/ieee/draft' branch is intended for draft modules with an approved Project Authorization Request (PAR)." --lint True --prefix IEEEStandardDraft --rootdir "$NONIETFDIR/yangmodels/yang/standard/ieee/draft/" --forcecompilation True >>$LOG 2>&1) &
 PIDS+=("$!")
 
 # Experimental IEEE
-(python $BIN/yangGeneric.py --metadata "IEEE: Draft YANG Data Models compilation from https://github.com/YangModels/yang/tree/master/experimental/ieee :  The 'experimental/ieee' branch is intended for IEEE work that does not yet have a Project Authorization Request (PAR). " --lint True --prefix IEEEExperimental --rootdir "$NONIETFDIR/yangmodels/yang/experimental/ieee/" >>$LOG 2>&1) &
+(python $BIN/yangGeneric.py --metadata "IEEE: Draft YANG Data Models compilation from https://github.com/YangModels/yang/tree/master/experimental/ieee: The 'experimental/ieee' branch is intended for IEEE work that does not yet have a Project Authorization Request (PAR)." --lint True --prefix IEEEExperimental --rootdir "$NONIETFDIR/yangmodels/yang/experimental/ieee/" --forcecompilation True >>$LOG 2>&1) &
 PIDS+=("$!")
 
 # Openconfig
@@ -338,7 +342,7 @@ rm -rf $TMP/bbf/ >>$LOG 2>&1
 rm -rf $TMP/openroadm-public/ >>$LOG 2>&1
 
 date +"%c: reloading cache" >>$LOG
-read -ra CRED <<<$(sed 's/\"//g'<<<"$CREDENTIALS")
+read -ra CRED <<<$(sed 's/\"//g' <<<"$CREDENTIALS")
 curl -s -X POST -u "${CRED[0]}":"${CRED[1]}" $MY_URI/api/load-cache >>$LOG 2>&1
 
 date +"%c: End of the script!" >>$LOG
