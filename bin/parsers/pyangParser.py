@@ -85,8 +85,8 @@ class PyangParser:
 
         if use_pyang_params:
             pyang_param = '--lint' if lint else '--ietf'
-            if not allinclusive:
-                bash_command.append(pyang_param)
+            bash_command.append(pyang_param)
+
         bash_command.append('2>&1')
 
         if self.__debug_level > 0:
