@@ -2,6 +2,21 @@
 
 * ##### vm.m.p - 2021-MM-DD
 
+* ##### v4.0.0 - 2021-07-09
+
+  * Pyang update to version 2.5.0 [deployment #85](https://github.com/YangCatalog/deployment/issues/85)
+  * YumaPro validator updated to version 20.10-9 [deployment #84](https://github.com/YangCatalog/deployment/issues/84)
+  * Bugfix: Credentials provided correctly for cURL command
+  * UnicodeDecodeError fixed for parsing modules using libyang [#82](https://github.com/YangCatalog/sdo_analysis/issues/82)
+  * Updated libyang build requirements
+  * AllYANGPageMain.json stats file created [#88](https://github.com/YangCatalog/sdo_analysis/issues/88)
+  * yangGeneric.py running for vendors only on PROD environment by default [#82](https://github.com/YangCatalog/sdo_analysis/issues/82)
+  * cronjob-daily and cronjob-weekly merged into one job [#82](https://github.com/YangCatalog/sdo_analysis/issues/82)
+  * Bugfix: Parsing modules which have compilation result None correctly [#80](https://github.com/YangCatalog/sdo_analysis/issues/80)
+  * Functionality adjustments to parse Huawei models
+  * Functionality adjustments to parse Cisco SVO models [#78](https://github.com/YangCatalog/sdo_analysis/issues/78)
+  * yang2.amsl.com mailname replaced by yangcatalog.org [deployment #73](https://github.com/YangCatalog/deployment/issues/73)
+
 * ##### v3.2.1 - 2021-05-04
 
   * Crontab MAILTO variable set during Docker image build [deployment #72](https://github.com/YangCatalog/deployment/issues/72)
@@ -31,7 +46,7 @@
 
   * Update Dockerfile
   * ConfD update [deployment #34](https://github.com/YangCatalog/deployment/issues/34)
-  * Pyang update [deployment #36]( https://github.com/YangCatalog/deployment/issues/36)
+  * Pyang update to version 2.4.0 [deployment #36](https://github.com/YangCatalog/deployment/issues/36)
   * YumaPro validator update
   * Run more in parallel [#48](https://github.com/YangCatalog/sdo_analysis/issues/48)
   * List cisco xe files correctly [#49](https://github.com/YangCatalog/sdo_analysis/issues/49)

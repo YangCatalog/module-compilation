@@ -54,7 +54,7 @@ RUN rm -rf /usr/bin/python
 RUN ln -s /usr/bin/python3 /usr/bin/python
 RUN cd /sdo_analysis/bin/resources/HTML; python setup.py install
 
-RUN dpkg -i yumapro-client-20.10-6.u1804.amd64.deb
+RUN dpkg -i yumapro-client-20.10-9.u1804.amd64.deb
 
 RUN chmod 0777 bin/configure.sh
 

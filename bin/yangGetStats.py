@@ -411,121 +411,56 @@ if __name__ == "__main__":
     total_number_drafts = len(files)
     total_number_drafts_no_strict = len(files_no_strict)
 
+    companies = (
+        ('Yumaworks', 'yumaworks.com'),
+        ('Tail-f', 'tail-f.com'),
+        ('Cisco', 'cisco.com'),
+        ('Huawei', 'guawei.com'),
+        ('Juniper', 'juniper.net'),
+        ('Ericsson', 'ericsson.com'),
+        ('Alcatel-Lucent', 'alcatel-lucent.com'),
+        ('Ciena', 'ciena.com'),
+        ('Brocade', 'brocade.com'),
+        ('ZTE', 'zte.com'),
+        ('Fujitsu', 'jp.fujitsu.com'),
+        ('Intel', 'intel.com'),
+        ('Infinera', 'infinera.com'),
+        ('Metaswitch', 'metaswitch.com'),
+        ('',''),
+        ('Google', 'google.com'),
+        ('Verizon', 'verizon.com'),
+        ('AT&T', 'att.com'),
+        ('Telefonica', 'telefonica.com'),
+        ('Orange', 'orange.com'),
+        ('BT', 'bt.com'),
+        ('Level 3', 'level3.com'),
+        ('Comcast', 'cable.comcast.com'),
+        ('China Unicom', 'chinaunicom.cn'),
+        ('China Mobile', 'chinamobile.com'),
+        ('Microsoft', 'microsoft.com'),
+        ('DT', 'telekom.de'),
+        ('Softbank', 'softbank.co.jp'),
+        ('Packet Design', 'packetdesign.com'),
+        ('Qosmos', 'qosmos.com')
+    )
+
+    def print_attribution(name, domain):
+        if not name and not domain:
+            print()
+        else:
+            strict = len(list_of_ietf_draft_containing_keyword(files, domain, args.draftpathstrict, debug_level))
+            non_strict = len(list_of_ietf_draft_containing_keyword(files_no_strict, domain,
+                                                                   args.draftpathnostrict, debug_level))
+            print('{}: {} - non strict rules: {}'.format(name, strict, non_strict))
+
     print()
-    print("Print, per company, the number of IETF drafts containing YANG model(s)")
-    print("Total numbers of drafts with YANG Model(s): " + str(total_number_drafts) + " - non strict rules: " + str(
-        total_number_drafts_no_strict))
-    print('')
-    print("Yumarkworks: " + str(len(list_of_ietf_draft_containing_keyword(files, "@yumaworks.com", args.draftpathstrict,
-                                                                          debug_level))) + " - non strict rules: " + str(
-        len(list_of_ietf_draft_containing_keyword(files_no_strict, "@yumaworks.com", args.draftpathnostrict,
-                                                  debug_level))))
-    print("Tail-f: " + str(len(list_of_ietf_draft_containing_keyword(files, "@tail-f.com", args.draftpathstrict,
-                                                                     debug_level))) + " - non strict rules: " + str(len(
-        list_of_ietf_draft_containing_keyword(files_no_strict, "@tail-f.com", args.draftpathnostrict, debug_level))))
-    print("Cisco: " + str(len(list_of_ietf_draft_containing_keyword(files, "@cisco.com", args.draftpathstrict,
-                                                                    debug_level))) + " - non strict rules: " + str(
-        len(list_of_ietf_draft_containing_keyword(files_no_strict, "@cisco.com", args.draftpathnostrict, debug_level))))
-    print("Huawei: " + str(len(list_of_ietf_draft_containing_keyword(files, "@huawei.com", args.draftpathstrict,
-                                                                     debug_level))) + " - non strict rules: " + str(len(
-        list_of_ietf_draft_containing_keyword(files_no_strict, "@huawei.com", args.draftpathnostrict, debug_level))))
-    print("Juniper: " + str(len(list_of_ietf_draft_containing_keyword(files, "@juniper.net", args.draftpathstrict,
-                                                                      debug_level))) + " - non strict rules: " + str(
-        len(list_of_ietf_draft_containing_keyword(files_no_strict, "@juniper.net", args.draftpathnostrict,
-                                                  debug_level))))
-    print("Ericsson: " + str(len(list_of_ietf_draft_containing_keyword(files, "@ericsson.com", args.draftpathstrict,
-                                                                       debug_level))) + " - non strict rules: " + str(
-        len(list_of_ietf_draft_containing_keyword(files_no_strict, "@ericsson.com", args.draftpathnostrict,
-                                                  debug_level))))
-    print("Alcatel-Lucent: " + str(len(
-        list_of_ietf_draft_containing_keyword(files, "@alcatel-lucent.com", args.draftpathstrict,
-                                              debug_level))) + " - non strict rules: " + str(len(
-        list_of_ietf_draft_containing_keyword(files_no_strict, "@alcatel-lucent.com", args.draftpathnostrict,
-                                              debug_level))))
-    print("Ciena: " + str(len(list_of_ietf_draft_containing_keyword(files, "@ciena.com", args.draftpathstrict,
-                                                                    debug_level))) + " - non strict rules: " + str(
-        len(list_of_ietf_draft_containing_keyword(files_no_strict, "@ciena.com", args.draftpathnostrict, debug_level))))
-    print("Brocade: " + str(len(list_of_ietf_draft_containing_keyword(files, "@brocade.com", args.draftpathstrict,
-                                                                      debug_level))) + " - non strict rules: " + str(
-        len(list_of_ietf_draft_containing_keyword(files_no_strict, "@brocade.com", args.draftpathnostrict,
-                                                  debug_level))))
-    print("ZTE: " + str(len(list_of_ietf_draft_containing_keyword(files, "@zte.com", args.draftpathstrict,
-                                                                  debug_level))) + " - non strict rules: " + str(
-        len(list_of_ietf_draft_containing_keyword(files_no_strict, "@zte.com", args.draftpathnostrict, debug_level))))
-    print("Fujitsu: " + str(len(list_of_ietf_draft_containing_keyword(files, "@jp.fujitsu.com", args.draftpathstrict,
-                                                                      debug_level))) + " - non strict rules: " + str(
-        len(list_of_ietf_draft_containing_keyword(files_no_strict, "@jp.fujitsu.com", args.draftpathnostrict,
-                                                  debug_level))))
-    print("Intel: " + str(len(list_of_ietf_draft_containing_keyword(files, "@intel.com", args.draftpathstrict,
-                                                                    debug_level))) + " - non strict rules: " + str(
-        len(list_of_ietf_draft_containing_keyword(files_no_strict, "@intel.com", args.draftpathnostrict, debug_level))))
-    print("Infinera: " + str(len(list_of_ietf_draft_containing_keyword(files, "@infinera.com", args.draftpathstrict,
-                                                                       debug_level))) + " - non strict rules: " + str(
-        len(list_of_ietf_draft_containing_keyword(files_no_strict, "@infinera.com", args.draftpathnostrict,
-                                                  debug_level))))
-    print("Metaswitch: " + str(len(list_of_ietf_draft_containing_keyword(files, "@metaswitch.com", args.draftpathstrict,
-                                                                         debug_level))) + " - non strict rules: " + str(
-        len(list_of_ietf_draft_containing_keyword(files_no_strict, "@metaswitch.com", args.draftpathnostrict,
-                                                  debug_level))))
-    print('')
-    print("Google: " + str(len(list_of_ietf_draft_containing_keyword(files, "@google.com", args.draftpathstrict,
-                                                                     debug_level))) + " - non strict rules: " + str(len(
-        list_of_ietf_draft_containing_keyword(files_no_strict, "@google.com", args.draftpathnostrict, debug_level))))
-    print("Verizon: " + str(len(list_of_ietf_draft_containing_keyword(files, "@verizon.com", args.draftpathstrict,
-                                                                      debug_level))) + " - non strict rules: " + str(
-        len(list_of_ietf_draft_containing_keyword(files_no_strict, "@verizon.com", args.draftpathnostrict,
-                                                  debug_level))))
-    print("AT&T: " + str(len(list_of_ietf_draft_containing_keyword(files, "@att.com", args.draftpathstrict,
-                                                                   debug_level))) + " - non strict rules: " + str(
-        len(list_of_ietf_draft_containing_keyword(files_no_strict, "@att.com", args.draftpathnostrict, debug_level))))
-    print("Telefonica: " + str(len(list_of_ietf_draft_containing_keyword(files, "@telefonica.com", args.draftpathstrict,
-                                                                         debug_level))) + " - non strict rules: " + str(
-        len(list_of_ietf_draft_containing_keyword(files_no_strict, "@telefonica.com", args.draftpathnostrict,
-                                                  debug_level))))
-    print("Orange: " + str(len(list_of_ietf_draft_containing_keyword(files, "@orange.com", args.draftpathstrict,
-                                                                     debug_level))) + " - non strict rules: " + str(len(
-        list_of_ietf_draft_containing_keyword(files_no_strict, "@orange.com", args.draftpathnostrict, debug_level))))
-    print("BT: " + str(len(list_of_ietf_draft_containing_keyword(files, "@bt.com", args.draftpathstrict,
-                                                                 debug_level))) + " - non strict rules: " + str(
-        len(list_of_ietf_draft_containing_keyword(files_no_strict, "@bt.com", args.draftpathnostrict, debug_level))))
-    print("Level 3: " + str(len(list_of_ietf_draft_containing_keyword(files, "@level3.com", args.draftpathstrict,
-                                                                      debug_level))) + " - non strict rules: " + str(
-        len(list_of_ietf_draft_containing_keyword(files_no_strict, "@level3.com", args.draftpathnostrict,
-                                                  debug_level))))
-    print("Comcast: " + str(len(list_of_ietf_draft_containing_keyword(files, "@cable.comcast.com", args.draftpathstrict,
-                                                                      debug_level))) + " - non strict rules: " + str(
-        len(list_of_ietf_draft_containing_keyword(files_no_strict, "@cable.comcast.com", args.draftpathnostrict,
-                                                  debug_level))))
-    print("China Unicom: " + str(len(
-        list_of_ietf_draft_containing_keyword(files, "@chinaunicom.cn", args.draftpathstrict,
-                                              debug_level))) + " - non strict rules: " + str(len(
-        list_of_ietf_draft_containing_keyword(files_no_strict, "@chinaunicom.cn", args.draftpathnostrict,
-                                              debug_level))))
-    print("China Mobile: " + str(len(
-        list_of_ietf_draft_containing_keyword(files, "@chinamobile.com", args.draftpathstrict,
-                                              debug_level))) + " - non strict rules: " + str(len(
-        list_of_ietf_draft_containing_keyword(files_no_strict, "@chinamobile.com", args.draftpathnostrict,
-                                              debug_level))))
-    print("Microsoft: " + str(len(list_of_ietf_draft_containing_keyword(files, "@microsoft.com", args.draftpathstrict,
-                                                                        debug_level))) + " - non strict rules: " + str(
-        len(list_of_ietf_draft_containing_keyword(files_no_strict, "@microsoft.com", args.draftpathnostrict,
-                                                  debug_level))))
-    print("DT: " + str(len(list_of_ietf_draft_containing_keyword(files, "@telekom.de", args.draftpathstrict,
-                                                                 debug_level))) + " - non strict rules: " + str(len(
-        list_of_ietf_draft_containing_keyword(files_no_strict, "@telekom.de", args.draftpathnostrict, debug_level))))
-    print("Softbank: " + str(len(list_of_ietf_draft_containing_keyword(files, "softbank.co.jp", args.draftpathstrict,
-                                                                       debug_level))) + " - non strict rules: " + str(
-        len(list_of_ietf_draft_containing_keyword(files_no_strict, "softbank.co.jp", args.draftpathnostrict,
-                                                  debug_level))))
-    print('')
-    print("Packet Design: " + str(len(
-        list_of_ietf_draft_containing_keyword(files, "@packetdesign.com", args.draftpathstrict,
-                                              debug_level))) + " - non strict rules: " + str(len(
-        list_of_ietf_draft_containing_keyword(files_no_strict, "@packetdesign.com", args.draftpathnostrict,
-                                              debug_level))))
-    print("Qosmos: " + str(len(list_of_ietf_draft_containing_keyword(files, "@qosmos.com", args.draftpathstrict,
-                                                                     debug_level))) + " - non strict rules: " + str(len(
-        list_of_ietf_draft_containing_keyword(files_no_strict, "@qosmos.com", args.draftpathnostrict, debug_level))))
+    print('Print, per company, the number of IETF drafts containing YANG model(s)')
+    print('Total numbers of drafts with YANG Model(s): {} - non strict rules: {}'
+          .format(total_number_drafts, total_number_drafts_no_strict))
+    print()
+    
+    for company in companies:
+        print_attribution(*company)
 
     for f in remove_old_html_files:
         try:
