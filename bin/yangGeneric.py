@@ -108,88 +108,86 @@ def number_of_yang_modules_that_passed_compilation(in_dict: dict, position: int,
     return t
 
 
-def combined_compilation(yang_file: str, result_pyang: str, result_confd: str, result_yuma: str, result_yanglint: str):
+def combined_compilation(yang_file: str, result: dict):
     """
     Determine the combined compilation result based on individual compilation results from parsers.
 
     Arguments:
         :param yang_file        (str) Name of the yang files
-        :param result_pyang     (str) compilation result from pyang
-        :param result_confd     (str) compilation result from confdc
-        :param result_yuma      (str) compilation result from yumadump-pro
-        :param result_yanglint  (str) compilation result from yanglint
+        :param result           (dict) Dictionary of compilation results with following keys:
+                                        pyang_lint, confdrc, yumadump, yanglint
     :return: the combined compilation result
     """
-    if "error" in result_pyang:
-        compilation_pyang = "FAILED"
-    elif "warning" in result_pyang:
-        compilation_pyang = "PASSED WITH WARNINGS"
-    elif result_pyang == "":
-        compilation_pyang = "PASSED"
+    if 'error' in result['pyang_lint']:
+        compilation_pyang = 'FAILED'
+    elif 'warning' in result['pyang_lint']:
+        compilation_pyang = 'PASSED WITH WARNINGS'
+    elif result['pyang_lint'] == '':
+        compilation_pyang = 'PASSED'
     else:
-        compilation_pyang = "UNKNOWN"
+        compilation_pyang = 'UNKNOWN'
 
     # logic for confdc compilation result:
-    if "error" in result_confd:
-        compilation_confd = "FAILED"
+    if 'error' in result['confdrc']:
+        compilation_confd = 'FAILED'
     #   The following doesn't work. For example, ietf-diffserv@2016-06-15.yang, now PASSED (TBC):
     #     Error: 'ietf-diffserv@2016-06-15.yang' import of module 'ietf-qos-policy' failed
     #     ietf-diffserv@2016-06-15.yang:11.3: error(250): definition not found
     #   This issue is that an import module that fails => report the main module as FAILED
     #   Another issue with ietf-bgp-common-structure.yang
-    elif "warning" in result_confd:
-        compilation_confd = "PASSED WITH WARNINGS"
-    elif result_confd == "":
-        compilation_confd = "PASSED"
+    elif 'warning' in result['confdrc']:
+        compilation_confd = 'PASSED WITH WARNINGS'
+    elif result['confdrc'] == '':
+        compilation_confd = 'PASSED'
     else:
-        compilation_confd = "UNKNOWN"
-    # "cannot compile submodules; compile the module instead" error message
+        compilation_confd = 'UNKNOWN'
+    # 'cannot compile submodules; compile the module instead' error message
     # => still print the message, but doesn't report it as FAILED
-    if "error: cannot compile submodules; compile the module instead" in result_confd:
-        compilation_confd = "PASSED"
+    if 'error: cannot compile submodules; compile the module instead' in result['confdrc']:
+        compilation_confd = 'PASSED'
 
     # logic for yumaworks compilation result:
     # remove the draft name from result_yuma
-    if result_yuma == "":
-        compilation_yuma = "PASSED"
-    elif "0 Errors, 0 Warnings" in result_yuma:
-        compilation_yuma = "PASSED"
-    elif "Error" in result_yuma and yang_file in result_yuma and "0 Errors" not in result_yuma:
+    if result['yumadump'] == '':
+        compilation_yuma = 'PASSED'
+    elif '0 Errors, 0 Warnings' in result['yumadump']:
+        compilation_yuma = 'PASSED'
+    elif 'Error' in result['yumadump'] and yang_file in result['yumadump'] and '0 Errors' not in result['yumadump']:
         # This is an approximation: if Error in an imported module, and warning on this current module
         # then it will report the module as FAILED
         # Solution: look at line by line comparision of Error and yang_file
-        compilation_yuma = "FAILED"
-    elif "Warning" in result_yuma and yang_file in result_yuma:
-        compilation_yuma = "PASSED WITH WARNINGS"
-    elif "Warning" in result_yuma and yang_file not in result_yuma:
-        compilation_yuma = "PASSED"
+        compilation_yuma = 'FAILED'
+    elif 'Warning' in result['yumadump'] and yang_file in result['yumadump']:
+        compilation_yuma = 'PASSED WITH WARNINGS'
+    elif 'Warning' in result['yumadump'] and yang_file not in result['yumadump']:
+        compilation_yuma = 'PASSED'
     else:
-        compilation_yuma = "UNKNOWN"
+        compilation_yuma = 'UNKNOWN'
 
     # logic for yanglint compilation result:
-    if "err :" in result_yanglint:
-        compilation_yanglint = "FAILED"
-    elif "warn:" in result_yanglint:
-        compilation_yanglint = "PASSED WITH WARNINGS"
-    elif result_yanglint == "":
-        compilation_yanglint = "PASSED"
+    if 'err :' in result['yanglint']:
+        compilation_yanglint = 'FAILED'
+    elif 'warn:' in result['yanglint']:
+        compilation_yanglint = 'PASSED WITH WARNINGS'
+    elif result['yanglint'] == '':
+        compilation_yanglint = 'PASSED'
     else:
-        compilation_yanglint = "UNKNOWN"
-    # "err : Unable to parse submodule, parse the main module instead." error message
+        compilation_yanglint = 'UNKNOWN'
+    # 'err : Input data contains submodule which cannot be parsed directly without its main module.' error message
     # => still print the message, but doesn't report it as FAILED
-    if "err : Unable to parse submodule, parse the main module instead." in result_yanglint:
-        compilation_yanglint = "PASSED"
+    if 'err : Input data contains submodule which cannot be parsed directly without its main module.' in result['yanglint']:
+        compilation_yanglint = 'PASSED'
 
     # determine the combined compilation status, based on the different compilers
     compilation_list = [compilation_pyang, compilation_confd, compilation_yuma, compilation_yanglint]
-    if "FAILED" in compilation_list:
-        compilation = "FAILED"
-    elif "PASSED WITH WARNINGS" in compilation_list:
-        compilation = "PASSED WITH WARNINGS"
-    elif compilation_list == ["PASSED", "PASSED", "PASSED", "PASSED"]:
-        compilation = "PASSED"
+    if 'FAILED' in compilation_list:
+        compilation = 'FAILED'
+    elif 'PASSED WITH WARNINGS' in compilation_list:
+        compilation = 'PASSED WITH WARNINGS'
+    elif compilation_list == ['PASSED', 'PASSED', 'PASSED', 'PASSED']:
+        compilation = 'PASSED'
     else:
-        compilation = "UNKNOWN"
+        compilation = 'UNKNOWN'
 
     return compilation
 
@@ -414,14 +412,22 @@ if __name__ == "__main__":
             result_yanglint = yanglintParser.run_yanglint(yang_file, args.rootdir, args.allinclusive)
 
             # if want to populate the document location from github, must uncomment the following line
-            #        dictionary[yang_file] = (draft_name_url, compilation, result, result_no_pyang_param)
-            compilation = combined_compilation(yang_file_without_path, result_pyang, result_confd, result_yuma,
-                                               result_yanglint)
+            # dictionary[yang_file] = (draft_name_url, compilation, result, result_no_pyang_param)
+
+            # If we are parsing RFCStandard
+            ietf = 'ietf-rfc' if '/YANG-rfc' in yang_file else None
+
+            result = {
+                'pyang_lint': result_pyang,
+                'pyang': result_no_pyang_param,
+                'confdrc': result_confd,
+                'yumadump': result_yuma,
+                'yanglint': result_yanglint
+            }
+            compilation = combined_compilation(yang_file, result)
             updated_modules.extend(
                 check_yangcatalog_data(pyang_exec, args.rootdir, resutl_html_dir, yang_file_without_path, None, None, None, compilation,
-                                       result_pyang,
-                                       result_no_pyang_param, result_confd, result_yuma, result_yanglint,
-                                       all_yang_catalog_metadata, None))
+                                       result, all_yang_catalog_metadata, prefix, ietf))
 
             yang_file_compilation = [
                 compilation, result_pyang, result_no_pyang_param, result_confd, result_yuma, result_yanglint]

@@ -2,6 +2,8 @@
 
 * ##### vm.m.p - 2021-MM-DD
 
+  * Bugfix: Modules compilation status/result overwriting [#52](https://github.com/YangCatalog/sdo_analysis/issues/52)
+
 * ##### v4.1.0 - 2021-08-10
 
   * Parsers and extractors moved into separate classes [#86](https://github.com/YangCatalog/sdo_analysis/issues/86)

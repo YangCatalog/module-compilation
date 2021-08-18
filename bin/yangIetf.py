@@ -108,105 +108,101 @@ def number_of_yang_modules_that_passed_compilation(in_dict: dict, compilation_co
     return t
 
 
-
-def combined_compilation(yang_file, result_pyang, result_no_ietf_flag, result_confd, result_yuma, result_yanglint):
+def combined_compilation(yang_file: str, result: dict):
     """
     Determine the combined compilation result based on individual compilation results from parsers.
-        :param yang_file                (str) Name of the yang files
-        :param result_pyang             (str) compilation result from pyang (using --ietf flag)
-        :param result_no_ietf_flag      (str) compilation result from pyang (without --ietf flag)
-        :param result_confd             (str) compilation result from confdc
-        :param result_yuma              (str) compilation result from yumadump-pro
-        :param result_yanglint          (str) compilation result from yanglint
+        :param yang_file    (str) Name of the yang files
+        :param result       (dict) Dictionary of compilation results with following keys:
+                                    pyang_lint, pyang, confdrc, yumadump, yanglint
     :return: the combined compilation result
     """
-    if "error" in result_pyang:
-        compilation_pyang = "FAILED"
-    elif "warning" in result_pyang:
-        compilation_pyang = "PASSED WITH WARNINGS"
-    elif result_pyang == "":
-        compilation_pyang = "PASSED"
+    if 'error' in result['pyang_lint']:
+        compilation_pyang = 'FAILED'
+    elif 'warning' in result['pyang_lint']:
+        compilation_pyang = 'PASSED WITH WARNINGS'
+    elif result['pyang_lint'] == '':
+        compilation_pyang = 'PASSED'
     else:
-        compilation_pyang = "UNKNOWN"
+        compilation_pyang = 'UNKNOWN'
 
     # logic for pyang compilation result:
-    if "error" in result_no_ietf_flag:
-        compilation_pyang_no_ietf = "FAILED"
-    elif "warning" in result_no_ietf_flag:
-        compilation_pyang_no_ietf = "PASSED WITH WARNINGS"
-    elif result_no_ietf_flag == "":
-        compilation_pyang_no_ietf = "PASSED"
+    if 'error' in result['pyang']:
+        compilation_pyang_no_ietf = 'FAILED'
+    elif 'warning' in result['pyang']:
+        compilation_pyang_no_ietf = 'PASSED WITH WARNINGS'
+    elif result['pyang']:
+        compilation_pyang_no_ietf = 'PASSED'
     else:
-        compilation_pyang_no_ietf = "UNKNOWN"
+        compilation_pyang_no_ietf = 'UNKNOWN'
 
     # logic for confdc compilation result:
-    #    if "error" in result_confd and yang_file in result_confd:
-    if "error" in result_confd:
-        compilation_confd = "FAILED"
+    # if 'error' in result['confdrc'] and yang_file in result['confdrc']:
+    if 'error' in result['confdrc']:
+        compilation_confd = 'FAILED'
     #   The following doesn't work. For example, ietf-diffserv@2016-06-15.yang, now PASSED (TBC):
     #     Error: 'ietf-diffserv@2016-06-15.yang' import of module 'ietf-qos-policy' failed
     #     ietf-diffserv@2016-06-15.yang:11.3: error(250): definition not found
     #   This issue is that an import module that fails => report the main module as FAILED
     #   Another issue with ietf-bgp-common-structure.yang
     # If the error is on the module itself, then, that's an error
-    elif "warning" in result_confd:
-        compilation_confd = "PASSED WITH WARNINGS"
-    elif result_confd == "":
-        compilation_confd = "PASSED"
+    elif 'warning' in result['confdrc']:
+        compilation_confd = 'PASSED WITH WARNINGS'
+    elif result['confdrc'] == '':
+        compilation_confd = 'PASSED'
     else:
-        compilation_confd = "UNKNOWN"
-    # "cannot compile submodules; compile the module instead" error  message
+        compilation_confd = 'UNKNOWN'
+    # 'cannot compile submodules; compile the module instead' error  message
     # => still print the message, but doesn't report it as FAILED
-    if "error: cannot compile submodules; compile the module instead" in result_confd:
-        compilation_confd = "PASSED"
+    if 'error: cannot compile submodules; compile the module instead' in result['confdrc']:
+        compilation_confd = 'PASSED'
 
     # logic for yumaworks compilation result:
-    # remove the draft name from result_yuma
-    if result_yuma == "":
-        compilation_yuma = "PASSED"
-    elif "0 Errors, 0 Warnings" in result_yuma:
-        compilation_yuma = "PASSED"
-    elif "Error" in result_yuma and yang_file in result_yuma and "0 Errors" not in result_yuma:
+    # remove the draft name from result['yumadump']
+    if result['yumadump'] == '':
+        compilation_yuma = 'PASSED'
+    elif '0 Errors, 0 Warnings' in result['yumadump']:
+        compilation_yuma = 'PASSED'
+    elif 'Error' in result['yumadump'] and yang_file in result['yumadump'] and '0 Errors' not in result['yumadump']:
         # This is an approximation: if Error in an imported module, and warning on this current module
         # then it will report the module as FAILED
         # Solution: look at line by line comparision of Error and yang_file
-        compilation_yuma = "FAILED"
-    elif "Warning" in result_yuma and yang_file in result_yuma:
-        compilation_yuma = "PASSED WITH WARNINGS"
-    elif "Warning" in result_yuma and yang_file not in result_yuma:
-        compilation_yuma = "PASSED"
+        compilation_yuma = 'FAILED'
+    elif 'Warning' in result['yumadump'] and yang_file in result['yumadump']:
+        compilation_yuma = 'PASSED WITH WARNINGS'
+    elif 'Warning' in result['yumadump'] and yang_file not in result['yumadump']:
+        compilation_yuma = 'PASSED'
     else:
-        compilation_yuma = "UNKNOWN"
+        compilation_yuma = 'UNKNOWN'
 
     # logic for yanglint compilation result:
-    if "err :" in result_yanglint:
-        compilation_yanglint = "FAILED"
-    elif "warn:" in result_yanglint:
-        compilation_yanglint = "PASSED WITH WARNINGS"
-    elif result_yanglint == "":
-        compilation_yanglint = "PASSED"
+    if 'err :' in result['yanglint']:
+        compilation_yanglint = 'FAILED'
+    elif 'warn:' in result['yanglint']:
+        compilation_yanglint = 'PASSED WITH WARNINGS'
+    elif result['yanglint'] == '':
+        compilation_yanglint = 'PASSED'
     else:
-        compilation_yanglint = "UNKNOWN"
-    # "err : Unable to parse submodule, parse the main module instead." error  message
+        compilation_yanglint = 'UNKNOWN'
+    # 'err : Input data contains submodule which cannot be parsed directly without its main module.' error  message
     # => still print the message, but doesn't report it as FAILED
-    if "err : Unable to parse submodule, parse the main module instead." in result_yanglint:
-        compilation_yanglint = "PASSED"
+    if 'err : Input data contains submodule which cannot be parsed directly without its main module.' in result['yanglint']:
+        compilation_yanglint = 'PASSED'
     # Next three lines could be removed when mount-point is supported by yanglint
-    # result_yanglint = result_yanglint.rstrip()
-    # if result_yanglint.endswith("extension statement found, ignoring."):
-    #     compilation_yanglint = "PASSED"
+    # result['yanglint'] = result['yanglint'].rstrip()
+    # if result['yanglint'].endswith('extension statement found, ignoring.'):
+    #     compilation_yanglint = 'PASSED'
 
     # determine the combined compilation status, based on the different compilers
     compilation_list = [compilation_pyang, compilation_pyang_no_ietf, compilation_confd, compilation_yuma,
                         compilation_yanglint]
-    if "FAILED" in compilation_list:
-        compilation = "FAILED"
-    elif "PASSED WITH WARNINGS" in compilation_list:
-        compilation = "PASSED WITH WARNINGS"
-    elif compilation_list == ["PASSED", "PASSED", "PASSED", "PASSED", "PASSED"]:
-        compilation = "PASSED"
+    if 'FAILED' in compilation_list:
+        compilation = 'FAILED'
+    elif 'PASSED WITH WARNINGS' in compilation_list:
+        compilation = 'PASSED WITH WARNINGS'
+    elif compilation_list == ['PASSED', 'PASSED', 'PASSED', 'PASSED', 'PASSED']:
+        compilation = 'PASSED'
     else:
-        compilation = "UNKNOWN"
+        compilation = 'UNKNOWN'
 
     return compilation
 
@@ -241,8 +237,7 @@ def module_or_submodule(input_file):
 
 
 def check_yangcatalog_data(pyang_exec, yang_path, resutl_html_dir, yang_file, datatracker_url, document_name, email, compilation,
-                           result_pyang_flag, result_pyang_no_flag,
-                           result_confd, result_yuma, result_yanglint, all_modules, ietf=None):
+                           result, all_modules, prefix, ietf=None):
     def __resolve_maturity_level():
         if ietf == 'ietf-rfc':
             return 'ratified'
@@ -346,8 +341,14 @@ def check_yangcatalog_data(pyang_exec, yang_path, resutl_html_dir, yang_file, da
 
         if compilation is not None and compilation != '' and module_data.get(
                 'compilation-status') != compilation.lower().replace(' ', '-'):
-            update = True
-            module_data['compilation-status'] = compilation.lower().replace(' ', '-')
+            # Module parsed with --ietf flag has higher priority
+            if module_data.get('organization') == 'ietf':
+                if ietf is not None:
+                    update = True
+                    module_data['compilation-status'] = compilation.lower().replace(' ', '-')
+            else:
+                update = True
+                module_data['compilation-status'] = compilation.lower().replace(' ', '-')
 
         if compilation is not None:
 
@@ -369,21 +370,17 @@ def check_yangcatalog_data(pyang_exec, yang_path, resutl_html_dir, yang_file, da
             rev = module_data['revision']
             org = module_data['organization']
             file_url = '{}@{}_{}.html'.format(name, rev, org)
-            result = {'name': name,
-                      'revision': rev,
-                      'pyang_lint': result_pyang_flag,
-                      'pyang': result_pyang_no_flag,
-                      'confdrc': result_confd, 'yumadump': result_yuma,
-                      'yanglint': result_yanglint}
+            result['name'] = name
+            result['revision'] = rev
 
             ths = list()
             option = '--lint'
             if ietf is not None:
                 option = '--ietf'
-            ths.append('Compilation Result (pyang {}). {}'.format(option, versions.get('pyang_version')))
-            ths.append('Compilation Result (pyang). Note: also generates errors for imported files. {}'.format(
+            ths.append('Compilation Results (pyang {}). {}'.format(option, versions.get('pyang_version')))
+            ths.append('Compilation Results (pyang). Note: also generates errors for imported files. {}'.format(
                 versions.get('pyang_version')))
-            ths.append('Compilation Results (confdc) Note: also generates errors for imported files. {}'.format(
+            ths.append('Compilation Results (confdc). Note: also generates errors for imported files. {}'.format(
                 versions.get('confd_version')))
             ths.append('Compilation Results (yangdump-pro). Note: also generates errors for imported files. {}'.format(
                 versions.get('yangdump_version')))
@@ -399,22 +396,28 @@ def check_yangcatalog_data(pyang_exec, yang_path, resutl_html_dir, yang_file, da
                 with open('{}/{}'.format(resutl_html_dir, file_url), 'r', encoding='utf-8') as f:
                     existing_output = f.read()
                 if existing_output != rendered_html:
-                    with open('{}/{}'.format(resutl_html_dir, file_url), 'w', encoding='utf-8') as f:
-                        f.write(rendered_html)
-                    os.chmod('{}/{}'.format(resutl_html_dir, file_url), 0o664)
+                    if module_data.get('organization') == 'ietf':
+                        if ietf is not None:
+                            with open('{}/{}'.format(resutl_html_dir, file_url), 'w', encoding='utf-8') as f:
+                                f.write(rendered_html)
+                            os.chmod('{}/{}'.format(resutl_html_dir, file_url), 0o664)
+                    else:
+                        with open('{}/{}'.format(resutl_html_dir, file_url), 'w', encoding='utf-8') as f:
+                            f.write(rendered_html)
+                        os.chmod('{}/{}'.format(resutl_html_dir, file_url), 0o664)
             else:
                 with open('{}/{}'.format(resutl_html_dir, file_url), 'w', encoding='utf-8') as f:
                     f.write(rendered_html)
                 os.chmod('{}/{}'.format(resutl_html_dir, file_url), 0o664)
-            if compilation == 'PASSED':
+            if module_data.get('compilation-status') == 'passed':
                 comp_result = ''
             else:
-                comp_result = 'https://yangcatalog.org/results/{}'.format(file_url)
-            if module_data['compilation-result'] != comp_result:
+                comp_result = '{}/results/{}'.format(prefix, file_url)
+            if module_data.get('compilation-result') != comp_result:
                 update = True
                 module_data['compilation-result'] = comp_result
 
-        if ietf is not None and module_data['organization'] == 'ietf':
+        if ietf is not None and module_data.get('organization') == 'ietf':
             wg = __resolve_working_group()
             if (module_data.get('ietf') is None or module_data['ietf']['ietf-wg'] != wg) and wg is not None:
                 update = True
@@ -654,13 +657,17 @@ if __name__ == "__main__":
             url2 = '{}/YANG-modules/{}'.format(web_url, yang_file)
             yang_url = '<a href="{}">Download the YANG model</a>'.format(url2)
 
-            compilation = combined_compilation(yang_file, result_pyang, result_no_ietf_flag, result_confd, result_yuma,
-                                               result_yanglint)
+            result = {
+                'pyang_lint': result_pyang,
+                'pyang': result_no_ietf_flag,
+                'confdrc': result_confd,
+                'yumadump': result_yuma,
+                'yanglint': result_yanglint
+            }
+            compilation = combined_compilation(yang_file, result)
             updated_modules.extend(
                 check_yangcatalog_data(pyang_exec, args.yangpath, resutl_html_dir, yang_file, url, draft_name, mailto, compilation,
-                                       result_pyang,
-                                       result_no_ietf_flag, result_confd, result_yuma, result_yanglint,
-                                       all_yang_catalog_metadata, 'ietf-draft'))
+                                       result, all_yang_catalog_metadata, prefix, 'ietf-draft'))
             if len(updated_modules) > 100:
                 updated_modules = push_to_confd(updated_modules, config)
             yang_file_compilation = [draft_url, email, yang_url, compilation, result_pyang, result_no_ietf_flag, result_confd, result_yuma,
@@ -724,11 +731,13 @@ if __name__ == "__main__":
             else:
                 compilation = 'UNKNOWN'
 
+            result = {
+                'pyang_lint': result_pyang,
+                'pyang': result_no_ietf_flag
+            }
             updated_modules.extend(
                 check_yangcatalog_data(pyang_exec, args.allyangexamplepath, resutl_html_dir, yang_file, url, draft_name, mailto, compilation,
-                                       result_pyang,
-                                       result_no_ietf_flag, '', '', '',
-                                       all_yang_catalog_metadata, 'ietf-example'))
+                                       result, all_yang_catalog_metadata, prefix, 'ietf-example'))
             if len(updated_modules) > 100:
                 updated_modules = push_to_confd(updated_modules, config)
             yang_file_compilation = [draft_url, email, compilation, result_pyang, result_no_ietf_flag]
@@ -773,7 +782,7 @@ if __name__ == "__main__":
             rfc_url = '<a href="{}">{}</a>'.format(url, rfc_name)
             updated_modules.extend(
                 check_yangcatalog_data(pyang_exec, args.rfcyangpath, resutl_html_dir, yang_file, url, rfc_name, None, None,
-                                       None, None, None, None, None, all_yang_catalog_metadata, 'ietf-rfc'))
+                                       {}, all_yang_catalog_metadata, prefix, 'ietf-rfc'))
             if len(updated_modules) > 100:
                 updated_modules = push_to_confd(updated_modules, config)
             files_hashes[yang_file_path] = file_hash
@@ -869,13 +878,17 @@ if __name__ == "__main__":
             url2 = '{}/YANG-modules/{}'.format(web_url, yang_file)
             yang_url = '<a href="{}">Download the YANG model</a>'.format(url2)
 
-            compilation = combined_compilation(yang_file, result_pyang, result_no_ietf_flag, result_confd, result_yuma,
-                                               result_yanglint)
+            result = {
+                'pyang_lint': result_pyang,
+                'pyang': result_no_ietf_flag,
+                'confdrc': result_confd,
+                'yumadump': result_yuma,
+                'yanglint': result_yanglint
+            }
+            compilation = combined_compilation(yang_file, result)
             updated_modules.extend(
                 check_yangcatalog_data(pyang_exec, args.yangpath, resutl_html_dir, yang_file, url, draft_name, mailto, compilation,
-                                       result_pyang,
-                                       result_no_ietf_flag, result_confd, result_yuma, result_yanglint,
-                                       all_yang_catalog_metadata, 'ietf-draft'))
+                                       result, all_yang_catalog_metadata, prefix, 'ietf-draft'))
             if len(updated_modules) > 100:
                 updated_modules = push_to_confd(updated_modules, config)
             yang_file_compilation = [draft_url, email, cisco_email, yang_url, compilation, result_pyang, result_no_ietf_flag, result_confd,
