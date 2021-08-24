@@ -16,9 +16,9 @@
 __author__ = 'bclaise'
 
 import argparse
-import configparser
 import os
 
+from create_config import create_config
 
 # ----------------------------------------------------------------------
 # Functions
@@ -83,9 +83,7 @@ def extract_email_string(d, email_domain, debug_level):
 # Main
 # ----------------------------------------------------------------------
 if __name__ == "__main__":
-    config = configparser.ConfigParser()
-    config._interpolation = configparser.ExtendedInterpolation()
-    config.read('/etc/yangcatalog/yangcatalog.conf')
+    config = create_config()
     ietf_directory = config.get('Directory-Section', 'ietf-directory')
 
     parser = argparse.ArgumentParser(description='Yang RFC/Draft Processor')

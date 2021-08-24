@@ -16,19 +16,13 @@ __copyright__ = "Copyright The IETF Trust 2020, All Rights Reserved"
 __license__ = "Apache License, Version 2.0"
 __email__ = "slavomir.mazur@pantheon.tech"
 
-import sys
 import json
 import argparse
 
-if sys.version_info >= (3, 4):
-    import configparser as ConfigParser
-else:
-    import ConfigParser
+from create_config import create_config
 
 if __name__ == "__main__":
-    config = ConfigParser.ConfigParser()
-    config._interpolation = ConfigParser.ExtendedInterpolation()
-    config.read('/etc/yangcatalog/yangcatalog.conf')
+    config = create_config()
     temp_dir = config.get('Directory-Section', 'temp')
     parser = argparse.ArgumentParser()
     parser.add_argument('--start', default=0, help='Cronjob start time', required=True)

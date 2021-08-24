@@ -23,15 +23,13 @@ import json
 
 from filelock import FileLock
 
+from create_config import create_config
 from versions import ValidatorsVersions
 
 
 class FileHasher:
     def __init__(self):
-        config_path = '/etc/yangcatalog/yangcatalog.conf'
-        config = ConfigParser.ConfigParser()
-        config._interpolation = ConfigParser.ExtendedInterpolation()
-        config.read(config_path)
+        config = create_config()
         self.cache_dir = config.get('Directory-Section', 'cache')
         self.validators_versions_bytes = self.get_versions()
 

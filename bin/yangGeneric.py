@@ -13,7 +13,6 @@
 # either express or implied.
 
 import argparse
-import configparser
 import datetime
 import json
 import os
@@ -22,6 +21,7 @@ import re
 import requests
 from filelock import FileLock
 
+from create_config import create_config
 from fileHasher import FileHasher
 from filesGenerator import FilesGenerator
 from parsers.confdcParser import ConfdcParser
@@ -298,9 +298,7 @@ def get_name_with_revision(yang_file: str):
 # ----------------------------------------------------------------------
 if __name__ == "__main__":
     home = os.path.expanduser('~')
-    config = configparser.ConfigParser()
-    config._interpolation = configparser.ExtendedInterpolation()
-    config.read('/etc/yangcatalog/yangcatalog.conf')
+    config = create_config()
     api_ip = config.get('Web-Section', 'ip')
     protocol = config.get('General-Section', 'protocol-api')
     resutl_html_dir = config.get('Web-Section', 'result-html-dir')

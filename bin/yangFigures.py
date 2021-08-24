@@ -17,7 +17,8 @@ mpl.use('Agg') # To prevent using a X-Windows server
 from pylab import *
 from matplotlib.dates import MonthLocator, DateFormatter
 import json
-import configparser
+
+from create_config import create_config
 
 
 def historical_yangmodule_compiled_readJSON(jsonfile):
@@ -56,9 +57,7 @@ months = MonthLocator(range(1, 13), bymonthday=1, interval=1)
 monthsFmt = DateFormatter("%b '%y")
 
 # Get some directory values where to store files
-config = configparser.ConfigParser()
-config._interpolation = configparser.ExtendedInterpolation()
-config.read('/etc/yangcatalog/yangcatalog.conf')
+config = create_config()
 web_directory = config.get('Web-Section', 'private-directory')
 
 

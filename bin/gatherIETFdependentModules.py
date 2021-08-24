@@ -4,10 +4,10 @@ from os import path
 
 import requests
 
+from create_config import create_config
+
 if __name__ == "__main__":
-    config = configparser.ConfigParser()
-    config._interpolation = configparser.ExtendedInterpolation()
-    config.read('/etc/yangcatalog/yangcatalog.conf')
+    config = create_config()
     api_ip = config.get('Web-Section', 'ip')
     protocol = config.get('General-Section', 'protocol-api')
     all_modules_dir = config.get('Directory-Section', 'save-file-dir')

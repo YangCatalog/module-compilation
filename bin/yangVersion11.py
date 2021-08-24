@@ -16,10 +16,10 @@
 # limitations under the License.
 
 from remove_directory_content import remove_directory_content
-from extract_emails import extract_email_string
 import argparse
-import configparser
 import os
+
+from create_config import create_config
 
 __author__ = 'Benoit Claise'
 __copyright__ = "Copyright(c) 2015, Cisco Systems, Inc.,  Copyright The IETF Trust 2019, All Rights Reserved"
@@ -96,9 +96,7 @@ def YANGversion11(srcpath, rfcpath, YANGmodel, yangpath, test, debug):
 
 
 if __name__ == "__main__":
-    config = configparser.ConfigParser()
-    config._interpolation = configparser.ExtendedInterpolation()
-    config.read('/etc/yangcatalog/yangcatalog.conf')
+    config = create_config()
     ietf_directory = config.get('Directory-Section', 'ietf-directory')
 
     parser = argparse.ArgumentParser(description='YANG 1.1 Processing Tool. Either test if a YANG module is YANG 1.1 (test option), or copy all YANG 1.1 modules to yangpath')

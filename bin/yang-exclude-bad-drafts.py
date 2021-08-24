@@ -13,8 +13,9 @@
 # either express or implied.
 
 import argparse
-import configparser
 import os
+
+from create_config import create_config
 
 __author__ = 'bclaise@cisco.com'
 
@@ -84,9 +85,7 @@ if __name__ == "__main__":
     """
     Testing functions
     """
-    config = configparser.ConfigParser()
-    config._interpolation = configparser.ExtendedInterpolation()
-    config.read('/etc/yangcatalog/yangcatalog.conf')
+    config = create_config()
     ietf_directory = config.get('Directory-Section', 'ietf-directory')
 
     parser = argparse.ArgumentParser(description='Remove drafts known as having xym errors, '

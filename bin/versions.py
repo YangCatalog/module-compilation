@@ -18,20 +18,17 @@ __license__ = "Apache License, Version 2.0"
 __email__ = "slavomir.mazur@pantheon.tech"
 __version__ = "1.1.0"
 
-import configparser as ConfigParser
-import json
 from subprocess import CalledProcessError, check_output
 
 import pyang
 from xym import __version__ as xym_version
 
+from create_config import create_config
+
 
 class ValidatorsVersions:
     def __init__(self):
-        config_path = '/etc/yangcatalog/yangcatalog.conf'
-        config = ConfigParser.ConfigParser()
-        config._interpolation = ConfigParser.ExtendedInterpolation()
-        config.read(config_path)
+        config = create_config()
         confdc_exec = config.get('Tool-Section', 'confdc-exec')
         self.cache_dir = config.get('Directory-Section', 'cache')
 

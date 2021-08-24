@@ -18,25 +18,15 @@ __license__ = "Apache V2.0"
 __email__ = "bclaise@cisco.com"
 
 import argparse
-import configparser
 import os
 import shutil
 import time
 from datetime import datetime
 
-# ----------------------------------------------------------------------
-# Functions
-# ----------------------------------------------------------------------
-
-
-# ----------------------------------------------------------------------
-# Main
-# ----------------------------------------------------------------------
+from create_config import create_config
 
 if __name__ == "__main__":
-    config = configparser.ConfigParser()
-    config._interpolation = configparser.ExtendedInterpolation()
-    config.read('/etc/yangcatalog/yangcatalog.conf')
+    config = create_config()
     web_private = config.get('Web-Section', 'private-directory')
     backup_directory = config.get('Directory-Section', 'backup')
     parser = argparse.ArgumentParser(description='Move file to the their creation time')

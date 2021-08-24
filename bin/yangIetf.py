@@ -26,6 +26,7 @@ import os
 import jinja2
 import requests
 
+from create_config import create_config
 from extract_emails import extract_email_string
 from extractors.dratfExtractor import DraftExtractor
 from extractors.rfcExtractor import RFCExtractor
@@ -474,9 +475,7 @@ def get_timestamp_with_pid():
 # ----------------------------------------------------------------------
 if __name__ == "__main__":
     home = os.path.expanduser('~')
-    config = configparser.ConfigParser()
-    config._interpolation = configparser.ExtendedInterpolation()
-    config.read('/etc/yangcatalog/yangcatalog.conf')
+    config = create_config()
     web_url = config.get('Web-Section', 'my-uri')
     web_private = config.get('Web-Section', 'private-directory')
 

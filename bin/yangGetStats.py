@@ -18,7 +18,6 @@ __license__ = "Apache V2.0"
 __email__ = "bclaise@cisco.com"
 
 import argparse
-import configparser
 import datetime
 import json
 import os
@@ -28,6 +27,8 @@ import matplotlib as mpl
 
 mpl.use('Agg')
 from matplotlib.dates import date2num
+
+from create_config import create_config
 
 
 # ----------------------------------------------------------------------
@@ -158,9 +159,7 @@ def write_dictionary_file_in_json(in_dict, path, file_name):
 # ----------------------------------------------------------------------
 if __name__ == "__main__":
     bin_directory = os.environ['BIN']
-    config = configparser.ConfigParser()
-    config._interpolation = configparser.ExtendedInterpolation()
-    config.read('/etc/yangcatalog/yangcatalog.conf')
+    config = create_config()
     web_private = config.get('Web-Section', 'private-directory')
     backup_directory = config.get('Directory-Section', 'backup')
     ietf_directory = config.get('Directory-Section', 'ietf-directory')
