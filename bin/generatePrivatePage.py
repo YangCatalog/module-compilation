@@ -23,10 +23,10 @@ if sys.version_info >= (3, 4):
 else:
     import ConfigParser
 
-__author__ = "Miroslav Kovac"
-__copyright__ = "Copyright The IETF Trust 2020, All Rights Reserved"
-__license__ = "Eclipse Public License v1.0"
-__email__ = "miroslav.kovac@pantheon.tech"
+__author__ = 'Miroslav Kovac'
+__copyright__ = 'Copyright The IETF Trust 2020, All Rights Reserved'
+__license__ = 'Eclipse Public License v1.0'
+__email__ = 'miroslav.kovac@pantheon.tech'
 
 
 def render(tpl_path, context):
@@ -44,7 +44,7 @@ def render(tpl_path, context):
     ).get_template(filename).render(context)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Generate yangcatalog main private page.')
     parser.add_argument('--config-path', type=str,
                         default='/etc/yangcatalog/yangcatalog.conf',
@@ -122,7 +122,8 @@ if __name__ == "__main__":
 
     context['openroadm'] = []
     for specific_version in args.openRoadM:
-        context['openroadm'].append({'alphaNumeric': specific_version})
+        context['openroadm'].append({'alphaNumeric': specific_version,
+                                     'allCharacters': specific_version})
     result = render('./resources/index.html', context)
     with open('{}/index.html'.format(private_dir), 'w') as f:
         f.write(result)
