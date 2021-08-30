@@ -1,4 +1,3 @@
-import configparser
 import shutil
 from os import path
 

@@ -17,7 +17,6 @@ __copyright__ = "Copyright The IETF Trust 2021, All Rights Reserved"
 __license__ = "Apache License, Version 2.0"
 __email__ = "slavomir.mazur@pantheon.tech"
 
-import configparser as ConfigParser
 import hashlib
 import json
 
