@@ -775,7 +775,7 @@ if __name__ == "__main__":
         old_file_hash = files_hashes.get(yang_file_path, None)
         rfc_url = dictionary_rfc_existing.get(yang_file, '')
 
-        if old_file_hash is None or old_file_hash != file_hash or args.forcecompilation or yang_file_compilation is None:
+        if old_file_hash is None or old_file_hash != file_hash or args.forcecompilation or rfc_url == '':
             rfc_name = yang_rfc_dict[yang_file]
             rfc_name = rfc_name.split('.')[0]
             url = 'https://tools.ietf.org/html/{}'.format(rfc_name)
@@ -797,7 +797,7 @@ if __name__ == "__main__":
     sorted_modules_list = sorted(dict_to_list_rfc(dictionary_rfc))
     # sorted_modules_list = sorted(dict_to_list_rfc(dictionary_rfc_no_submodules), key = itemgetter(1))
 
-    filesGenerator.write_dictionary(dictionary, 'IETFYANGRFC')
+    filesGenerator.write_dictionary(dictionary_rfc, 'IETFYANGRFC')
     headers = ['YANG Model (and submodel)', 'RFC']
     filesGenerator.generateHTMLTable(sorted_modules_list, headers, 'IETFYANGRFC.html')
 
