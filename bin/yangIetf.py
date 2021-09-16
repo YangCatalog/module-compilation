@@ -22,6 +22,7 @@ import configparser
 import datetime
 import json
 import os
+import time
 
 import jinja2
 import requests
@@ -373,6 +374,7 @@ def check_yangcatalog_data(pyang_exec, yang_path, resutl_html_dir, yang_file, da
             file_url = '{}@{}_{}.html'.format(name, rev, org)
             result['name'] = name
             result['revision'] = rev
+            result['generated'] = time.strftime('%d/%m/%Y')
 
             ths = list()
             option = '--lint'
