@@ -489,7 +489,7 @@ if __name__ == "__main__":
     protocol = config.get('General-Section', 'protocol-api')
     resutl_html_dir = config.get('Web-Section', 'result-html-dir')
 
-    parser = argparse.ArgumentParser(description='Yang RFC/Draft Processor')
+    parser = argparse.ArgumentParser(description='YANG RFC/Draft Processor')
     parser.add_argument("--draftpath", default=ietf_directory + "/my-id-mirror/",
                         help="The optional directory where to find the source drafts. "
                              "Default is '" + ietf_directory + "/my-id-mirror/' but could also be '" + ietf_directory + "/my-id-archive-mirror/' to get expired drafts as well")

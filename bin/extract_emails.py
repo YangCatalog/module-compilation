@@ -20,6 +20,7 @@ import os
 
 from create_config import create_config
 
+
 # ----------------------------------------------------------------------
 # Functions
 # ----------------------------------------------------------------------
@@ -27,7 +28,7 @@ def list_of_ietf_drafts(directory, debug_level):
     """
     Returns the list of files in a directory
     # status: troubleshooting done
-    
+
     :param directory: directory to search for drafts
     :return: list of found drafts
     """
@@ -44,12 +45,12 @@ def list_of_ietf_drafts(directory, debug_level):
 
 def extract_email_string(d, email_domain, debug_level):
     """
-    Returns a string, comma separated, of all the email addresses for the company email domain,  
+    Returns a string, comma separated, of all the email addresses for the company email domain,
     within an IETF draft
     :param d: an IETF draft, including the path
     :param email_domain: example "@cisco.com"
     :param debug
-    :return: a string, comma separated, of all the email addresses for the company email domain,  
+    :return: a string, comma separated, of all the email addresses for the company email domain,
     """
     email_string = ""
     list_of_email_address = []
@@ -63,10 +64,10 @@ def extract_email_string(d, email_domain, debug_level):
         if debug_level > 1:
             print("  line: " + line)
         if "email" in line.lower() or "e-mail" in line.lower():
-            try: 
+            try:
                 email = line.split(":")[1]
-            except: 
-                email = line.split("mail")[1]              
+            except:
+                email = line.split("mail")[1]
             email = email.rstrip(" ")
             email = email.lstrip(" ")
             if debug_level > 0:
@@ -86,11 +87,11 @@ if __name__ == "__main__":
     config = create_config()
     ietf_directory = config.get('Directory-Section', 'ietf-directory')
 
-    parser = argparse.ArgumentParser(description='Yang RFC/Draft Processor')
+    parser = argparse.ArgumentParser(description='YANG RFC/Draft Processor')
 
     # Host Config
-    parser.add_argument("--draftpath", default= ietf_directory + "/my-id-mirror/", help="The path to the draft directory).")
-    parser.add_argument("--yangpath", default= ietf_directory + "/YANG/", help="The path where to store extracted models")
+    parser.add_argument("--draftpath", default=ietf_directory + "/my-id-mirror/", help="The path to the draft directory).")
+    parser.add_argument("--yangpath", default=ietf_directory + "/YANG/", help="The path where to store extracted models")
     parser.add_argument("--debug", type=int, default=0, help="Debug level")
     args = parser.parse_args()
 
@@ -101,7 +102,7 @@ if __name__ == "__main__":
     ietf_drafts = list_of_ietf_drafts(args.draftpath, args.debug)
     for draft_file in ietf_drafts:
         if debug_level > 1:
-            print("Main: " + draft_file)
-        output = extract_email_string(draft_file, "@cisco.com")
-        if output: 
-            print("Main: " + draft_file + ": " + output)
+            print('Main: {}'.format(draft_file))
+        output = extract_email_string(draft_file, '@cisco.com')
+        if output:
+            print('Main: {}: {}'.format(draft_file, output))
