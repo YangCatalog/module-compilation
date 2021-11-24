@@ -37,6 +37,7 @@ from parsers.confdcParser import ConfdcParser
 from parsers.pyangParser import PyangParser
 from parsers.yangdumpProParser import YangdumpProParser
 from parsers.yanglintParser import YanglintParser
+from redisConnections.redisConnection import RedisConnection
 from remove_directory_content import remove_directory_content
 from versions import ValidatorsVersions
 
@@ -457,14 +458,16 @@ def push_to_confd(updated_modules: list, config: configparser.ConfigParser):
         print('creating patch request to confd with updated data')
         url = '{}/restconf/data/yang-catalog:catalog/modules/'.format(confd_prefix)
         response = requests.patch(url, data=json_modules_data,
-                                  auth=(credentials[0],
-                                        credentials[1]),
+                                  auth=(credentials[0], credentials[1]),
                                   headers={
                                       'Accept': 'application/yang-data+json',
                                       'Content-type': 'application/yang-data+json'})
         if response.status_code < 200 or response.status_code > 299:
             print('Request with body {} on path {} failed with {}'.
                   format(json_modules_data, url, response.text))
+    redisConnection = RedisConnection()
+    redisConnection.populate_modules(updated_modules)
+
     return []
 
 

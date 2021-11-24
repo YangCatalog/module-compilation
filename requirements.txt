@@ -6,3 +6,4 @@ Jinja2==3.0.1
 requests==2.25.1
 xym==0.5
 filelock==3.0.12
+redis==3.5.3
