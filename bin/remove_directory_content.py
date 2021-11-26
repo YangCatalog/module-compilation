@@ -19,6 +19,7 @@ import shutil
 
 __author__ = 'bclaise@cisco.com'
 
+
 def remove_directory_content(directory: str, debug_level: int = 0):
     """
     Empty content of the directory passed as an argument.
@@ -28,7 +29,7 @@ def remove_directory_content(directory: str, debug_level: int = 0):
         :param debug_level  (int) debug level; If > 0 print some debug statements to the console
     """
     if not os.path.isdir(directory):
-        return
+        os.makedirs(directory)
     for filename in os.listdir(directory):
         file_path = os.path.join(directory, filename)
         try:

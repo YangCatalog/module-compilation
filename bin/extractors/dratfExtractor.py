@@ -28,19 +28,19 @@ from extractors.helper import (check_after_xym_extraction,
 
 
 class DraftExtractor:
-    def __init__(self, draft_path: str, yang_path: str, draft_extraction_yang_path: str,
-                 all_yang_draft_path_strict: str, all_yang_example_path: str,
-                 all_yang_draft_path_only_example: str, all_yang_path: str,
-                 all_yang_draft_path_no_strict: str, debug_level: int):
-        self.draft_path = draft_path
-        self.yang_path = yang_path
-        self.draft_extraction_yang_path = draft_extraction_yang_path
-        self.all_yang_draft_path_strict = all_yang_draft_path_strict
-        self.all_yang_example_path = all_yang_example_path
-        self.all_yang_draft_path_only_example = all_yang_draft_path_only_example
-        self.all_yang_path = all_yang_path
-        self.all_yang_draft_path_no_strict = all_yang_draft_path_no_strict
+    def __init__(self, draft_extractor_paths: dict, debug_level: int,
+                 extract_elements: bool = True, extract_examples: bool = True):
+        self.draft_path = draft_extractor_paths.get('draft_path', '')
+        self.yang_path = draft_extractor_paths.get('yang_path', '')
+        self.draft_elements_path = draft_extractor_paths.get('draft_elements_path', '')
+        self.all_yang_draft_path_strict = draft_extractor_paths.get('all_yang_draft_path_strict', '')
+        self.all_yang_example_path = draft_extractor_paths.get('all_yang_example_path', '')
+        self.all_yang_draft_path_only_example = draft_extractor_paths.get('all_yang_draft_path_only_example', '')
+        self.all_yang_path = draft_extractor_paths.get('all_yang_path', '')
+        self.all_yang_draft_path_no_strict = draft_extractor_paths.get('all_yang_draft_path_no_strict', '')
         self.debug_level = debug_level
+        self.extract_examples = extract_examples
+        self.extract_elements = extract_elements
         self.ietf_drafts = []
         self.draft_yang_dict = {}
         self.draft_yang_example_dict = {}
@@ -82,32 +82,29 @@ class DraftExtractor:
                     print('DEBUG: Extracted YANG models from Draft\n {}'.format(str(extracted_yang_models)))
 
                 # typedef, grouping and identity extraction from Drafts
-                for extracted_model in extracted_yang_models:
-                    if not extracted_model.startswith('example-'):
-                        print('Identifier definition extraction for {}'.format(extracted_model))
-                        module_fname = '{}{}'.format(self.yang_path, extracted_model)
-                        extract_elem(module_fname, self.draft_extraction_yang_path, 'typedef')
-                        extract_elem(module_fname, self.draft_extraction_yang_path, 'grouping')
-                        extract_elem(module_fname, self.draft_extraction_yang_path, 'identity')
+                if self.extract_elements:
+                    self.extract_all_elements(extracted_yang_models)
+
                 self.draft_yang_dict[draft_file] = extracted_yang_models
                 # copy the draft file in a specific directory for strict = True
                 shutil.copy2(draft_file_path, self.all_yang_draft_path_strict)
 
             # Extract the correctly formatted example YANG Models into all_yang_example_path
-            extracted_yang_models = self.extract_from_draft_file(draft_file, self.draft_path, self.all_yang_example_path,
-                                                                 strict=True, strict_examples=True)
-            if extracted_yang_models:
-                correct = check_after_xym_extraction(draft_file, extracted_yang_models)
-                if not correct:
-                    self.ietf_drafts.remove(draft_file)
-                    continue
+            if self.extract_examples:
+                extracted_yang_models = self.extract_from_draft_file(draft_file, self.draft_path, self.all_yang_example_path,
+                                                                     strict=True, strict_examples=True)
+                if extracted_yang_models:
+                    correct = check_after_xym_extraction(draft_file, extracted_yang_models)
+                    if not correct:
+                        self.ietf_drafts.remove(draft_file)
+                        continue
 
-                if self.debug_level > 0:
-                    print('DEBUG: Extracted YANG models from Draft\n {}'.format(str(extracted_yang_models)))
+                    if self.debug_level > 0:
+                        print('DEBUG: Extracted YANG models from Draft\n {}'.format(str(extracted_yang_models)))
 
-                self.draft_yang_example_dict[draft_file] = extracted_yang_models
-                # copy the draft file in a specific directory for strict = True
-                shutil.copy2(draft_file_path, self.all_yang_draft_path_only_example)
+                    self.draft_yang_example_dict[draft_file] = extracted_yang_models
+                    # copy the draft file in a specific directory for strict = True
+                    shutil.copy2(draft_file_path, self.all_yang_draft_path_only_example)
 
             # Extract all YANG Models, including the wrongly formatted ones, in all_yang_path
             extracted_yang_models = self.extract_from_draft_file(draft_file, self.draft_path, self.all_yang_path)
@@ -140,3 +137,15 @@ class DraftExtractor:
         remove_invalid_files(self.yang_path, self.inverted_draft_yang_dict)
         remove_invalid_files(self.all_yang_example_path, self.inverted_draft_yang_example_dict)
         remove_invalid_files(self.all_yang_path, self.inverted_draft_yang_all_dict)
+
+    def extract_all_elements(self, extracted_yang_models: list):
+        """ Extract typedefs, groupings and identities from data models into .txt files.
+        These elements are not extracted from example models.
+        """
+        for extracted_model in extracted_yang_models:
+            if not extracted_model.startswith('example-'):
+                print('Identifier definition extraction for {}'.format(extracted_model))
+                module_fname = '{}{}'.format(self.yang_path, extracted_model)
+                extract_elem(module_fname, self.draft_elements_path, 'typedef')
+                extract_elem(module_fname, self.draft_elements_path, 'grouping')
+                extract_elem(module_fname, self.draft_elements_path, 'identity')

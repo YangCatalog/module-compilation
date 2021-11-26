@@ -537,10 +537,10 @@ if __name__ == "__main__":
                         help="The optional directory where to store "
                              "the typedef, grouping, identity from data models extracted from RFCs"
                              "Default is '" + ietf_directory + "/YANG-rfc-extraction/'")
-    parser.add_argument("--draftextractionyangpath", default=ietf_directory + "/YANG-extraction/",
+    parser.add_argument("--draftelementspath", default=ietf_directory + "/draft-elements/",
                         help="The optional directory where to store "
                              "the typedef, grouping, identity from data models correctely extracted from drafts"
-                             "Default is '" + home + "/ietf/YANG-extraction/'")
+                             "Default is '" + ietf_directory + "/draft-elements/'")
     parser.add_argument("--strict", type=bool, default=False, help='Optional flag that determines syntax enforcement; '
                                                                    "'If set to 'True' <CODE BEGINS> / <CODE ENDS> are "
                                                                    "required; default is 'False'")
@@ -579,6 +579,17 @@ if __name__ == "__main__":
         key = '{}@{}'.format(mod['name'], mod['revision'])
         all_yang_catalog_metadata[key] = mod
 
+    draft_extractor_paths = {
+        'draft_path': args.draftpath,
+        'yang_path': args.yangpath,
+        'draft_elements_path': args.draftelementspath,
+        'all_yang_draft_path_strict': args.allyangdraftpathstrict,
+        'all_yang_example_path': args.allyangexamplepath,
+        'all_yang_draft_path_only_example': args.allyangdraftpathonlyexample,
+        'all_yang_path': args.allyangpath,
+        'all_yang_draft_path_no_strict': args.allyangdraftpathnostrict
+    }
+
     # Empty the yangpath, allyangpath, and rfcyangpath directories content
     remove_directory_content(args.yangpath, debug_level)
     remove_directory_content(args.allyangpath, debug_level)
@@ -589,7 +600,7 @@ if __name__ == "__main__":
     remove_directory_content(args.allyangdraftpathnostrict, debug_level)
     remove_directory_content(args.allyangdraftpathonlyexample, debug_level)
     remove_directory_content(args.rfcextractionyangpath, debug_level)
-    remove_directory_content(args.draftextractionyangpath, debug_level)
+    remove_directory_content(args.draftelementspath, debug_level)
 
     # Extract YANG models from RFCs files
     rfcExtractor = RFCExtractor(args.rfcpath, args.rfcyangpath, args.rfcextractionyangpath, args.debug)
@@ -601,10 +612,7 @@ if __name__ == "__main__":
     print(get_timestamp_with_pid() + 'all RFCs processed', flush=True)
 
     # Extract YANG models from IETF draft files
-    draftExtractor = DraftExtractor(args.draftpath, args.yangpath, args.draftextractionyangpath,
-                                    args.allyangdraftpathstrict, args.allyangexamplepath,
-                                    args.allyangdraftpathonlyexample, args.allyangpath,
-                                    args.allyangdraftpathnostrict, args.debug)
+    draftExtractor = DraftExtractor(draft_extractor_paths, args.debug)
     draftExtractor.extract_drafts()
     draftExtractor.invert_dict()
     draftExtractor.remove_invalid_files()

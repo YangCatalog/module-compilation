@@ -9,3 +9,4 @@ YANGCATALOG_CONFIG_PATH=<YANGCATALOG_CONFIG_PATH>
 #  SDO Analysis to fetch from IETF, YangModels, ...
 #
 5 1 * * * (cd /sdo_analysis/bin/ ; ./cronjob)
+0 10 * * 3 (cd /sdo_analysis/bin/ ; python3 checkArchivedDrafts.py)
