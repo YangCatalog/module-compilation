@@ -16,24 +16,18 @@ __copyright__ = "Copyright The IETF Trust 2020, All Rights Reserved"
 __license__ = "Apache License, Version 2.0"
 __email__ = "slavomir.mazur@pantheon.tech"
 
-import json
 import argparse
+import json
 
 from create_config import create_config
 
-if __name__ == "__main__":
-    config = create_config()
-    temp_dir = config.get('Directory-Section', 'temp')
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--start', default=0, help='Cronjob start time', required=True)
-    parser.add_argument('--end', default=0, help='Cronjob end time', required=True)
-    parser.add_argument('--status', default='Fail', help='Result of cronjob run', required=True)
-    parser.add_argument('--filename', default='', help='Name of job', required=True)
-    args = parser.parse_args()
+
+def job_log(start_time: int, end_time: str, temp_dir: str, filename: str, messages: list = [], status: str = ''):
     result = {}
-    result['start'] = int(args.start)
-    result['end'] = int(args.end)
-    result['status'] = args.status
+    result['start'] = start_time
+    result['end'] = end_time
+    result['status'] = status
+    result['messages'] = messages
 
     try:
         with open('{}/cronjob.json'.format(temp_dir), 'r') as f:
@@ -43,17 +37,30 @@ if __name__ == "__main__":
 
     last_successfull = None
     # If successfull rewrite, otherwise use last_successfull value from JSON
-    if args.status == 'Success':
-        last_successfull = int(args.end)
+    if status == 'Success':
+        last_successfull = end_time
     else:
         try:
-            previous_state = file_content.get(args.filename)
+            previous_state = file_content.get(filename)
             last_successfull = previous_state.get('last_successfull')
         except:
             last_successfull = None
 
     result['last_successfull'] = last_successfull
-    file_content[args.filename] = result
+    file_content[filename] = result
 
     with open('{}/cronjob.json'.format(temp_dir), 'w') as f:
         f.write(json.dumps(file_content, indent=4))
+
+
+if __name__ == '__main__':
+    config = create_config()
+    temp_dir = config.get('Directory-Section', 'temp')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--start', default=0, help='Cronjob start time', required=True)
+    parser.add_argument('--end', default=0, help='Cronjob end time', required=True)
+    parser.add_argument('--status', default='Fail', help='Result of cronjob run', required=True)
+    parser.add_argument('--filename', default='', help='Name of job', required=True)
+    args = parser.parse_args()
+
+    job_log(int(args.start), int(args.end), temp_dir, args.filename, status=args.status)

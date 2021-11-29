@@ -22,11 +22,13 @@ import argparse
 import datetime
 import os
 import shutil
+import time
 
 import requests
 
 from create_config import create_config
 from extractors.dratfExtractor import DraftExtractor
+from job_log import job_log
 from messageFactory.messageFactory import MessageFactory
 from remove_directory_content import remove_directory_content
 
@@ -41,6 +43,7 @@ def custom_print(message: str):
 
 
 def main():
+    start = time.perf_counter()
     config = create_config()
     ietf_directory = config.get('Directory-Section', 'ietf-directory')
     temp_dir = config.get('Directory-Section', 'temp')
@@ -68,15 +71,22 @@ def main():
         'all_yang_path': '{}/YANG-ALL'.format(temp_dir)
     }
 
-    remove_directory_content(args.yangpath, args.debug)
-    remove_directory_content(missing_modules_directory, args.debug)
-    remove_directory_content(all_yang_drafts_strict, args.debug)
+    try:
+        remove_directory_content(args.yangpath, args.debug)
+        remove_directory_content(missing_modules_directory, args.debug)
+        remove_directory_content(all_yang_drafts_strict, args.debug)
 
-    draftExtractor = DraftExtractor(draft_extractor_paths, args.debug, extract_elements=False, extract_examples=False)
-    draftExtractor.extract_drafts()
-    draftExtractor.invert_dict()
-    draftExtractor.remove_invalid_files()
+        custom_print('Extracting modules from drafts stored in {}'.format(args.draftpath))
+        draftExtractor = DraftExtractor(draft_extractor_paths, args.debug, extract_elements=False, extract_examples=False)
+        draftExtractor.extract_drafts()
+        draftExtractor.invert_dict()
+        draftExtractor.remove_invalid_files()
+    except Exception:
+        custom_print('Error occured while extracting modules')
+        end = time.perf_counter()
+        job_log(start, end, temp_dir, 'checkArchivedDrafts', 'Fail')
 
+    custom_print('Loading all modules data from API')
     prefix = '{}://{}'.format(protocol, api_ip)
     all_modules = requests.get('{}/api/search/modules'.format(prefix)).json()
     if all_modules:
@@ -102,6 +112,10 @@ def main():
     if missing_modules:
         mf = MessageFactory()
         mf.send_missing_modules(missing_modules)
+
+    message = {'label': 'Number of missing modules', 'message': len(missing_modules)}
+    end = time.perf_counter()
+    job_log(start, end, temp_dir, 'checkArchivedDrafts', messages=[message], status='Success')
 
 
 if __name__ == '__main__':
