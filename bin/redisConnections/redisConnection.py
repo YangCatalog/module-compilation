@@ -45,7 +45,7 @@ class RedisConnection:
                     if new_impl_name not in existing_impls_names:
                         existing_impls.append(new_impl)
                         existing_impls_names.append(new_impl_name)
-            elif key in ['submodule', 'dependents', 'dependencies']:
+            elif key == 'dependents':
                 new_prop_list = new_module.get(key, [])
                 existing_prop_list = existing_module.get(key, [])
                 existing_prop_names = [existing_prop.get('name') for existing_prop in existing_prop_list]
