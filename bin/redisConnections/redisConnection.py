@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__author__ = "Slavomir Mazur"
-__copyright__ = "Copyright The IETF Trust 2021, All Rights Reserved"
-__license__ = "Apache License, Version 2.0"
-__email__ = "slavomir.mazur@pantheon.tech"
+__author__ = 'Slavomir Mazur'
+__copyright__ = 'Copyright The IETF Trust 2021, All Rights Reserved'
+__license__ = 'Apache License, Version 2.0'
+__email__ = 'slavomir.mazur@pantheon.tech'
 
 
 import json
@@ -39,13 +39,13 @@ class RedisConnection:
             if key == 'implementations':
                 new_impls = new_module.get('implementations', {}).get('implementation', [])
                 existing_impls = existing_module.get('implementations', {}).get('implementation', [])
-                existing_impls_names = [self.create_implementation_key(impl) for impl in existing_impls]
+                existing_impls_names = [self._create_implementation_key(impl) for impl in existing_impls]
                 for new_impl in new_impls:
-                    new_impl_name = self.create_implementation_key(new_impl)
+                    new_impl_name = self._create_implementation_key(new_impl)
                     if new_impl_name not in existing_impls_names:
                         existing_impls.append(new_impl)
                         existing_impls_names.append(new_impl_name)
-            elif key == 'dependents':
+            elif key in ['dependents', 'dependencies']:
                 new_prop_list = new_module.get(key, [])
                 existing_prop_list = existing_module.get(key, [])
                 existing_prop_names = [existing_prop.get('name') for existing_prop in existing_prop_list]
@@ -66,7 +66,7 @@ class RedisConnection:
         return existing_module
 
     def populate_modules(self, new_modules: list):
-        """ Merge new data of each module in "new_modules" list with existing data already stored in Redis.
+        """ Merge new data of each module in 'new_modules' list with existing data already stored in Redis.
         Set updated data to Redis under created key in format: <name>@<revision>/<organization>
 
         Argument:
@@ -75,7 +75,7 @@ class RedisConnection:
         new_merged_modules = {}
 
         for new_module in new_modules:
-            redis_key = self.__create_module_key(new_module)
+            redis_key = self._create_module_key(new_module)
             redis_module = self.get_module(redis_key)
             if redis_module == '{}':
                 updated_module = new_module
@@ -94,9 +94,9 @@ class RedisConnection:
 
         return result
 
-    def __create_module_key(self, module: dict):
+    def _create_module_key(self, module: dict):
         return '{}@{}/{}'.format(module.get('name'), module.get('revision'), module.get('organization'))
 
-    def create_implementation_key(self, impl: dict):
+    def _create_implementation_key(self, impl: dict):
         return '{}/{}/{}/{}'.format(impl['vendor'].replace(' ', '#'), impl['platform'].replace(' ', '#'),
                                     impl['software-version'].replace(' ', '#'), impl['software-flavor'].replace(' ', '#'))

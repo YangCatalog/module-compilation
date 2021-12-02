@@ -43,7 +43,7 @@ def custom_print(message: str):
 
 
 def main():
-    start = time.perf_counter()
+    start = int(time.time())
     config = create_config()
     ietf_directory = config.get('Directory-Section', 'ietf-directory')
     temp_dir = config.get('Directory-Section', 'temp')
@@ -83,7 +83,7 @@ def main():
         draftExtractor.remove_invalid_files()
     except Exception:
         custom_print('Error occured while extracting modules')
-        end = time.perf_counter()
+        end = int(time.time())
         job_log(start, end, temp_dir, 'checkArchivedDrafts', 'Fail')
 
     custom_print('Loading all modules data from API')
@@ -114,7 +114,7 @@ def main():
         mf.send_missing_modules(missing_modules)
 
     message = {'label': 'Number of missing modules', 'message': len(missing_modules)}
-    end = time.perf_counter()
+    end = int(time.time())
     job_log(start, end, temp_dir, 'checkArchivedDrafts', messages=[message], status='Success')
 
 
