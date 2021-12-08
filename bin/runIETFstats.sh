@@ -14,7 +14,7 @@
 
 source configure.sh
 LOG=$LOGS/YANGIETFstats.log
-date +"%c: Starting" > $LOG
+date +"%c: Starting" >$LOG
 
 # Need to set some ENV variables for subsequent calls in .PY to confd...
 # TODO probably to be moved inside the confd caller
@@ -26,17 +26,17 @@ mkdir -p $IETFDIR/rfc
 
 cd $IETFDIR
 
-date +"%c: Retrieving current IETF drafts" >> $LOG
-rsync -avz --include 'draft-*.txt' --exclude '*' --delete rsync.ietf.org::internet-drafts my-id-mirror >> $LOG 2>&1
-date +"%c: Retrieving archived IETF drafts" >> $LOG
-rsync -avz --include 'draft-*.txt' --exclude '*' --delete rsync.ietf.org::id-archive my-id-archive-mirror >> $LOG 2>&1
-date +"%c: Retrieving IETF RFCs" >> $LOG
-rsync -avlz --delete --delete-excluded --exclude=dummy.txt --exclude="std-*.txt" --exclude="bcp-*.txt" --exclude="rfc-retrieval.txt" --exclude="rfc-index*.txt" --exclude="RFCs_for_errata.txt" --exclude="rfc-ref.txt" --exclude="rfcxx00.txt" --exclude="*index*" --include="*.txt" --exclude="*" ftp.rfc-editor.org::rfcs rfc >> $LOG 2>&1
+date +"%c: Retrieving current IETF drafts" >>$LOG
+rsync -avz --include 'draft-*.txt' --exclude '*' --delete rsync.ietf.org::internet-drafts my-id-mirror >>$LOG 2>&1
+date +"%c: Retrieving archived IETF drafts" >>$LOG
+rsync -avz --include 'draft-*.txt' --exclude '*' --delete rsync.ietf.org::id-archive my-id-archive-mirror >>$LOG 2>&1
+date +"%c: Retrieving IETF RFCs" >>$LOG
+rsync -avlz --delete --delete-excluded --exclude=dummy.txt --exclude="std-*.txt" --exclude="bcp-*.txt" --exclude="rfc-retrieval.txt" --exclude="rfc-index*.txt" --exclude="RFCs_for_errata.txt" --exclude="rfc-ref.txt" --exclude="rfcxx00.txt" --exclude="*index*" --include="*.txt" --exclude="*" ftp.rfc-editor.org::rfcs rfc >>$LOG 2>&1
 
 #remove the drafts with xym.py error, but that don't contain YANG data modules
-date +"%c: Removing bad IETF drafts" >> $LOG
-python $BIN/yang-exclude-bad-drafts.py >> $LOG 2>&1
-python $BIN/yang-exclude-bad-drafts.py --dstdir $IETFDIR/my-id-archive-mirror >> $LOG 2>&1
+date +"%c: Removing bad IETF drafts" >>$LOG
+python $BIN/yang-exclude-bad-drafts.py >>$LOG 2>&1
+python $BIN/yang-exclude-bad-drafts.py --dstdir $IETFDIR/my-id-archive-mirror >>$LOG 2>&1
 
 #copy the current content to the -old files
 if [ -f $WEB_PRIVATE/IETFDraftYANGPageCompilation.html ]; then
@@ -48,15 +48,15 @@ fi
 
 # Some directory and symbolic links may need to be created
 # TODO have a script to create those
-date +"%c: Creating required directories and symbolic links" >> $LOG
+date +"%c: Creating required directories and symbolic links" >>$LOG
 mkdir -p $IETFDIR/YANG
-echo "All YANG modules extracted correctly from IETF drafts" > $IETFDIR/YANG/README.md
+echo "All YANG modules extracted correctly from IETF drafts" >$IETFDIR/YANG/README.md
 mkdir -p $IETFDIR/YANG-all
-echo "All YANG modules extracted (bad or good) from IETF drafts" > $IETFDIR/YANG-all/README.md
+echo "All YANG modules extracted (bad or good) from IETF drafts" >$IETFDIR/YANG-all/README.md
 mkdir -p $IETFDIR/YANG-example
 mkdir -p $IETFDIR/YANG-extraction
 mkdir -p $IETFDIR/YANG-rfc
-echo "All YANG modules extracted correctly from RFCs" > $IETFDIR/YANG-rfc/README.md
+echo "All YANG modules extracted correctly from RFCs" >$IETFDIR/YANG-rfc/README.md
 mkdir -p $IETFDIR/YANG-rfc-extraction
 mkdir -p $IETFDIR/YANG-example-old-rfc
 mkdir -p $IETFDIR/YANG-v11
@@ -65,7 +65,7 @@ mkdir -p $IETFDIR/draft-with-YANG-no-strict
 mkdir -p $IETFDIR/draft-with-YANG-example
 mkdir -p $IETFDIR/draft-with-YANG-diff
 mkdir -p $MODULES
-echo "Set of all YANG modules known" > $MODULES/README.md
+echo "Set of all YANG modules known" >$MODULES/README.md
 rm -f $MODULES/YANG
 ln -f -s $IETFDIR/YANG $MODULES/YANG
 rm -f $MODULES/YANG-rfc
@@ -103,52 +103,56 @@ rm -f $MODULES/open-config-main
 ln -f -s $NONIETFDIR/openconfig/public/release/models/ $MODULES/open-config-main
 
 # Extract all YANG models from RFC and I-D
-date +"%c: Starting to extract all YANG modules from IETF documents" >> $LOG
+date +"%c: Starting to extract all YANG modules from IETF documents" >>$LOG
 # Using --draftpath $IETFDIR/my-id-archive-mirror/ means much longer process as all expired drafts will also be analyzed...
-python $BIN/yangIetf.py >> $LOG 2>&1
+python $BIN/yangIetf.py >>$LOG 2>&1
 # python $BIN/yangIetf.py --draftpath $IETFDIR/my-id-archive-mirror/ >> $LOG 2>&1
-date +"%c: Finished extracting all YANG modules from IETF documents" >> $LOG
+date +"%c: Finished extracting all YANG modules from IETF documents" >>$LOG
 
 # Clean up of the .fxs files created by confdc
-date +"%c: cleaning up the now useless .fxs files" >> $LOG
-find $IETFDIR/ -name *.fxs ! -name fujitsu-optical-channel-interfaces.fxs -print | xargs -r rm >> $LOG 2>&1
-find $NONIETFDIR/ -name *.fxs ! -name fujitsu-optical-channel-interfaces.fxs -print | xargs -r rm >> $LOG 2>&1
+date +"%c: cleaning up the now useless .fxs files" >>$LOG
+find $IETFDIR/ -name *.fxs ! -name fujitsu-optical-channel-interfaces.fxs -print | xargs -r rm >>$LOG 2>&1
+find $NONIETFDIR/ -name *.fxs ! -name fujitsu-optical-channel-interfaces.fxs -print | xargs -r rm >>$LOG 2>&1
 
 # move all IETF YANG modules to the web part
 # TODO better using a symbolic link ?
-mkdir -p $WEB/YANG-modules >> $LOG 2>&1
-rm -f $WEB/YANG-modules/* >> $LOG 2>&1
-cp --preserve $IETFDIR/YANG/*.yang $WEB/YANG-modules >> $LOG 2>&1
-date +"%c: IETF YANG modules copied to $WEB/YANG-modules" >> $LOG
+mkdir -p $WEB/YANG-modules >>$LOG 2>&1
+rm -f $WEB/YANG-modules/* >>$LOG 2>&1
+cp --preserve $IETFDIR/YANG/*.yang $WEB/YANG-modules >>$LOG 2>&1
+date +"%c: IETF YANG modules copied to $WEB/YANG-modules" >>$LOG
 
 # Generate the report for RFC-ed YANG modules, and ftp the files.
-python $BIN/yangGeneric.py --metadata "RFC-produced YANG models: Oh gosh, not all of them correctly passed $($PYANG -v) with --ietf :-( " --prefix RFCStandard --rootdir "$IETFDIR/YANG-rfc/" >> $LOG 2>&1
-date +"%c: All RFC processed" >> $LOG
+python $BIN/yangGeneric.py --metadata "RFC-produced YANG models: Oh gosh, not all of them correctly passed $($PYANG -v) with --ietf :-( " --prefix RFCStandard --rootdir "$IETFDIR/YANG-rfc/" >>$LOG 2>&1
+date +"%c: All RFC processed" >>$LOG
 
 #Generate the diff files
 # Need to add || true as diff returns 1 in case of different files...
-diff $WEB_PRIVATE/IETFDraftYANGPageCompilation.html $WEB_PRIVATE/IETFDraftYANGPageCompilation-old.html > $WEB_PRIVATE/IETFDraftYANGPageCompilation-diff.txt || true
-diff $WEB_PRIVATE/IETFCiscoAuthorsYANGPageCompilation.html $WEB_PRIVATE/IETFCiscoAuthorsYANGPageCompilation-old.html > $WEB_PRIVATE/IETFCiscoAuthorsYANGPageCompilation-diff.txt || true
-date +"%c: Diff files generated" >> $LOG
+diff $WEB_PRIVATE/IETFDraftYANGPageCompilation.html $WEB_PRIVATE/IETFDraftYANGPageCompilation-old.html >$WEB_PRIVATE/IETFDraftYANGPageCompilation-diff.txt || true
+diff $WEB_PRIVATE/IETFCiscoAuthorsYANGPageCompilation.html $WEB_PRIVATE/IETFCiscoAuthorsYANGPageCompilation-old.html >$WEB_PRIVATE/IETFCiscoAuthorsYANGPageCompilation-diff.txt || true
+date +"%c: Diff files generated" >>$LOG
 
 # create the tar files
 cd $IETFDIR/YANG-rfc
-tar cfz $WEB_DOWNLOADABLES/YANG-RFC.tgz *yang >> $LOG 2>&1
+tar cfz $WEB_DOWNLOADABLES/YANG-RFC.tgz *yang >>$LOG 2>&1
 cd $IETFDIR/YANG
-tar cfz $WEB_DOWNLOADABLES/YANG.tgz *yang >> $LOG 2>&1
+tar cfz $WEB_DOWNLOADABLES/YANG.tgz *yang >>$LOG 2>&1
 cd $IETFDIR/YANG-all
-tar cfz $WEB_DOWNLOADABLES/All-YANG-drafts.tgz *yang >> $LOG 2>&1
-date +"%c: YANG v1.0 tarball files generated" >> $LOG
+tar cfz $WEB_DOWNLOADABLES/All-YANG-drafts.tgz *yang >>$LOG 2>&1
+date +"%c: YANG v1.0 tarball files generated" >>$LOG
 
 # copy the YANG 1.1 data models in $IETF_DIR/YANG-v11
-python $BIN/yangVersion11.py >> $LOG 2>&1
+python $BIN/yangVersion11.py >>$LOG 2>&1
 
 cd $IETFDIR/YANG-v11
-tar cvfz $WEB_DOWNLOADABLES/YANG-v11.tgz *yang >> $LOG 2>&1
-date +"%c: YANG v1.1 tarball files generated" >> $LOG
+tar cvfz $WEB_DOWNLOADABLES/YANG-v11.tgz *yang >>$LOG 2>&1
+date +"%c: YANG v1.1 tarball files generated" >>$LOG
 
-python $BIN/gatherIETFdependentModules.py >> $LOG 2>&1
-date +"%c: dependencies copied" >> $LOG
+python $BIN/gatherIETFdependentModules.py >>$LOG 2>&1
+date +"%c: dependencies copied" >>$LOG
 
-date +"%c: End of the script!" >> $LOG
+date +"%c: reloading cache" >>$LOG
+read -ra CRED <<<$(sed 's/\"//g' <<<"$CREDENTIALS")
+curl -s -X POST -u "${CRED[0]}":"${CRED[1]}" $MY_URI/api/load-cache >>$LOG 2>&1
+
+date +"%c: End of the script!" >>$LOG
 cd $BIN

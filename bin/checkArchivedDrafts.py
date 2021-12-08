@@ -93,19 +93,31 @@ def main():
     if all_modules:
         all_modules = all_modules.get('module', [])
         all_modules_keys = ['{}@{}'.format(m.get('name'), m.get('revision')) for m in all_modules]
- 
+
     with open('{}/resources/old-rfcs.json'.format(os.path.dirname(os.path.realpath(__file__))), 'r') as f:
         old_modules = json.load(f)
 
+    # Prepare a directory where the missing modules will be copied
+    dst_path = '{}/yangmodels/yang/experimental/ietf-extracted-YANG-modules'.format(missing_modules_directory)
+    if not os.path.isdir(dst_path):
+        os.makedirs(dst_path)
+
     missing_modules = []
+    incorrect_revision_modules = []
     for yang_file in draftExtractor.inverted_draft_yang_dict:
         name_revision = yang_file.split('.yang')[0]
-        if yang_file in old_modules:
+        if yang_file in old_modules or yang_file.startswith('example-'):
             continue
+        if '@' in yang_file:
+            revision = yang_file.split('@')[-1].split('.yang')[0]
+            _, month, day = revision.split('-')
+            if len(month) != 2 or len(day) != 2:
+                incorrect_revision_modules.append(yang_file)
+                continue
         if name_revision not in all_modules_keys:
             missing_modules.append(yang_file)
             src = os.path.join(args.yangpath, yang_file)
-            dst = os.path.join(missing_modules_directory, yang_file)
+            dst = os.path.join(dst_path, yang_file)
             shutil.copy2(src, dst)
 
     custom_print('Following modules from Drafts are missing in YANG Catalog')
@@ -117,7 +129,7 @@ def main():
 
     if missing_modules:
         mf = MessageFactory()
-        mf.send_missing_modules(missing_modules)
+        mf.send_missing_modules(missing_modules, incorrect_revision_modules)
 
     message = {'label': 'Number of missing modules', 'message': len(missing_modules)}
     end = int(time.time())

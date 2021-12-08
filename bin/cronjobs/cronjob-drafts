@@ -23,7 +23,8 @@
         (
             cd /sdo_analysis/bin
             source configure.sh
-            python3 checkArchivedDrafts.py
+            export LOG=$LOGS/YANGgenericstats.log
+            python3 checkArchivedDrafts.py >>$LOG 2>&1
         ) >/var/yang/logs/check-archived-drafts.log
     else
         echo "$(date) cronjob-daily still running - skipping now" >>/var/yang/logs/crons-log.log

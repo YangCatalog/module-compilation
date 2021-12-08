@@ -62,10 +62,15 @@ class MessageFactory:
         self.__smtp.sendmail(self.__email_from, send_to, msg.as_string())
         self.__smtp.quit()
 
-    def send_missing_modules(self, modules_list: list):
+    def send_missing_modules(self, modules_list: list, incorrect_revision_modules: list):
         message = ('Following modules extracted from drafts are missing in YANG Catalog:\n')
         for module in modules_list:
             message += '{}\n'.format(module)
         message += '\nAll missing modules have been copied to the folder {}/drafts-missing-modules'.format(self._temp_dir)
+
+        if incorrect_revision_modules:
+            message += '\n\nFollowing missing modules do not have revision in the correct format:\n'
+            for module in incorrect_revision_modules:
+                message += '{}\n'.format(module)
 
         self.__post_to_email(message, self.__developers_email)

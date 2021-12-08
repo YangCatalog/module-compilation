@@ -465,8 +465,8 @@ def push_to_confd(updated_modules: list, config: configparser.ConfigParser):
         if response.status_code < 200 or response.status_code > 299:
             print('Request with body {} on path {} failed with {}'.
                   format(json_modules_data, url, response.text))
-    redisConnection = RedisConnection()
-    redisConnection.populate_modules(updated_modules)
+        redisConnection = RedisConnection()
+        redisConnection.populate_modules(updated_modules)
 
     return []
 

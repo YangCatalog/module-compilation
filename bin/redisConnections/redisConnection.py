@@ -91,6 +91,10 @@ class RedisConnection:
 
     def set_redis_module(self, module: dict, redis_key: str):
         result = self.modulesDB.set(redis_key, json.dumps(module))
+        if result:
+            print('{} key updated'.format(redis_key), flush=True)
+        else:
+            print('Problem while setting {}'.format(redis_key), flush=True)
 
         return result
 
