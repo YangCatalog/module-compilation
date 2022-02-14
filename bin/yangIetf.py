@@ -309,19 +309,19 @@ def check_yangcatalog_data(pyang_exec, yang_path, resutl_html_dir, yang_file, da
             return document_name.split('-')[2]
 
     updated_modules = []
-    pyang_module = '{}/{}'.format(yang_path, yang_file)
+    pyang_module = os.path.join(yang_path, yang_file)
     found = False
-    for root, dirs, files in os.walk(yang_path):
+    for root, _, files in os.walk(yang_path):
         if found:
             break
         for ff in files:
             if ff == yang_file:
-                pyang_module = '{}/{}'.format(root, ff)
+                pyang_module = os.path.join(root, ff)
                 found = True
             if found:
                 break
     if not found:
-        print("Error file " + yang_file + " not found in dir or subdir of " + yang_path)
+        print('Error: file {} not found in dir or subdir of {}'.format(yang_file, yang_path))
     name_revision = \
         os.popen(pyang_exec + ' -f' + 'name --name-print-revision --path="$MODULES" ' + pyang_module + ' 2> /dev/null').read().rstrip().split(
             ' ')[0]
@@ -396,23 +396,24 @@ def check_yangcatalog_data(pyang_exec, yang_path, resutl_html_dir, yang_file, da
                        'ths': ths}
             template = os.path.dirname(os.path.realpath(__file__)) + '/resources/compilationStatusTemplate.html'
             rendered_html = render(template, context)
-            if os.path.isfile('{}/{}'.format(resutl_html_dir, file_url)):
-                with open('{}/{}'.format(resutl_html_dir, file_url), 'r', encoding='utf-8') as f:
+            result_html_file = os.path.join(resutl_html_dir, file_url)
+            if os.path.isfile(result_html_file):
+                with open(result_html_file, 'r', encoding='utf-8') as f:
                     existing_output = f.read()
                 if existing_output != rendered_html:
                     if is_rfc:
                         if ietf is not None:
-                            with open('{}/{}'.format(resutl_html_dir, file_url), 'w', encoding='utf-8') as f:
+                            with open(result_html_file, 'w', encoding='utf-8') as f:
                                 f.write(rendered_html)
-                            os.chmod('{}/{}'.format(resutl_html_dir, file_url), 0o664)
+                            os.chmod(result_html_file, 0o664)
                     else:
-                        with open('{}/{}'.format(resutl_html_dir, file_url), 'w', encoding='utf-8') as f:
+                        with open(result_html_file, 'w', encoding='utf-8') as f:
                             f.write(rendered_html)
-                        os.chmod('{}/{}'.format(resutl_html_dir, file_url), 0o664)
+                        os.chmod(result_html_file, 0o664)
             else:
-                with open('{}/{}'.format(resutl_html_dir, file_url), 'w', encoding='utf-8') as f:
+                with open(result_html_file, 'w', encoding='utf-8') as f:
                     f.write(rendered_html)
-                os.chmod('{}/{}'.format(resutl_html_dir, file_url), 0o664)
+                os.chmod(result_html_file, 0o664)
             if module_data.get('compilation-status') == 'unknown':
                 comp_result = ''
             else:
@@ -441,7 +442,6 @@ def check_yangcatalog_data(pyang_exec, yang_path, resutl_html_dir, yang_file, da
         if update:
             updated_modules.append(module_data)
             print('DEBUG: updated_modules: {}'.format(name_revision))
-
     else:
         print('WARN: {} not in confd yet'.format(name_revision))
     return updated_modules

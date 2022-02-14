@@ -31,9 +31,9 @@ from parsers.yanglintParser import YanglintParser
 from yangIetf import check_yangcatalog_data, push_to_confd
 
 __author__ = 'Benoit Claise'
-__copyright__ = "Copyright(c) 2015-2018, Cisco Systems, Inc.,  Copyright The IETF Trust 2019, All Rights Reserved"
-__license__ = "Apache 2.0"
-__email__ = "bclaise@cisco.com"
+__copyright__ = 'Copyright(c) 2015-2018, Cisco Systems, Inc.,  Copyright The IETF Trust 2019, All Rights Reserved'
+__license__ = 'Apache 2.0'
+__email__ = 'bclaise@cisco.com'
 
 
 # ----------------------------------------------------------------------
@@ -108,19 +108,19 @@ def number_of_yang_modules_that_passed_compilation(in_dict: dict, position: int,
     return t
 
 
-def combined_compilation(yang_file: str, result: dict):
+def combined_compilation(yang_file_name: str, result: dict):
     """
     Determine the combined compilation result based on individual compilation results from parsers.
 
     Arguments:
-        :param yang_file        (str) Name of the yang files
+        :param yang_file_name   (str) Name of the yang file
         :param result           (dict) Dictionary of compilation results with following keys:
                                         pyang_lint, confdrc, yumadump, yanglint
     :return: the combined compilation result
     """
-    if 'error' in result['pyang_lint']:
+    if 'error:' in result['pyang_lint']:
         compilation_pyang = 'FAILED'
-    elif 'warning' in result['pyang_lint']:
+    elif 'warning:' in result['pyang_lint']:
         compilation_pyang = 'PASSED WITH WARNINGS'
     elif result['pyang_lint'] == '':
         compilation_pyang = 'PASSED'
@@ -128,14 +128,14 @@ def combined_compilation(yang_file: str, result: dict):
         compilation_pyang = 'UNKNOWN'
 
     # logic for confdc compilation result:
-    if 'error' in result['confdrc']:
+    if 'error:' in result['confdrc']:
         compilation_confd = 'FAILED'
     #   The following doesn't work. For example, ietf-diffserv@2016-06-15.yang, now PASSED (TBC):
     #     Error: 'ietf-diffserv@2016-06-15.yang' import of module 'ietf-qos-policy' failed
     #     ietf-diffserv@2016-06-15.yang:11.3: error(250): definition not found
     #   This issue is that an import module that fails => report the main module as FAILED
     #   Another issue with ietf-bgp-common-structure.yang
-    elif 'warning' in result['confdrc']:
+    elif 'warning:' in result['confdrc']:
         compilation_confd = 'PASSED WITH WARNINGS'
     elif result['confdrc'] == '':
         compilation_confd = 'PASSED'
@@ -146,20 +146,19 @@ def combined_compilation(yang_file: str, result: dict):
     if 'error: cannot compile submodules; compile the module instead' in result['confdrc']:
         compilation_confd = 'PASSED'
 
-    # logic for yumaworks compilation result:
-    # remove the draft name from result_yuma
+    # logic for yumadump-pro compilation result:
     if result['yumadump'] == '':
         compilation_yuma = 'PASSED'
     elif '0 Errors, 0 Warnings' in result['yumadump']:
         compilation_yuma = 'PASSED'
-    elif 'Error' in result['yumadump'] and yang_file in result['yumadump'] and '0 Errors' not in result['yumadump']:
+    elif 'Error' in result['yumadump'] and yang_file_name in result['yumadump'] and '0 Errors' not in result['yumadump']:
         # This is an approximation: if Error in an imported module, and warning on this current module
         # then it will report the module as FAILED
-        # Solution: look at line by line comparision of Error and yang_file
+        # Solution: look at line by line comparision of Error and yang_file_name
         compilation_yuma = 'FAILED'
-    elif 'Warning' in result['yumadump'] and yang_file in result['yumadump']:
+    elif 'Warning:' in result['yumadump'] and yang_file_name in result['yumadump']:
         compilation_yuma = 'PASSED WITH WARNINGS'
-    elif 'Warning' in result['yumadump'] and yang_file not in result['yumadump']:
+    elif 'Warning:' in result['yumadump'] and yang_file_name not in result['yumadump']:
         compilation_yuma = 'PASSED'
     else:
         compilation_yuma = 'UNKNOWN'
@@ -254,8 +253,9 @@ def module_or_submodule(yang_file_path: str):
         return None
 
 
-def get_timestamp_with_pid():
-    return str(datetime.datetime.now().time()) + ' (' + str(os.getpid()) + '): '
+def custom_print(message: str):
+    timestamp = '{} ({}):'.format(datetime.datetime.now().time(), os.getpid())
+    print('{} {}'.format(timestamp, message), flush=True)
 
 
 def get_name_with_revision(yang_file: str):
@@ -341,7 +341,7 @@ if __name__ == "__main__":
                              "for all files even if they have not been changed "
                              "or even if the validators versions have not been changed.")
     args = parser.parse_args()
-    print('{}Start of job in {}'.format(get_timestamp_with_pid(), args.rootdir), flush=True)
+    custom_print('Start of job in {}'.format(args.rootdir))
 
     # Get list of hashed files
     fileHasher = FileHasher()
@@ -352,14 +352,14 @@ if __name__ == "__main__":
 
     modules = {}
     try:
-        with open('{}/all_modules_data.json'.format(temp_dir), 'r') as f:
+        with open(os.path.join(temp_dir, 'all_modules_data.json'), 'r') as f:
             modules = json.load(f)
-            print(get_timestamp_with_pid() + 'All the modules data loaded from JSON files', flush=True)
+            custom_print('All the modules data loaded from JSON files')
     except Exception:
         modules = {}
     if modules == {}:
         modules = requests.get('{}/api/search/modules'.format(prefix)).json()
-        print(get_timestamp_with_pid() + 'All the modules data loaded from API', flush=True)
+        custom_print('All the modules data loaded from API')
 
     for mod in modules['module']:
         key = '{}@{}'.format(mod['name'], mod['revision'])
@@ -367,8 +367,7 @@ if __name__ == "__main__":
     yang_list = list_of_yang_modules_in_subdir(args.rootdir, args.debug)
     if args.debug > 0:
         print('yang_list content:\n{}'.format(yang_list))
-    print(get_timestamp_with_pid() +
-          'relevant files list built, {} modules found in {}'.format(len(yang_list), args.rootdir), flush=True)
+    custom_print('relevant files list built, {} modules found in {}'.format(len(yang_list), args.rootdir))
 
     # YANG modules from drafts: PYANG validation, dictionary generation, dictionary inversion, and page generation
     dictionary = {}
@@ -423,7 +422,7 @@ if __name__ == "__main__":
                 'yumadump': result_yuma,
                 'yanglint': result_yanglint
             }
-            compilation = combined_compilation(yang_file, result)
+            compilation = combined_compilation(yang_file_without_path, result)
             updated_modules.extend(
                 check_yangcatalog_data(pyang_exec, args.rootdir, resutl_html_dir, yang_file_without_path, None, None, None, compilation,
                                        result, all_yang_catalog_metadata, prefix, is_rfc, ietf))
@@ -439,7 +438,7 @@ if __name__ == "__main__":
             if module_or_submodule(yang_file) == 'module':
                 dictionary_no_submodules[yang_file_with_revision] = yang_file_compilation
 
-    print(get_timestamp_with_pid() + 'all modules compiled/validated', flush=True)
+    custom_print('all modules compiled/validated')
 
     # Make a list out of the no-submodules dictionary
     sorted_modules_list = sorted(dict_to_list(dictionary_no_submodules))
@@ -490,7 +489,7 @@ if __name__ == "__main__":
     print('Number of YANG data models from {} that passed compilation with warnings: {}/{}'.format(args.prefix, passed_with_warnings, total_number))
     print('Number of YANG data models from {} that failed compilation: {}/{}'.format(args.prefix, failed, total_number))
 
-    print('{}end of yangGeneric.py job for {}'.format(get_timestamp_with_pid(), args.prefix), flush=True)
+    custom_print('end of yangGeneric.py job for {}'.format(args.prefix))
 
     # Update files content hashes and dump into .json file
     if len(updated_hashes) > 0:

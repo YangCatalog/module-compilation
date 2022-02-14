@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__author__ = "Slavomir Mazur"
-__copyright__ = "Copyright The IETF Trust 2021, All Rights Reserved"
-__license__ = "Apache License, Version 2.0"
-__email__ = "slavomir.mazur@pantheon.tech"
+__author__ = 'Slavomir Mazur'
+__copyright__ = 'Copyright The IETF Trust 2021, All Rights Reserved'
+__license__ = 'Apache License, Version 2.0'
+__email__ = 'slavomir.mazur@pantheon.tech'
 
 import glob
 import os
@@ -23,10 +23,11 @@ import os
 
 class ConfdcParser:
     def __init__(self, confdc_exec: str, modules_directory: str, debug_level: int = 0):
-        self.__confdc_exec = confdc_exec
-        self.__modules_directory = modules_directory
-        self.__debug_level = debug_level
-        self.__tail_warning = '-w TAILF_MUST_NEED_DEPENDENCY'  # Treat ErrorCode as a warning, even if --fail-onwarnings is given
+        self._confdc_exec = confdc_exec
+        self._modules_directory = modules_directory
+        self._debug_level = debug_level
+        self._symlink_paths = self.get_symlink_paths()
+        self._tail_warning = '-w TAILF_MUST_NEED_DEPENDENCY'  # Treat ErrorCode as a warning, even if --fail-onwarnings is given
 
     def run_confdc(self, yang_file_path: str, rootdir: str, allinclusive: bool = False):
         """
@@ -50,21 +51,23 @@ class ConfdcParser:
         if allinclusive:
             path_command = '--yangpath {}'.format(rootdir)
         else:
-            symlink_paths = self.get_symlink_paths()
             subdir_paths = self.list_all_subdirs(rootdir)
-            paths_list = symlink_paths + subdir_paths
+            paths_list = self._symlink_paths + subdir_paths
 
             path_command = '--yangpath {}'.format(':'.join(paths_list))
 
-        bash_command = [self.__confdc_exec, path_command, self.__tail_warning, file_command, '2>&1']
-        if self.__debug_level > 0:
+        bash_command = [self._confdc_exec, path_command, self._tail_warning, file_command, '2>&1']
+        if self._debug_level > 0:
             print('DEBUG: running command {}'.format(' '.join(bash_command)))
 
         try:
             result_confdc = os.popen(' '.join(bash_command)).read()
+            # Remove absolute path from output
             result_confdc = result_confdc.replace(rootdir, '')
-        except:
-            result_confdc = 'Problem occured while running command: {}'.format(' '.join(bash_command))
+            for sym_link in self._symlink_paths:
+                result_confdc = result_confdc.replace('{}/'.format(sym_link), '')
+        except Exception:
+            result_confdc = 'Problem occured while running command: {}'.format(' '.join(bash_command))            
 
         return result_confdc
 
@@ -74,10 +77,10 @@ class ConfdcParser:
         :return: list of symbolic links of the modules_directory
         """
         symlink_paths = []
-        for _, dirs, _ in os.walk(self.__modules_directory, followlinks=True):
+        for _, dirs, _ in os.walk(self._modules_directory, followlinks=True):
             for direc in dirs:
-                path = '{}/{}'.format(self.__modules_directory, direc)
-                if os.path.islink(path) and path != '{}/YANG'.format(self.__modules_directory):
+                path = '{}/{}'.format(self._modules_directory, direc)
+                if os.path.islink(path) and path != '{}/YANG'.format(self._modules_directory):
                     symlink_paths.append(path)
 
         return symlink_paths

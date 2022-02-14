@@ -12,19 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__author__ = "Slavomir Mazur"
-__copyright__ = "Copyright The IETF Trust 2021, All Rights Reserved"
-__license__ = "Apache License, Version 2.0"
-__email__ = "slavomir.mazur@pantheon.tech"
+__author__ = 'Slavomir Mazur'
+__copyright__ = 'Copyright The IETF Trust 2021, All Rights Reserved'
+__license__ = 'Apache License, Version 2.0'
+__email__ = 'slavomir.mazur@pantheon.tech'
 
 import os
 
 
 class PyangParser:
     def __init__(self, pyang_exec: str, modules_directory: str, debug_level: int = 0):
-        self.__pyang_exec = pyang_exec
-        self.__modules_directory = modules_directory
-        self.__debug_level = debug_level
+        self._pyang_exec = pyang_exec
+        self._modules_directory = modules_directory
+        self._debug_level = debug_level
+        self._modules_directories = [os.path.join(modules_directory, sym) for sym in os.listdir(modules_directory)]
 
     def run_pyang_ietf(self, yang_file_path: str, ietf: bool):
         """
@@ -38,13 +39,13 @@ class PyangParser:
         directory, filename = os.path.split(yang_file_path)
         os.chdir(directory)
 
-        path_command = '--path="{}"'.format(self.__modules_directory)
-        bash_command = [self.__pyang_exec, path_command, filename]
+        path_command = '--path="{}"'.format(self._modules_directory)
+        bash_command = [self._pyang_exec, path_command, filename]
         if ietf:
             bash_command.append('--ietf')
         bash_command.append('2>&1')
 
-        if self.__debug_level > 0:
+        if self._debug_level > 0:
             print('DEBUG: running command {}'.format(' '.join(bash_command)))
 
         result_pyang = os.popen(' '.join(bash_command)).read()
@@ -79,9 +80,9 @@ class PyangParser:
         if allinclusive:
             path_command = '--path="{}"'.format(rootdir)
         else:
-            path_command = '--path="{}"'.format(self.__modules_directory)
+            path_command = '--path="{}"'.format(self._modules_directory)
 
-        bash_command = [self.__pyang_exec, path_command, filename]
+        bash_command = [self._pyang_exec, path_command, filename]
 
         if use_pyang_params:
             pyang_param = '--lint' if lint else '--ietf'
@@ -89,9 +90,13 @@ class PyangParser:
 
         bash_command.append('2>&1')
 
-        if self.__debug_level > 0:
+        if self._debug_level > 0:
             print('DEBUG: running command {}'.format(' '.join(bash_command)))
 
         result_pyang = os.popen(' '.join(bash_command)).read()
+        # Remove absolute path from output
+        result_pyang = result_pyang.replace('{}/'.format(directory), '')
+        for mod_dir in self._modules_directories:
+            result_pyang = result_pyang.replace('{}/'.format(mod_dir), '')
 
         return result_pyang
