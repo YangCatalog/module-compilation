@@ -28,7 +28,9 @@ from parsers.confdcParser import ConfdcParser
 from parsers.pyangParser import PyangParser
 from parsers.yangdumpProParser import YangdumpProParser
 from parsers.yanglintParser import YanglintParser
-from yangIetf import check_yangcatalog_data, push_to_confd
+from utility.utility import (dict_to_list, list_br_html_addition,
+                             module_or_submodule, push_to_confd)
+from yangIetf import check_yangcatalog_data
 
 __author__ = 'Benoit Claise'
 __copyright__ = 'Copyright(c) 2015-2018, Cisco Systems, Inc.,  Copyright The IETF Trust 2019, All Rights Reserved'
@@ -57,38 +59,6 @@ def list_of_yang_modules_in_subdir(srcdir: str, debug_level: int):
                     print(os.path.join(root, f))
                 ll.append(os.path.join(root, f))
     return ll
-
-
-def dict_to_list(in_dict: dict):
-    """
-    Create a list out of compilation results from 'in_dict' dictionary variable.
-
-    Argument:
-        :param in_dict      (dict) Dictionary of modules with compilation results
-        :return: List of compilation results
-    """
-    dictlist = []
-    for key, value in in_dict.items():
-        if value is not None:
-            temp_list = [key]
-            temp_list.extend(value)
-            dictlist.append(temp_list)
-    return dictlist
-
-
-def list_br_html_addition(l: list):
-    """
-    Replace the /n by the <br> HTML tag throughout the list.
-
-    Argument:
-        :param l    (list) List of compilation results
-    :return: updated list - <br> HTML tags added
-    """
-    for sublist in l:
-        for i in range(len(sublist)):
-            if isinstance(sublist[i], str):
-                sublist[i] = sublist[i].replace('\n', '<br>')
-    return l
 
 
 def number_of_yang_modules_that_passed_compilation(in_dict: dict, position: int, compilation_condition: str):
@@ -216,41 +186,6 @@ def get_mod_rev(module):
         return mname
     else:
         return mname + '@' + mrev
-
-
-def module_or_submodule(yang_file_path: str):
-    """
-    Try to find out if the given model is a submodule or a module.
-
-    Argument:
-        :param yang_file_path   (str) Full path to the yang model to check
-    """
-    if yang_file_path:
-        file_input = open(yang_file_path, 'r', encoding='utf-8', errors='ignore')
-        all_lines = file_input.readlines()
-        file_input.close()
-        commented_out = False
-        for each_line in all_lines:
-            module_position = each_line.find('module')
-            submodule_position = each_line.find('submodule')
-            cpos = each_line.find('//')
-            if commented_out:
-                mcpos = each_line.find('*/')
-            else:
-                mcpos = each_line.find('/*')
-            if mcpos != -1 and cpos > mcpos:
-                if commented_out:
-                    commented_out = False
-                else:
-                    commented_out = True
-            if submodule_position >= 0 and (submodule_position < cpos or cpos == -1) and not commented_out:
-                return 'submodule'
-            if module_position >= 0 and (module_position < cpos or cpos == -1) and not commented_out:
-                return 'module'
-        print('File {} not yang file or not well formated'.format(yang_file_path))
-        return 'wrong file'
-    else:
-        return None
 
 
 def custom_print(message: str):

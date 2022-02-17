@@ -18,11 +18,11 @@ __copyright__ = 'Copyright(c) 2015-2019, Cisco Systems, Inc.,  Copyright The IET
 __email__ = 'bclaise@cisco.com, evyncke@cisco.com'
 
 import argparse
-import configparser
 import datetime
 import json
 import os
 import time
+from operator import itemgetter
 
 import jinja2
 import requests
@@ -37,8 +37,9 @@ from parsers.confdcParser import ConfdcParser
 from parsers.pyangParser import PyangParser
 from parsers.yangdumpProParser import YangdumpProParser
 from parsers.yanglintParser import YanglintParser
-from redisConnections.redisConnection import RedisConnection
 from remove_directory_content import remove_directory_content
+from utility.utility import (dict_to_list, list_br_html_addition,
+                             module_or_submodule, push_to_confd)
 from versions import ValidatorsVersions
 
 # ----------------------------------------------------------------------
@@ -51,48 +52,6 @@ versions = validators_versions.get_versions()
 # ----------------------------------------------------------------------
 # Functions
 # ----------------------------------------------------------------------
-
-
-def dict_to_list(in_dict: dict):
-    """
-    Create a list out of compilation results from 'in_dict' dictionary variable.
-
-    Argument:
-        :param in_dict      (dict) Dictionary of modules with compilation results
-        :return: List of compilation results
-    """
-    dictlist = []
-    for key, value in in_dict.items():
-        if value is not None:
-            temp_list = [key]
-            temp_list.extend(value)
-            dictlist.append(temp_list)
-    return dictlist
-
-
-def dict_to_list_rfc(in_dict):
-    """
-    Create a list out of a dictionary
-    :param in_dict: The input dictionary
-    :return: List
-    """
-    dictlist = []
-    for key, value in in_dict.items():
-        dictlist.append((key, str(value)))
-    return dictlist
-
-
-def list_br_html_addition(l):
-    """
-    Replace the /n by the <br> HTML tag throughout the list.
-    :param l: The list
-    :return: List
-    """
-    for sublist in l:
-        for i in range(len(sublist)):
-            if type(sublist[i]) == type(''):
-                sublist[i] = sublist[i].replace('\n', '<br>')
-    return l
 
 
 def number_of_yang_modules_that_passed_compilation(in_dict: dict, compilation_condition: str):
@@ -205,35 +164,6 @@ def combined_compilation(yang_file: str, result: dict):
         compilation = 'UNKNOWN'
 
     return compilation
-
-
-def module_or_submodule(input_file):
-    if input_file:
-        file_input = open(input_file, "r", encoding='utf-8')
-        all_lines = file_input.readlines()
-        file_input.close()
-        commented_out = False
-        for each_line in all_lines:
-            module_position = each_line.find('module')
-            submodule_position = each_line.find('submodule')
-            cpos = each_line.find('//')
-            if commented_out:
-                mcpos = each_line.find('*/')
-            else:
-                mcpos = each_line.find('/*')
-            if mcpos != -1 and cpos > mcpos:
-                if commented_out:
-                    commented_out = False
-                else:
-                    commented_out = True
-            if submodule_position >= 0 and (submodule_position < cpos or cpos == -1) and not commented_out:
-                return 'submodule'
-            if module_position >= 0 and (module_position < cpos or cpos == -1) and not commented_out:
-                return 'module'
-        print('File ' + input_file + ' not yang file or not well formated')
-        return 'wrong file'
-    else:
-        return None
 
 
 def check_yangcatalog_data(pyang_exec, yang_path, resutl_html_dir, yang_file, datatracker_url, document_name, email, compilation,
@@ -443,30 +373,6 @@ def check_yangcatalog_data(pyang_exec, yang_path, resutl_html_dir, yang_file, da
     return updated_modules
 
 
-def push_to_confd(updated_modules: list, config: configparser.ConfigParser):
-    json_modules_data = json.dumps({'modules': {'module': updated_modules}})
-    confd_protocol = config.get('General-Section', 'protocol-confd')
-    confd_port = config.get('Web-Section', 'confd-port')
-    confd_host = config.get('Web-Section', 'confd-ip')
-    credentials = config.get('Secrets-Section', 'confd-credentials').strip('"').split()
-    confd_prefix = '{}://{}:{}'.format(confd_protocol, confd_host, confd_port)
-    if '{"module": []}' not in json_modules_data:
-        print('creating patch request to confd with updated data')
-        url = '{}/restconf/data/yang-catalog:catalog/modules/'.format(confd_prefix)
-        response = requests.patch(url, data=json_modules_data,
-                                  auth=(credentials[0], credentials[1]),
-                                  headers={
-                                      'Accept': 'application/yang-data+json',
-                                      'Content-type': 'application/yang-data+json'})
-        if response.status_code < 200 or response.status_code > 299:
-            print('Request with body {} on path {} failed with {}'.
-                  format(json_modules_data, url, response.text))
-        redisConnection = RedisConnection()
-        redisConnection.populate_modules(updated_modules)
-
-    return []
-
-
 def custom_print(message: str):
     timestamp = '{} ({}):'.format(datetime.datetime.now().time(), os.getpid())
     print('{} {}'.format(timestamp, message), flush=True)
@@ -590,7 +496,9 @@ if __name__ == '__main__':
         'all_yang_draft_path_no_strict': args.allyangdraftpathnostrict
     }
 
+    # ----------------------------------------------------------------------
     # Empty the yangpath, allyangpath, and rfcyangpath directories content
+    # ----------------------------------------------------------------------
     remove_directory_content(args.yangpath, debug_level)
     remove_directory_content(args.allyangpath, debug_level)
     remove_directory_content(args.rfcyangpath, debug_level)
@@ -602,7 +510,9 @@ if __name__ == '__main__':
     remove_directory_content(args.rfcextractionyangpath, debug_level)
     remove_directory_content(args.draftelementspath, debug_level)
 
+    # ----------------------------------------------------------------------
     # Extract YANG models from IETF RFCs files
+    # ----------------------------------------------------------------------
     rfcExtractor = RFCExtractor(args.rfcpath, args.rfcyangpath, args.rfcextractionyangpath, args.debug)
     rfcExtractor.extract_rfcs()
     rfcExtractor.invert_dict()
@@ -611,7 +521,9 @@ if __name__ == '__main__':
     custom_print('Old examples YANG modules moved')
     custom_print('All IETF RFCs pre-processed')
 
+    # ----------------------------------------------------------------------
     # Extract YANG models from IETF draft files
+    # ----------------------------------------------------------------------
     draftExtractor = DraftExtractor(draft_extractor_paths, args.debug)
     draftExtractor.extract_drafts()
     draftExtractor.invert_dict()
@@ -623,7 +535,9 @@ if __name__ == '__main__':
     yang_draft_dict = draftExtractor.inverted_draft_yang_dict
     yang_example_draft_dict = draftExtractor.inverted_draft_yang_example_dict
 
+    # ----------------------------------------------------------------------
     # Initialize parsers
+    # ----------------------------------------------------------------------
     pyangParser = PyangParser(args.debug)
     confdcParser = ConfdcParser(args.debug)
     yumadumpProParser = YangdumpProParser(args.debug)
@@ -804,8 +718,8 @@ if __name__ == '__main__':
         #     dictionary_rfc_no_submodules[yang_file] = rfc_url
 
     # Uncomment next two lines if you want to remove the submodules from the RFC report in http://www.claise.be/IETFYANGOutOfRFC.png
-    sorted_modules_list = sorted(dict_to_list_rfc(dictionary_rfc))
-    # sorted_modules_list = sorted(dict_to_list_rfc(dictionary_rfc_no_submodules), key = itemgetter(1))
+    sorted_modules_list = sorted(dict_to_list(dictionary_rfc, True))
+    # sorted_modules_list = sorted(dict_to_list(dictionary_rfc_no_submodules, True), key = itemgetter(1))
 
     filesGenerator.write_dictionary(dictionary_rfc, 'IETFYANGRFC')
     headers = ['YANG Model (and submodel)', 'RFC']
