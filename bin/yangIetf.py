@@ -27,6 +27,9 @@ from operator import itemgetter
 import jinja2
 import requests
 
+from compilators.draftsCompilator import DraftsCompilator
+from compilators.examplesCompilator import ExamplesCompilator
+from compilators.rfcsCompilator import RfcsCompilator
 from create_config import create_config
 from extract_emails import extract_email_string
 from extractors.dratfExtractor import DraftExtractor
@@ -38,8 +41,7 @@ from parsers.pyangParser import PyangParser
 from parsers.yangdumpProParser import YangdumpProParser
 from parsers.yanglintParser import YanglintParser
 from remove_directory_content import remove_directory_content
-from utility.utility import (dict_to_list, list_br_html_addition,
-                             module_or_submodule, push_to_confd)
+from utility.utility import dict_to_list, list_br_html_addition
 from versions import ValidatorsVersions
 
 # ----------------------------------------------------------------------
@@ -543,193 +545,82 @@ if __name__ == '__main__':
     yumadumpProParser = YangdumpProParser(args.debug)
     yanglintParser = YanglintParser(args.debug)
 
-    # Load compilation results from .json file, if any exists
-    try:
-        with open(os.path.join(args.htmlpath, 'IETFDraft.json'), 'r') as f:
-            dictionary_existing = json.load(f)
-    except Exception:
-        dictionary_existing = {}
-    dictionary = {}
-    dictionary_no_submodules = {}
-    updated_modules = []
-
-    custom_print('Starting compilation in {} directory'.format(args.yangpath))
-    for yang_file in yang_draft_dict:
-        yang_file_path = os.path.join(args.yangpath, yang_file)
-        file_hash = fileHasher.hash_file(yang_file_path)
-        old_file_hash = files_hashes.get(yang_file_path, None)
-        yang_file_compilation = dictionary_existing.get(yang_file, None)
-
-        if old_file_hash is None or old_file_hash != file_hash or args.forcecompilation or yang_file_compilation is None:
-            email, compilation = '', ''
-            ietf_flag = True
-            result_pyang = pyangParser.run_pyang_ietf(yang_file_path, ietf_flag)
-            ietf_flag = False
-            result_no_ietf_flag = pyangParser.run_pyang_ietf(yang_file_path, ietf_flag)
-            result_confd = confdcParser.run_confdc(yang_file_path, args.yangpath)
-            result_yuma = yumadumpProParser.run_yumadumppro(yang_file_path, args.yangpath)
-            result_yanglint = yanglintParser.run_yanglint(yang_file_path, args.yangpath)
-            draft_name = yang_draft_dict.get(yang_file, '')
-            url = draft_name.split('.')[0]
-            rev_num = url.split('-')[-1]
-            url = url.rstrip('-0123456789')
-            mailto = url + '@ietf.org'
-            url = 'https://datatracker.ietf.org/doc/{}/{}'.format(url, rev_num)
-            draft_url = '<a href="{}">{}</a>'.format(url, draft_name)
-            email = '<a href="mailto:{}">Email Authors</a>'.format(mailto)
-            url2 = '{}/YANG-modules/{}'.format(web_url, yang_file)
-            yang_url = '<a href="{}">Download the YANG model</a>'.format(url2)
-            is_rfc = os.path.isfile('{}{}'.format(args.rfcyangpath, yang_file))
-
-            result = {
-                'pyang_lint': result_pyang,
-                'pyang': result_no_ietf_flag,
-                'confdrc': result_confd,
-                'yumadump': result_yuma,
-                'yanglint': result_yanglint
-            }
-            compilation = combined_compilation(yang_file, result)
-            updated_modules.extend(
-                check_yangcatalog_data(pyang_exec, args.yangpath, resutl_html_dir, yang_file, url, draft_name, mailto, compilation,
-                                       result, all_yang_catalog_metadata, prefix, is_rfc, 'ietf-draft'))
-            if len(updated_modules) > 100:
-                updated_modules = push_to_confd(updated_modules, config)
-            yang_file_compilation = [draft_url, email, yang_url, compilation, result_pyang, result_no_ietf_flag, result_confd, result_yuma,
-                                     result_yanglint]
-            # Do not store hash if compilation result is 'UNKNOWN' -> try to parse model again next time
-            if compilation != 'UNKNOWN':
-                files_hashes[yang_file_path] = file_hash
-
-        dictionary[yang_file] = yang_file_compilation
-        if module_or_submodule(yang_file_path) == 'module':
-            dictionary_no_submodules[yang_file] = yang_file_compilation
-    custom_print('IETF Drafts validated/compiled')
-
-    # Make a list out of the no-submodules dictionary
-    sorted_modules_list = sorted(dict_to_list(dictionary_no_submodules))
-    # Replace CR by the BR HTML tag
-    sorted_modules_list_br_tags = list_br_html_addition(sorted_modules_list)
-
-    filesGenerator.write_dictionary(dictionary, 'IETFDraft')
-    headers = filesGenerator.getIETFDraftYANGPageCompilationHeaders()
-    filesGenerator.generateYANGPageCompilationHTML(sorted_modules_list_br_tags, headers, 'IETFDraft')
-
-    # Example- YANG modules from drafts: PYANG validation, dictionary generation, dictionary inversion, and page generation
-    # Load compilation results from .json file, if any exists
-    try:
-        with open(os.path.join(args.htmlpath, 'IETFDraftExample.json'), 'r') as f:
-            dictionary_example_existing = json.load(f)
-    except Exception:
-        dictionary_example_existing = {}
-    dictionary_example = {}
-    dictionary_no_submodules_example = {}
-
+    # ----------------------------------------------------------------------
+    # Compile extracted example- modules
+    # ----------------------------------------------------------------------
     custom_print('Starting compilation in {} directory'.format(args.allyangexamplepath))
-    for yang_file in yang_example_draft_dict:
-        yang_file_path = args.allyangexamplepath + yang_file
-        file_hash = fileHasher.hash_file(yang_file_path)
-        old_file_hash = files_hashes.get(yang_file_path, None)
-        yang_file_compilation = dictionary_example_existing.get(yang_file, None)
-
-        if old_file_hash is None or old_file_hash != file_hash or args.forcecompilation or yang_file_compilation is None:
-            email, compilation = '', ''
-            ietf_flag = True
-            result_pyang = pyangParser.run_pyang_ietf(yang_file_path, ietf_flag)
-            ietf_flag = False
-            result_no_ietf_flag = pyangParser.run_pyang_ietf(yang_file_path, ietf_flag)
-            draft_name = yang_example_draft_dict.get(yang_file, '')
-            url = draft_name.split('.')[0]
-            rev_num = url.split('-')[-1]
-            url = url.rstrip('-0123456789')
-            mailto = url + '@ietf.org'
-            url = 'https://datatracker.ietf.org/doc/{}/{}'.format(url, rev_num)
-            draft_url = '<a href="{}">{}</a>'.format(url, draft_name)
-            email = '<a href="mailto:{}">Email Authors</a>'.format(mailto)
-            # Resolve compilation result from PYANG compilation messages
-            if 'error' in result_pyang:
-                compilation = 'FAILED'
-            elif 'warning' in result_pyang:
-                compilation = 'PASSED WITH WARNINGS'
-            elif result_pyang == '':
-                compilation = 'PASSED'
-            else:
-                compilation = 'UNKNOWN'
-
-            result = {
-                'pyang_lint': result_pyang,
-                'pyang': result_no_ietf_flag
-            }
-            updated_modules.extend(
-                check_yangcatalog_data(pyang_exec, args.allyangexamplepath, resutl_html_dir, yang_file, url, draft_name, mailto, compilation,
-                                       result, all_yang_catalog_metadata, prefix, False, 'ietf-example'))
-            if len(updated_modules) > 100:
-                updated_modules = push_to_confd(updated_modules, config)
-            yang_file_compilation = [draft_url, email, compilation, result_pyang, result_no_ietf_flag]
-            # Do not store hash if compilation result is 'UNKNOWN' -> try to parse model again next time
-            if compilation != 'UNKNOWN':
-                files_hashes[yang_file_path] = file_hash
-
-        dictionary_example[yang_file] = yang_file_compilation
-        if module_or_submodule(args.allyangexamplepath + yang_file) == 'module':
-            dictionary_no_submodules_example[yang_file] = yang_file_compilation
-    custom_print('example YANG modules in IETF Drafts validated/compiled')
+    examplesCompilator = ExamplesCompilator(args.allyangexamplepath, yang_example_draft_dict, args.debug)
+    examplesCompilator.compile_examples(all_yang_catalog_metadata, args.forcecompilation)
+    custom_print('example- YANG modules extracted from IETF Drafts validated/compiled')
 
     # Make a list out of the no-submodules dictionary
-    sorted_modules_list = sorted(dict_to_list(dictionary_no_submodules_example))
+    sorted_modules_list = sorted(dict_to_list(examplesCompilator.results_no_submodules_dict))
     # Replace CR by the BR HTML tag
     sorted_modules_list_br_tags = list_br_html_addition(sorted_modules_list)
 
-    filesGenerator.write_dictionary(dictionary_example, 'IETFDraftExample')
+    # Generate json and html files with compilation results of extracted example- modules
+    filesGenerator.write_dictionary(examplesCompilator.results_dict, 'IETFDraftExample')
     headers = filesGenerator.getIETFDraftExampleYANGPageCompilationHeaders()
     filesGenerator.generateYANGPageCompilationHTML(sorted_modules_list_br_tags, headers, 'IETFDraftExample')
 
-    # Load URLs from .json file, if any exists
-    try:
-        with open(os.path.join(args.htmlpath, 'IETFYANGRFC.json'), 'r') as f:
-            dictionary_rfc_existing = json.load(f)
-    except Exception:
-        dictionary_rfc_existing = {}
-    dictionary_rfc = {}
-    dictionary_rfc_no_submodules = {}
-
+    # ----------------------------------------------------------------------
+    # Compile extracted RFC modules
+    # ----------------------------------------------------------------------
     custom_print('Starting compilation in {} directory'.format(args.rfcyangpath))
-    for yang_file in yang_rfc_dict:
-        yang_file_path = args.rfcyangpath + yang_file
-        file_hash = fileHasher.hash_file(yang_file_path)
-        old_file_hash = files_hashes.get(yang_file_path, None)
-        rfc_url = dictionary_rfc_existing.get(yang_file, '')
-
-        if old_file_hash is None or old_file_hash != file_hash or args.forcecompilation or rfc_url == '':
-            rfc_name = yang_rfc_dict[yang_file]
-            rfc_name = rfc_name.split('.')[0]
-            url = 'https://tools.ietf.org/html/{}'.format(rfc_name)
-            rfc_url = '<a href="{}">{}</a>'.format(url, rfc_name)
-            updated_modules.extend(
-                check_yangcatalog_data(pyang_exec, args.rfcyangpath, resutl_html_dir, yang_file, url, rfc_name, None, None,
-                                       {}, all_yang_catalog_metadata, prefix, True, 'ietf-rfc'))
-            if len(updated_modules) > 100:
-                updated_modules = push_to_confd(updated_modules, config)
-            files_hashes[yang_file_path] = file_hash
-
-        dictionary_rfc[yang_file] = rfc_url
-        # Uncomment next three lines if you want to remove the submodules from the RFC report in http://www.claise.be/IETFYANGOutOfRFC.png
-        # dictionary_rfc_no_submodules[yang_file] = rfc_url
-        # if module_or_submodule(yang_file_path) == 'module':
-        #     dictionary_rfc_no_submodules[yang_file] = rfc_url
+    rfcsCompilator = RfcsCompilator(args.rfcyangpath, yang_rfc_dict, args.debug)
+    rfcsCompilator.compile_rfcs(all_yang_catalog_metadata, args.forcecompilation)
+    custom_print('RFC YANG modules validated/compiled')
 
     # Uncomment next two lines if you want to remove the submodules from the RFC report in http://www.claise.be/IETFYANGOutOfRFC.png
-    sorted_modules_list = sorted(dict_to_list(dictionary_rfc, True))
-    # sorted_modules_list = sorted(dict_to_list(dictionary_rfc_no_submodules, True), key = itemgetter(1))
+    sorted_modules_list = sorted(dict_to_list(rfcsCompilator.results_dict, True))
+    # sorted_modules_list = sorted(dict_to_list(rfcsCompilator.results_no_submodules_dict, True), key=itemgetter(1))
 
-    filesGenerator.write_dictionary(dictionary_rfc, 'IETFYANGRFC')
+    # Generate json and html files with compilation results of extracted RFC modules
+    filesGenerator.write_dictionary(rfcsCompilator.results_dict, 'IETFYANGRFC')
     headers = ['YANG Model (and submodel)', 'RFC']
     filesGenerator.generateHTMLTable(sorted_modules_list, headers)
+
+    # ----------------------------------------------------------------------
+    # Compile modules extracted from drafts
+    # ----------------------------------------------------------------------
+    paths = {
+        'draftpath': args.draftpath,
+        'rfcpath': args.rfcyangpath
+    }
+    custom_print('Starting compilation in {} directory'.format(args.yangpath))
+    draftsCompilator = DraftsCompilator(args.yangpath, yang_draft_dict, args.debug)
+    draftsCompilator.compile_drafts(all_yang_catalog_metadata, args.forcecompilation, paths)
+    custom_print('Modules extracted from IETF Drafts validated/compiled')
+
+    # Make a list out of the no-submodules dictionary
+    sorted_modules_list = sorted(dict_to_list(draftsCompilator.results_dict))
+    # Replace CR by the BR HTML tag
+    sorted_modules_list_br_tags = list_br_html_addition(sorted_modules_list)
+
+    # Generate json and html files with compilation results of modules extracted from IETF Drafts
+    filesGenerator.write_dictionary(draftsCompilator.results_dict, 'IETFDraft')
+    headers = filesGenerator.getIETFDraftYANGPageCompilationHeaders()
+    filesGenerator.generateYANGPageCompilationHTML(sorted_modules_list_br_tags, headers, 'IETFDraft')
+
+    # Make a list out of the no-submodules dictionary
+    sorted_modules_list = sorted(dict_to_list(draftsCompilator.results_dict_authors))
+    # Replace CR by the BR HTML tag
+    sorted_modules_list_br_tags = list_br_html_addition(sorted_modules_list)
+
+    # Generate json and html files with compilation results of modules extracted from IETF Drafts with cisco authors
+    filesGenerator.write_dictionary(draftsCompilator.results_dict_authors, 'IETFCiscoAuthors')
+    headers = filesGenerator.getIETFCiscoAuthorsYANGPageCompilationHeaders()
+    filesGenerator.generateYANGPageCompilationHTML(sorted_modules_list_br_tags, headers, 'IETFCiscoAuthors')
+
+    output_email_list_unique = list(set(draftsCompilator.output_cisco_emails))
+    output_email_string_unique = ', '.join(output_email_list_unique)
+    custom_print('List of emails of Cisco autthors:\n{}'.format(output_email_string_unique))
 
     # Create IETF drafts extraction and compilation statistics
     drafts_stats = {
         'total-drafts': len(yang_draft_dict.keys()),
-        'draft-passed': number_of_yang_modules_that_passed_compilation(dictionary, 'PASSED'),
-        'draft-warnings': number_of_yang_modules_that_passed_compilation(dictionary, 'PASSED WITH WARNINGS'),
+        'draft-passed': number_of_yang_modules_that_passed_compilation(draftsCompilator.results_dict, 'PASSED'),
+        'draft-warnings': number_of_yang_modules_that_passed_compilation(draftsCompilator.results_dict, 'PASSED WITH WARNINGS'),
         'all-ietf-drafts': len([f for f in os.listdir(args.allyangpath) if os.path.isfile(os.path.join(args.allyangpath, f))]),
         'example-drafts': len(yang_example_draft_dict.keys())
     }
@@ -753,7 +644,7 @@ if __name__ == '__main__':
             if counter == 0:
                 break
 
-    # Print the summary of the IETF drafts extraction and compilation results
+    # Print the summary of the IETF Drafts extraction and compilation results
     print('--------------------------')
     print('Number of correctly extracted YANG models from IETF drafts: {}'
           .format(drafts_stats.get('total-drafts')))
@@ -766,84 +657,4 @@ if __name__ == '__main__':
     print('Number of correctly extracted example YANG models from IETF drafts: {}'
           .format(drafts_stats.get('example-drafts')), flush=True)
 
-    # YANG modules from drafts, for CiscoAuthors: HTML page generation for yang models
-    output_email = ''
-    dictionary = {}
-    dictionary_no_submodules = {}
-    for yang_file in yang_draft_dict:
-        yang_file_path = os.path.join(args.allyangpath, yang_file)
-        cisco_email = extract_email_string(args.draftpath + yang_draft_dict[yang_file], '@cisco.com', debug_level)
-        tailf_email = extract_email_string(args.draftpath + yang_draft_dict[yang_file], '@tail-f.com', debug_level)
-        if tailf_email:
-            if cisco_email:
-                cisco_email += ',{}'.format(tailf_email)
-            else:
-                cisco_email = tailf_email
-        if cisco_email:
-            output_email = output_email + cisco_email + ', '
-            draft_name, email, compilation = '', '', ''
-            result_pyang, result_no_ietf_flag, result_confd, result_yuma, result_yanglint = '', '', '', '', ''
-            ietf_flag = True
-            result_pyang = pyangParser.run_pyang_ietf(yang_file_path, ietf_flag)
-            ietf_flag = False
-            result_no_ietf_flag = pyangParser.run_pyang_ietf(yang_file_path, ietf_flag)
-            result_confd = confdcParser.run_confdc(yang_file_path, args.yangpath)
-            result_yuma = yumadumpProParser.run_yumadumppro(yang_file_path, args.yangpath)
-            result_yanglint = yanglintParser.run_yanglint(yang_file_path, args.yangpath)
-            draft_name = yang_draft_dict[yang_file]
-            url = draft_name.split('.')[0]
-            rev_num = url.split('-')[-1]
-            url = url.rstrip('-0123456789')
-            mailto = '{}@ietf.org'.format(url)
-            url = 'https://datatracker.ietf.org/doc/{}/{}'.format(url, rev_num)
-            draft_url = '<a href="{}">{}</a>'.format(url, draft_name)
-            email = '<a href="mailto:{}">Email All Authors</a>'.format(mailto)
-            cisco_email = '<a href="mailto:{}">Email Cisco Authors Only</a>'.format(cisco_email)
-            url2 = '{}/YANG-modules/{}'.format(web_url, yang_file)
-            yang_url = '<a href="{}">Download the YANG model</a>'.format(url2)
-            is_rfc = os.path.isfile('{}{}'.format(args.rfcyangpath, yang_file))
-
-            result = {
-                'pyang_lint': result_pyang,
-                'pyang': result_no_ietf_flag,
-                'confdrc': result_confd,
-                'yumadump': result_yuma,
-                'yanglint': result_yanglint
-            }
-            compilation = combined_compilation(yang_file, result)
-            updated_modules.extend(
-                check_yangcatalog_data(pyang_exec, args.yangpath, resutl_html_dir, yang_file, url, draft_name, mailto, compilation,
-                                       result, all_yang_catalog_metadata, prefix, is_rfc, 'ietf-draft'))
-            if len(updated_modules) > 100:
-                updated_modules = push_to_confd(updated_modules, config)
-            yang_file_compilation = [draft_url, email, cisco_email, yang_url, compilation, result_pyang, result_no_ietf_flag, result_confd,
-                                     result_yuma, result_yanglint]
-            dictionary[yang_file] = yang_file_compilation
-            if module_or_submodule(args.yangpath + yang_file) == 'module':
-                dictionary_no_submodules[yang_file] = yang_file_compilation
-    output_email = output_email.rstrip(', ')
-
-    # Get list of unique email, then join them using comma into one string
-    output_email_list = [i.strip() for i in output_email.split(',')]
-    output_email_list_unique = list(set(output_email_list))
-    output_email_string_unique = ', '.join(output_email_list_unique)
-
-    updated_modules = push_to_confd(updated_modules, config)
-
-    # Make a list out of the no-submodules dictionary
-    sorted_modules_list = sorted(dict_to_list(dictionary_no_submodules))
-    # Replace CR by the BR HTML tag
-    sorted_modules_list_br_tags = list_br_html_addition(sorted_modules_list)
-    # make a list out of the dictionary
-
-    headers = filesGenerator.getIETFCiscoAuthorsYANGPageCompilationHeaders()
-    filesGenerator.generateYANGPageCompilationHTML(sorted_modules_list_br_tags, headers, 'IETFCiscoAuthors')
-
-    with open('{}/IETFCiscoAuthorsYANGPageCompilation.json'.format(args.htmlpath), 'w') as f:
-        json.dump(sorted_modules_list_br_tags, f)
-    print(output_email_string_unique)
     custom_print('end of yangIetf.py job')
-
-    # Update files content hashes and dump into .json file
-    if len(files_hashes) > 0:
-        fileHasher.dump_hashed_files_list(files_hashes)

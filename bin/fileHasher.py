@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__author__ = "Slavomir Mazur"
-__copyright__ = "Copyright The IETF Trust 2021, All Rights Reserved"
-__license__ = "Apache License, Version 2.0"
-__email__ = "slavomir.mazur@pantheon.tech"
+__author__ = 'Slavomir Mazur'
+__copyright__ = 'Copyright The IETF Trust 2021, All Rights Reserved'
+__license__ = 'Apache License, Version 2.0'
+__email__ = 'slavomir.mazur@pantheon.tech'
 
 import hashlib
 import json
@@ -27,10 +27,14 @@ from versions import ValidatorsVersions
 
 
 class FileHasher:
-    def __init__(self):
+    def __init__(self, forcecompilation: bool = False):
         config = create_config()
         self.cache_dir = config.get('Directory-Section', 'cache')
+
+        self.forcecompilation = forcecompilation
         self.validators_versions_bytes = self.get_versions()
+        self.files_hashes = self.load_hashed_files_list()
+        self.updated_hashes = {}
 
     def hash_file(self, path: str):
         """ Create hash from content of the given file and validators versions.
@@ -98,3 +102,18 @@ class FileHasher:
         validators_versions = ValidatorsVersions()
         actual_versions = validators_versions.get_versions()
         return json.dumps(actual_versions).encode('utf-8')
+
+    def should_parse(self, path: str):
+        """ Decide whether module at the given path should be parsed or not.
+        Check whether file content hash has changed and keep it for the future use.
+
+        Argument:
+            :param path     (str) Full path to the file to be hashed
+        """
+        hash_changed = False
+        file_hash = self.hash_file(path)
+        old_file_hash = self.files_hashes.get(path, None)
+        if old_file_hash is None or old_file_hash != file_hash:
+            hash_changed = True
+
+        return [self.forcecompilation or hash_changed, file_hash]

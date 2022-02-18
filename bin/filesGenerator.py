@@ -143,7 +143,7 @@ class FilesGenerator:
             :param headers          (list) Headers list to generate the HTML table
         """
         generated_message = 'Generated on {} by the YANG Catalog.'.format(time.strftime('%d/%m/%Y'))
-        htmlcode = HTML.list(generated_message)
+        htmlcode = HTML.list([generated_message])
         htmlcode1 = HTML.table(rfcs_list, header_row=headers)
 
         HTML_filename = os.path.join(self.__htmlpath, 'IETFYANGRFC.html')
