@@ -13,7 +13,10 @@
 # either express or implied.
 
 
-__author__ = 'bclaise'
+__author__ = 'Benoit Claise'
+__copyright__ = 'Copyright(c) 2015-2018, Cisco Systems, Inc.,  Copyright The IETF Trust 2019, All Rights Reserved'
+__license__ = 'Apache License, Version 2.0'
+__email__ = 'bclaise@cisco.com'
 
 import argparse
 import os
@@ -24,85 +27,84 @@ from create_config import create_config
 # ----------------------------------------------------------------------
 # Functions
 # ----------------------------------------------------------------------
-def list_of_ietf_drafts(directory, debug_level):
-    """
-    Returns the list of files in a directory
-    # status: troubleshooting done
+def list_of_ietf_drafts(directory: str):
+    """ Returns a list of all the files in a directory.
 
-    :param directory: directory to search for drafts
+    Arguments:
+        :param directory        (str) Directory to search for drafts
+
     :return: list of found drafts
     """
-    only_files = [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
-    # Remove the non-drafts from the list of files
-    only_drafts = []
-    for f in only_files:
-        if debug_level > 1:
-            print("DEBUG: " + f + " in list_of_ietf_drafts: is a IETF Drafts")
-        if "draft-" in f:
-            only_drafts.append(f)
+    only_files = [file for file in os.listdir(directory) if os.path.isfile(os.path.join(directory, file))]
+    only_drafts = [file for file in only_files if 'draft-' in file]
+
     return only_drafts
 
 
-def extract_email_string(d, email_domain, debug_level):
+def extract_email_string(draft_path: str, email_domain: str, debug_level: int = 0):
+    """ Returns a string, comma separated, of all the email addresses for the company email domain,
+    within an IETF draft.
+
+    Arguments:
+        :param draft_path       (str) Full path to the draft
+        :param email_domain     (str) Domain of search email (e.g. @cisco.com, @tail-f.com)
+        :param debug_level      (int) Debug level
+    :return: a string, comma separated, of all the unique email addresses for the company email domain,
     """
-    Returns a string, comma separated, of all the email addresses for the company email domain,
-    within an IETF draft
-    :param d: an IETF draft, including the path
-    :param email_domain: example "@cisco.com"
-    :param debug
-    :return: a string, comma separated, of all the email addresses for the company email domain,
-    """
-    email_string = ""
     list_of_email_address = []
 
-    bash_command = "grep \"" + email_domain + "\" " + d
+    bash_command = 'grep "{}" {}'.format(email_domain, draft_path)
     if debug_level > 1:
-        print("bash_command: " + bash_command)
+        print('DEBUG: running command {}'.format(bash_command))
     temp_result = os.popen(bash_command).readlines()
     for line in temp_result:
         line = line.strip(' \r\n')
         if debug_level > 1:
-            print("  line: " + line)
-        if "email" in line.lower() or "e-mail" in line.lower():
-            try:
-                email = line.split(":")[1]
-            except:
-                email = line.split("mail")[1]
-            email = email.rstrip(" ")
-            email = email.lstrip(" ")
-            if debug_level > 0:
-                print("  draft name: " + d + " email: " + email)
-            list_of_email_address.append(email)
-    if list_of_email_address:
-        for i in list_of_email_address:
-            email_string = email_string + i + ", "
-    email_string = email_string.rstrip(", ")
+            print('DEBUG: proccesing line: {}'.format(line))
+        if 'mailto:' in line:
+            mailto = line.split('>')[0].split('mailto:')[-1]
+            emails = [e for e in mailto.split(' ') if '@' in e]
+            list_of_email_address.extend(emails)
+        if any(term in line.lower() for term in ['email', 'e-mail']):
+            line = line.split(':')[-1]
+            line = line.split('mail')[-1]
+            emails = [e for e in line.split(' ') if '@' in e]
+            list_of_email_address.extend(emails)
+            if emails and debug_level > 0:
+                print('DEBUG: {}: {}'.format(draft_path, emails))
+    unique_list_of_email_address = list(set(list_of_email_address))
+    email_string = ','.join(unique_list_of_email_address)
+
     return email_string
 
 
 # ----------------------------------------------------------------------
 # Main
 # ----------------------------------------------------------------------
-if __name__ == "__main__":
+if __name__ == '__main__':
     config = create_config()
     ietf_directory = config.get('Directory-Section', 'ietf-directory')
 
     parser = argparse.ArgumentParser(description='YANG RFC/Draft Processor')
-
-    # Host Config
-    parser.add_argument("--draftpath", default=ietf_directory + "/my-id-mirror/", help="The path to the draft directory).")
-    parser.add_argument("--yangpath", default=ietf_directory + "/YANG/", help="The path where to store extracted models")
-    parser.add_argument("--debug", type=int, default=0, help="Debug level")
+    parser.add_argument('--draftpath',
+                        default='{}/my-id-mirror/'.format(ietf_directory),
+                        help='Path to the directory where all the drafts will be stored.'
+                             'Default is {}/my-id-archive-mirror/'.format(ietf_directory))
+    parser.add_argument('--yangpath',
+                        default='{}/YANG/'.format(ietf_directory),
+                        help='Path to the directory where all the modules should be extracted.'
+                        'Default is {}/YANG'.format(ietf_directory))
+    parser.add_argument('--debug', type=int,
+                        default=0,
+                        help='Debug level; the default is 0')
     args = parser.parse_args()
 
     debug_level = args.debug
 
     os.chdir(args.draftpath)
 
-    ietf_drafts = list_of_ietf_drafts(args.draftpath, args.debug)
+    ietf_drafts = list_of_ietf_drafts(args.draftpath)
     for draft_file in ietf_drafts:
-        if debug_level > 1:
-            print('Main: {}'.format(draft_file))
-        output = extract_email_string(draft_file, '@cisco.com')
-        if output:
+        output = extract_email_string(draft_file, '@cisco.com', debug_level)
+        if output and debug_level > 0:
             print('Main: {}: {}'.format(draft_file, output))
