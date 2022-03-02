@@ -114,8 +114,8 @@ def list_br_html_addition(modules_list: list):
         :param modules_list     (list) List of lists of compilation results
         :return: updated list - <br> HTML tags added
     """
-    for sublist in modules_list:
-        sublist = [element.replace('\n', '<br>') for element in sublist if isinstance(element, str)]
+    for i, sublist in enumerate(modules_list):
+        modules_list[i] = [element.replace('\n', '<br>') for element in sublist if isinstance(element, str)]
 
     return modules_list
 
