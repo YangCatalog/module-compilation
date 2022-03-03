@@ -66,6 +66,8 @@ class ConfdcParser:
 
         try:
             result_confdc = os.popen(' '.join(bash_command)).read()
+            result_confdc = result_confdc.strip()
+            result_confdc = result_confdc.replace('\n\n', '\n').replace('\n', '\n\n')
             # Remove absolute path from output
             result_confdc = result_confdc.replace(rootdir, '')
             for sym_link in self._symlink_paths:

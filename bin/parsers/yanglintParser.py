@@ -54,11 +54,13 @@ class YanglintParser:
 
         try:
             result_yanglint = os.popen(' '.join(bash_command)).read()
+            result_yanglint = result_yanglint.strip()
+            result_yanglint = result_yanglint.replace('\n\n', '\n').replace('\n', '\n\n')
             result_yanglint = result_yanglint.replace(workdir, '')
             # Same result messages are often found in the result_yanglint multiple times
-            splitted_result_yanglint = result_yanglint.split('\n')
-            unique_results_list = sorted(set(splitted_result_yanglint), key=splitted_result_yanglint.index)
-            result_yanglint = '\n'.join(unique_results_list)
+            # splitted_result_yanglint = result_yanglint.split('\n')
+            # unique_results_list = sorted(set(splitted_result_yanglint), key=splitted_result_yanglint.index)
+            # result_yanglint = '\n'.join(unique_results_list)
         except Exception:
             result_yanglint = 'libyang err : Problem occured while running command: {}'.format(' '.join(bash_command))
 

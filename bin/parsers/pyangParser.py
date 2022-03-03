@@ -53,6 +53,8 @@ class PyangParser:
             print('DEBUG: running command {}'.format(' '.join(bash_command)))
 
         result_pyang = os.popen(' '.join(bash_command)).read()
+        result_pyang = result_pyang.strip()
+        result_pyang = result_pyang.replace('\n\n', '\n').replace('\n', '\n\n')
 
         return result_pyang
 
@@ -98,6 +100,8 @@ class PyangParser:
             print('DEBUG: running command {}'.format(' '.join(bash_command)))
 
         result_pyang = os.popen(' '.join(bash_command)).read()
+        result_pyang = result_pyang.strip()
+        result_pyang = result_pyang.replace('\n\n', '\n').replace('\n', '\n\n')
         # Remove absolute path from output
         result_pyang = result_pyang.replace('{}/'.format(directory), '')
         for mod_dir in self._modules_directories:
