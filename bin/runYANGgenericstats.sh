@@ -151,7 +151,7 @@ if [ "$IS_PROD" = "True" ]; then
          yang_removed=${git%/*}
          prefix=${yang_removed#*/}
          prefix2=$(echo $prefix | tr -cd '[:alnum:]')
-         (python yangGeneric.py --allinclusive True --metadata "Cisco $meta $prefix from https://github.com/YangModels/yang/tree/master/vendor/cisco/nx/$git" --lint True --prefix Cisco$os$prefix2 --rootdir "$path2" >>$LOG 2>&1) &
+         (python yangGeneric.py --allinclusive True --metadata "Cisco $meta $prefix from https://github.com/YangModels/yang/tree/main/vendor/cisco/nx/$git" --lint True --prefix Cisco$os$prefix2 --rootdir "$path2" >>$LOG 2>&1) &
          PIDSNX+=("$!")
          wait_for_processes "${PIDSNX[@]}"
       done
@@ -174,7 +174,7 @@ if [ "$IS_PROD" = "True" ]; then
          yang_removed=${git%/*}
          prefix=${yang_removed#*/}
          prefix2=$(echo $prefix | tr -cd '[:alnum:]')
-         (python yangGeneric.py --allinclusive True --metadata "Cisco $meta $prefix from https://github.com/YangModels/yang/tree/master/vendor/cisco/xe/$git" --lint True --prefix Cisco$os$prefix2 --rootdir "$path2" >>$LOG 2>&1) &
+         (python yangGeneric.py --allinclusive True --metadata "Cisco $meta $prefix from https://github.com/YangModels/yang/tree/main/vendor/cisco/xe/$git" --lint True --prefix Cisco$os$prefix2 --rootdir "$path2" >>$LOG 2>&1) &
          PIDSXE+=("$!")
          wait_for_processes "${PIDSXE[@]}"
       done
@@ -197,7 +197,7 @@ if [ "$IS_PROD" = "True" ]; then
          yang_removed=${git%/*}
          prefix=${yang_removed#*/}
          prefix2=$(echo $prefix | tr -cd '[:alnum:]')
-         (python yangGeneric.py --allinclusive True --metadata "Cisco $meta $prefix from https://github.com/YangModels/yang/tree/master/vendor/cisco/xr/$git" --lint True --prefix Cisco$os$prefix2 --rootdir "$path2" >>$LOG 2>&1) &
+         (python yangGeneric.py --allinclusive True --metadata "Cisco $meta $prefix from https://github.com/YangModels/yang/tree/main/vendor/cisco/xr/$git" --lint True --prefix Cisco$os$prefix2 --rootdir "$path2" >>$LOG 2>&1) &
          PIDSXR+=("$!")
          wait_for_processes "${PIDSXR[@]}"
       done
@@ -220,7 +220,7 @@ if [ "$IS_PROD" = "True" ]; then
          yang_removed=${git%/*}
          prefix=${yang_removed#*/}
          prefix2=$(echo $prefix | tr -cd '[:alnum:]')
-         (python yangGeneric.py --allinclusive True --metadata "Cisco $meta $prefix from https://github.com/YangModels/yang/tree/master/vendor/cisco/svo/$git" --lint True --prefix Cisco$os$prefix2 --rootdir "$path2" >>$LOG 2>&1) &
+         (python yangGeneric.py --allinclusive True --metadata "Cisco $meta $prefix from https://github.com/YangModels/yang/tree/main/vendor/cisco/svo/$git" --lint True --prefix Cisco$os$prefix2 --rootdir "$path2" >>$LOG 2>&1) &
          PIDSSVO+=("$!")
          wait_for_processes "${PIDSSVO[@]}"
       done

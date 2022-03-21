@@ -34,7 +34,7 @@ cd $NONIETFDIR/yangmodels/yang
 # Be sure that remote is also set to yang-catalog/yang fork
 git config remote.fork.url >&- || git remote add fork https://$GIT_TOKEN@github.com/yang-catalog/yang.git >>$LOG 2>&1
 git remote update >>$LOG 2>&1
-git pull origin master >>$LOG 2>&1
+git pull origin main >>$LOG 2>&1
 git submodule update --init --recursive >>$LOG 2>&1
 
 # get the entire content of github (openconfig)
