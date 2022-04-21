@@ -41,29 +41,29 @@ if __name__ == "__main__":
     args = parser.parse_args()
     debug_level = args.debug
 
-name_to_backup = ['IETFYANGPageMain.html', 'HydrogenODLPageCompilation.html', 'HeliumODLPageCompilation.html', 'LithiumODLPageCompilation.html',
-                  'IETFCiscoAuthorsYANGPageCompilation.html', 'IETFYANGOutOfRFC.html', 'IETFDraftYANGPageCompilation.html',
-                  'IEEEStandardYANGPageCompilation.html', 'IEEEStandardDraftYANGPageCompilation.html', 'IANAStandardYANGPageCompilation.html',
-                  'IEEEExperimentalYANGPageCompilation.html', 'YANGPageMain.html', 'IETFYANGRFC.html']
-# name_to_backup = ['temp.html']
-for file in name_to_backup:
-    file_no_extension = file.split(".")[0]
-    file_extension = file.split(".")[-1]
-    full_path_file = args.documentpath + file
-    if os.path.isfile(full_path_file):
-        modifiedTime = os.path.getmtime(full_path_file)
-        timestamp = (datetime.fromtimestamp(modifiedTime).strftime("%Y_%m_%d"))
-        if file_no_extension == 'IETFYANGRFC':
-            file_no_extension = 'IETFYANGOutOfRFC'
-        new_full_path_file = args.backuppath + file_no_extension + "_" + timestamp + "." + file_extension
-        if debug_level > 0:
-            print("file full path: " + full_path_file)
-            print("file without extension: " + file_no_extension)
-            print("file extension: " + file_extension)
-            print("full path: " + full_path_file)
-            print("last modified: %s" % time.ctime(os.path.getmtime(full_path_file)))
-            print("timestamp: " + str(timestamp))
-            print("new file name: " + new_full_path_file)
-        shutil.copy2(full_path_file, new_full_path_file)
-    else:
-        print('*** file {} not present!'.format(full_path_file))
+    name_to_backup = ['IETFYANGPageMain.html', 'HydrogenODLPageCompilation.html', 'HeliumODLPageCompilation.html', 'LithiumODLPageCompilation.html',
+                    'IETFCiscoAuthorsYANGPageCompilation.html', 'IETFYANGOutOfRFC.html', 'IETFDraftYANGPageCompilation.html',
+                    'IEEEStandardYANGPageCompilation.html', 'IEEEStandardDraftYANGPageCompilation.html', 'IANAStandardYANGPageCompilation.html',
+                    'IEEEExperimentalYANGPageCompilation.html', 'YANGPageMain.html', 'IETFYANGRFC.html']
+    # name_to_backup = ['temp.html']
+    for file in name_to_backup:
+        file_no_extension = file.split(".")[0]
+        file_extension = file.split(".")[-1]
+        full_path_file = args.documentpath + file
+        if os.path.isfile(full_path_file):
+            modifiedTime = os.path.getmtime(full_path_file)
+            timestamp = (datetime.fromtimestamp(modifiedTime).strftime("%Y_%m_%d"))
+            if file_no_extension == 'IETFYANGRFC':
+                file_no_extension = 'IETFYANGOutOfRFC'
+            new_full_path_file = args.backuppath + file_no_extension + "_" + timestamp + "." + file_extension
+            if debug_level > 0:
+                print("file full path: " + full_path_file)
+                print("file without extension: " + file_no_extension)
+                print("file extension: " + file_extension)
+                print("full path: " + full_path_file)
+                print("last modified: %s" % time.ctime(os.path.getmtime(full_path_file)))
+                print("timestamp: " + str(timestamp))
+                print("new file name: " + new_full_path_file)
+            shutil.copy2(full_path_file, new_full_path_file)
+        else:
+            print('*** file {} not present!'.format(full_path_file))

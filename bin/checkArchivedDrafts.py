@@ -82,11 +82,13 @@ def main():
     except Exception:
         custom_print('Error occured while extracting modules')
         end = int(time.time())
-        job_log(start, end, temp_dir, 'checkArchivedDrafts', 'Fail')
+        job_log(start, end, temp_dir, 'checkArchivedDrafts', status='Fail')
+        return
 
     custom_print('Loading all modules data from API')
     prefix = '{}://{}'.format(protocol, api_ip)
     all_modules = requests.get('{}/api/search/modules'.format(prefix)).json()
+    all_modules_keys = []
     if all_modules:
         all_modules = all_modules.get('module', [])
         all_modules_keys = ['{}@{}'.format(m.get('name'), m.get('revision')) for m in all_modules]

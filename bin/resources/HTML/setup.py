@@ -2,6 +2,8 @@
 Setup script for HTML.py
 """
 
+# pyright: reportGeneralTypeIssues=false
+
 import distutils.core
 import HTML
 

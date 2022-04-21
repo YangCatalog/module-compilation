@@ -28,10 +28,10 @@ G = nx.DiGraph()
 
 # Regular expressions for parsing yang files; we are only interested in
 # the 'module', 'import' and 'revision' statements
-MODULE_STATEMENT = re.compile('''^[ \t]*(sub)?module +(["'])?([-A-Za-z0-9]*(@[0-9-]*)?)(["'])? *\{.*$''')
-IMPORT_STATEMENT = re.compile('''^[ \t]*import[\s]*([-A-Za-z0-9]*)?[\s]*\{([\s]*prefix[\s]*[\S]*;[\s]*})?.*$''')
-INCLUDE_STATEMENT = re.compile('''^[ \t]*include[\s]*([-A-Za-z0-9]*)?[\s]*\{.*$''')
-REVISION_STATEMENT = re.compile('''^[ \t]*revision[\s]*(['"])?([-0-9]*)?(['"])?[\s]*\{.*$''')
+MODULE_STATEMENT = re.compile(r'''^[ \t]*(sub)?module +(["'])?([-A-Za-z0-9]*(@[0-9-]*)?)(["'])? *\{.*$''')
+IMPORT_STATEMENT = re.compile(r'''^[ \t]*import[\s]*([-A-Za-z0-9]*)?[\s]*\{([\s]*prefix[\s]*[\S]*;[\s]*})?.*$''')
+INCLUDE_STATEMENT = re.compile(r'''^[ \t]*include[\s]*([-A-Za-z0-9]*)?[\s]*\{.*$''')
+REVISION_STATEMENT = re.compile(r'''^[ \t]*revision[\s]*(['"])?([-0-9]*)?(['"])?[\s]*\{.*$''')
 
 # Node Attribute Types
 # All those attributes do not fare well in network 2.*
@@ -352,7 +352,7 @@ def prune_standalone_nodes():
 def get_dependent_modules():
     print('\n===Dependent Modules===')
     for node_name in G.nodes():
-        dependents = nx.bfs_predecessors(G, node_name)
+        dependents = tuple(nx.bfs_predecessors(G, node_name))
         if len(dependents):
             print(dependents)
 
@@ -416,7 +416,7 @@ def plot_module_dependency_graph(graph):
     nx.draw_networkx_nodes(graph, pos=pos, nodelist=prune_graph_nodes(graph, UNKNOWN_TAG), node_size=200,
                            node_shape='^', node_color='orange', alpha=1.0, linewidths=0.25, label='Unknown')
     # Draw edges in light gray (fairly transparent)
-    nx.draw_networkx_edges(graph, pos=pos, alpha=0.25, linewidths=0.1, arrows=False)
+    nx.draw_networkx_edges(graph, pos=pos, alpha=0.25, arrows=False)
     # Draw labels on nodes (modules)
     nx.draw_networkx_labels(graph, pos=pos, font_size=14, font_weight='normal', alpha=1.0)
 
@@ -461,7 +461,7 @@ if __name__ == "__main__":
         print_dependency_tree()
 
     if args.single_dependency_tree:
-        print_dependency_tree(single_node=args.single_dependency_tree)
+        print_dependency_tree()
 
     if args.impact_analysis:
         print_impacting_modules()
@@ -497,7 +497,7 @@ if __name__ == "__main__":
             plot_module_dependency_graph(get_subgraph_for_node(node))
             plt.savefig("%s.png" % node)
             print('    Done.')
-        except nx.exception.NetworkXError as e:
+        except nx.NetworkXError as e:
             print("    %s" % e)
 
     print('\n')

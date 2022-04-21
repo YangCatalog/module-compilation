@@ -86,6 +86,8 @@ __author__  = 'Philippe Lagadec'
 # Columns alignement and style, one of the oldest and trickiest bugs in Mozilla:
 # https://bugzilla.mozilla.org/show_bug.cgi?id=915
 
+# pyright: reportGeneralTypeIssues=false, reportOptionalMemberAccess=false
+# pyright: reportUndefinedVariable=false
 
 #--- CONSTANTS -----------------------------------------------------------------
 

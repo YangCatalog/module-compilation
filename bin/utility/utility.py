@@ -21,6 +21,7 @@ import configparser
 import json
 import os
 import time
+import typing as t
 
 import jinja2
 import requests
@@ -120,8 +121,8 @@ def list_br_html_addition(modules_list: list):
     return modules_list
 
 
-def check_yangcatalog_data(config: configparser.ConfigParser, yang_file_path: str, datatracker_url: str, document_name,
-                           email, compilation_status, result, all_modules, is_rfc, versions, ietf=None):
+def check_yangcatalog_data(config: configparser.ConfigParser, yang_file_path: str, datatracker_url: t.Optional[str],
+                           document_name, email, compilation_status, result, all_modules, is_rfc, versions, ietf=None):
     def __resolve_maturity_level():
         if ietf == 'ietf-rfc':
             return 'ratified'

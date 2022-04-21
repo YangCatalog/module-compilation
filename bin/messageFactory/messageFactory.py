@@ -19,6 +19,7 @@ __email__ = 'slavomir.mazur@pantheon.tech'
 
 import os
 import smtplib
+import typing as t
 from email.mime.text import MIMEText
 
 from create_config import create_config
@@ -42,7 +43,7 @@ class MessageFactory:
         self.__me = self.__me.split('/')[-1]
         self.__smtp = smtplib.SMTP('localhost')
 
-    def __post_to_email(self, message: str, email_to: list = None, subject: str = None):
+    def __post_to_email(self, message: str, email_to: t.Optional[list] = None, subject: t.Optional[str] = None):
         """Send message to the list of e-mails.
 
             Arguments:

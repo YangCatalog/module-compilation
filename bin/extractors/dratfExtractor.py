@@ -23,8 +23,7 @@ import shutil
 from extract_elem import extract_elem
 from xym import xym
 
-from extractors.helper import (check_after_xym_extraction,
-                               invert_yang_modules_dict, remove_invalid_files)
+from extractors.helper import check_after_xym_extraction, invert_yang_modules_dict, remove_invalid_files
 
 
 class DraftExtractor:
@@ -48,9 +47,9 @@ class DraftExtractor:
         self.inverted_draft_yang_dict = {}
         self.inverted_draft_yang_example_dict = {}
         self.inverted_draft_yang_all_dict = {}
-        self.__create_ietf_drafts_list()
+        self._create_ietf_drafts_list()
 
-    def __create_ietf_drafts_list(self):
+    def _create_ietf_drafts_list(self):
         for filename in os.listdir(self.draft_path):
             full_path = os.path.join(self.draft_path, filename)
             if os.path.isfile(full_path):

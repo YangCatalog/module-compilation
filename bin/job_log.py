@@ -41,7 +41,7 @@ def job_log(start_time: int, end_time: int, temp_dir: str, filename: str, messag
         last_successfull = end_time
     else:
         try:
-            previous_state = file_content.get(filename)
+            previous_state = file_content[filename]
             last_successfull = previous_state.get('last_successfull')
         except:
             last_successfull = None

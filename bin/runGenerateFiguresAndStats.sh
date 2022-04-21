@@ -46,14 +46,14 @@ python $BIN/yangFigures.py >> $LOG 2>&1
 
 date +"%c: Generating the dependency pictures" >> $LOG
 cd $WEB_PRIVATE/figures >> $LOG
-python $BIN/symd.py --draft $IETFDIR/YANG/ --rfc-repos $IETFDIR/YANG-rfc/ --graph >>$LOG 2>&1
+python $BIN/symd.py --draft-repos $IETFDIR/YANG/ --rfc-repos $IETFDIR/YANG-rfc/ --graph >>$LOG 2>&1
 mv modules.png modules-ietf.png
-python $BIN/symd.py --recurse --draft $MODULES --rfc-repos $IETFDIR/YANG-rfc/ --graph >>$LOG 2>&1
+python $BIN/symd.py --recurse --draft-repos $MODULES --rfc-repos $IETFDIR/YANG-rfc/ --graph >>$LOG 2>&1
 mv modules.png modules-all.png
-python $BIN/symd.py --recurse --draft $MODULES --rfc-repos $IETFDIR/YANG-rfc/ --sub-graph ietf-interfaces >>$LOG 2>&1
+python $BIN/symd.py --recurse --draft-repos $MODULES --rfc-repos $IETFDIR/YANG-rfc/ --sub-graph ietf-interfaces >>$LOG 2>&1
 mv ietf-interfaces.png ietf-interfaces-all.png
-python $BIN/symd.py --recurse --draft $IETFDIR/YANG/ --rfc-repos $IETFDIR/YANG-rfc/ --sub-graph ietf-interfaces >>$LOG 2>&1
-python $BIN/symd.py --recurse --draft $IETFDIR/YANG/ --rfc-repos $IETFDIR/YANG-rfc/ --sub-graph ietf-routing >>$LOG 2>&1
+python $BIN/symd.py --recurse --draft-repos $IETFDIR/YANG/ --rfc-repos $IETFDIR/YANG-rfc/ --sub-graph ietf-interfaces >>$LOG 2>&1
+python $BIN/symd.py --recurse --draft-repos $IETFDIR/YANG/ --rfc-repos $IETFDIR/YANG-rfc/ --sub-graph ietf-routing >>$LOG 2>&1
 
 
 trap - EXIT ERR

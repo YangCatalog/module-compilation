@@ -54,7 +54,7 @@ def extract_elem(module_fname, extract_dir, elem_type):
                     continue
                 # Search after the keyword which MUST be the first word in the line (no " for example before)
                 #keyword_start = line.lstrip().find(elem_type)
-                match = re.match('^\s*' + elem_type + '\s+([-_\.\w]+)' + '\s*{', line)
+                match = re.match(r'^\s*' + elem_type + r'\s+([-_\.\w]+)' + r'\s*{', line)
                 if match:
                     found_keyword = True
                     identifier = match.group(1)
@@ -62,7 +62,7 @@ def extract_elem(module_fname, extract_dir, elem_type):
                     if file_out == None:
                         file_out = open(extract_dir + '/' + elem_type + '-' + identifier + '.txt', 'w', encoding = 'utf-8')
 #                        print("Creating file: " + extract_dir + '/' + elem_type + '-' + identifier + '.txt')
-            if found_keyword: # Processing the keyword
+            if found_keyword and file_out: # Processing the keyword
                 file_out.write(line)
                 if line.find('{') >= 0:
                     open_bracket_count = open_bracket_count + 1
@@ -76,7 +76,7 @@ def extract_elem(module_fname, extract_dir, elem_type):
                     file_out = None
 
 def get_identifier(elem_type, line):
-    match = re.match('\s*' + elem_type + '\s+([-_\.\w\d]+)' + '\s*{', line)
+    match = re.match(r'\s*' + elem_type + r'\s+([-_\.\w\d]+)' + r'\s*{', line)
     if match:
         return match.group(1)
     else:

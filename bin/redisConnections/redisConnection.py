@@ -30,7 +30,7 @@ class RedisConnection:
         config = create_config()
         self.__redis_host = config.get('DB-Section', 'redis-host')
         self.__redis_port = config.get('DB-Section', 'redis-port')
-        self.modulesDB = Redis(host=self.__redis_host, port=self.__redis_port, db=modules_db)
+        self.modulesDB = Redis(host=self.__redis_host, port=self.__redis_port, db=modules_db) # pyright: ignore
 
     ### MODULES DATABASE COMMUNICATION ###
     def update_module_properties(self, new_module: dict, existing_module: dict):
