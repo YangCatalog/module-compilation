@@ -224,7 +224,7 @@ def get_name_with_revision(yang_file: str):
 if __name__ == '__main__':
     config = create_config()
     api_ip = config.get('Web-Section', 'ip')
-    protocol = config.get('General-Section', 'protocol-api')
+    protocol = config.get('Web-Section', 'protocol-api')
     resutl_html_dir = config.get('Web-Section', 'result-html-dir')
     web_private = config.get('Web-Section', 'private-directory') + '/'
     modules_directory = config.get('Directory-Section', 'modules-directory')

@@ -33,6 +33,8 @@ mpl.use('Agg')
 # ----------------------------------------------------------------------
 # Functions
 # ----------------------------------------------------------------------
+
+
 def list_of_files_in_dir(srcdir, extension, debug_level):
     """
     Returns the list of file in a directory
@@ -319,7 +321,7 @@ if __name__ == '__main__':
 
     backup_prefix = ['HydrogenODLPageCompilation_', 'HeliumODLPageCompilation_',
                      'LithiumODLPageCompilation_', 'IETFCiscoAuthorsYANGPageCompilation_',
-                     'IETFDraftYANGPageCompilation_',
+                     'IETFDraftYANGPageCompilation_', 'IANAStandardYANGPageCompilation_',
                      'IEEEStandardYANGPageCompilation_', 'IEEEStandardDraftYANGPageCompilation_', 'IEEEExperimentalYANGPageCompilation_']
     # !!! there are two IEEE IEEEExperimentalYANGPageCompilation and IEEEStandardYANGPageCompilation_
     for prefix in backup_prefix:

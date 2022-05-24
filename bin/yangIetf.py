@@ -70,7 +70,7 @@ if __name__ == '__main__':
     pyang_exec = config.get('Tool-Section', 'pyang-exec')
     confdc_exec = config.get('Tool-Section', 'confdc-exec')
     api_ip = config.get('Web-Section', 'ip')
-    protocol = config.get('General-Section', 'protocol-api')
+    protocol = config.get('Web-Section', 'protocol-api')
     resutl_html_dir = config.get('Web-Section', 'result-html-dir')
 
     parser = argparse.ArgumentParser(description='YANG RFC/Draft Processor')

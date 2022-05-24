@@ -22,8 +22,8 @@ import os
 
 class YangdumpProParser:
     def __init__(self, debug_level: int = 0):
-        self.__debug_level = debug_level
-        self.__yangdump_exec = 'yangdump-pro'
+        self._debug_level = debug_level
+        self._yangdump_exec = 'yangdump-pro'
 
     def run_yumadumppro(self, yang_file_path: str, workdir: str, allinclusive: bool = False):
         """
@@ -43,8 +43,8 @@ class YangdumpProParser:
         else:
             config_command = '--config=/etc/yumapro/yangdump-pro.conf'
 
-        bash_command = [self.__yangdump_exec, '--quiet-mode', config_command, yang_file_path, '2>&1']
-        if self.__debug_level > 0:
+        bash_command = [self._yangdump_exec, '--quiet-mode', config_command, yang_file_path, '2>&1']
+        if self._debug_level > 0:
             print('DEBUG: running command {}'.format(' '.join(bash_command)))
 
         # Modify command output

@@ -45,7 +45,7 @@ def main():
     ietf_directory = config.get('Directory-Section', 'ietf-directory')
     temp_dir = config.get('Directory-Section', 'temp')
     api_ip = config.get('Web-Section', 'ip')
-    protocol = config.get('General-Section', 'protocol-api')
+    protocol = config.get('Web-Section', 'protocol-api')
     var_path = config.get('Directory-Section', 'var')
 
     parser = argparse.ArgumentParser(description='Check if modules from all the Drafts are populated in YANG Catalog')

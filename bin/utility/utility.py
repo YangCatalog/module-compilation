@@ -158,7 +158,7 @@ def check_yangcatalog_data(config: configparser.ConfigParser, yang_file_path: st
 
     pyang_exec = config.get('Tool-Section', 'pyang-exec')
     result_html_dir = config.get('Web-Section', 'result-html-dir')
-    protocol = config.get('General-Section', 'protocol-api')
+    protocol = config.get('Web-Section', 'protocol-api')
     api_ip = config.get('Web-Section', 'ip')
 
     prefix = '{}://{}'.format(protocol, api_ip)
