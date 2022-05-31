@@ -190,7 +190,7 @@ if [ "$IS_PROD" = "True" ]; then
       ((running = running + 1))
       git=${path##*/cisco/xr/}
       slash_removed=${git%/}
-      prefix=${yang_removed#*/}
+      prefix=${slash_removed#*/}
       prefix2=$(echo $prefix | tr -cd '[:alnum:]')
       (python yangGeneric.py --allinclusive True --metadata "Cisco $meta $prefix from https://github.com/YangModels/yang/tree/main/vendor/cisco/xr/$git" --lint True --prefix Cisco$os$prefix2 --rootdir "$path2" >>$LOG 2>&1) &
       PIDSXR+=("$!")
@@ -270,8 +270,8 @@ if [ "$IS_PROD" = "True" ]; then
          git=${path2##*/network-router/}
          slash_removed=${git%/}
          version=${slash_removed%/*}
-         platform=${salsh_removed#*/}
-         prefix=$(echo $yang_removed | tr -cd '[:alnum:]')
+         platform=${slash_removed#*/}
+         prefix=$(echo $slash_removed | tr -cd '[:alnum:]')
          (python yangGeneric.py --allinclusive True --metadata "HUAWEI ROUTER $version $platform https://github.com/Huawei/yang/tree/master/network-router/$git" --lint True --prefix NETWORKROUTER$prefix --rootdir "$path2" >>$LOG 2>&1) &
          PIDSHUAWEI+=("$!")
          wait_for_processes "${PIDSHUAWEI[@]}"

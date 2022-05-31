@@ -22,6 +22,17 @@ import os
 from create_config import create_config
 
 
+def _remove_duplicates(result: str) -> str:
+    """ Same result messages are often found in the compilation result multiple times.
+    This method filter out duplicate messages.
+    """
+    splitted_result = result.split('\n\n')
+    unique_results_list = sorted(set(splitted_result), key=splitted_result.index)
+    final_result = '\n\n'.join(unique_results_list)
+
+    return final_result
+
+
 class YanglintParser:
     def __init__(self, debug_level: int = 0):
         self._config = create_config()
@@ -57,11 +68,9 @@ class YanglintParser:
             result_yanglint = result_yanglint.strip()
             result_yanglint = result_yanglint.replace('\n\n', '\n').replace('\n', '\n\n')
             result_yanglint = result_yanglint.replace(workdir, '')
-            # Same result messages are often found in the result_yanglint multiple times
-            # splitted_result_yanglint = result_yanglint.split('\n')
-            # unique_results_list = sorted(set(splitted_result_yanglint), key=splitted_result_yanglint.index)
-            # result_yanglint = '\n'.join(unique_results_list)
-        except Exception:
-            result_yanglint = 'libyang err : Problem occured while running command: {}'.format(' '.join(bash_command))
 
-        return result_yanglint
+            final_result = _remove_duplicates(result_yanglint)
+        except Exception:
+            final_result = 'libyang err : Problem occured while running command: {}'.format(' '.join(bash_command))
+
+        return final_result

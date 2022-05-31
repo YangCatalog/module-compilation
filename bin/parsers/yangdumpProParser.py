@@ -20,6 +20,17 @@ __email__ = 'slavomir.mazur@pantheon.tech'
 import os
 
 
+def _remove_duplicates(result: str) -> str:
+    """ Same result messages are often found in the compilation result multiple times.
+    This method filter out duplicate messages.
+    """
+    splitted_result = result.split('\n\n')
+    unique_results_list = sorted(set(splitted_result), key=splitted_result.index)
+    final_result = '\n\n'.join(unique_results_list)
+
+    return final_result
+
+
 class YangdumpProParser:
     def __init__(self, debug_level: int = 0):
         self._debug_level = debug_level
@@ -43,18 +54,17 @@ class YangdumpProParser:
         else:
             config_command = '--config=/etc/yumapro/yangdump-pro.conf'
 
-        bash_command = [self._yangdump_exec, '--quiet-mode', config_command, yang_file_path, '2>&1']
+        bash_command = [self._yangdump_exec, config_command, yang_file_path, '2>&1']
         if self._debug_level > 0:
             print('DEBUG: running command {}'.format(' '.join(bash_command)))
 
         # Modify command output
         try:
             result_yumadump = os.popen(' '.join(bash_command)).read()
-            final_result = result_yumadump.strip()
-            final_result = final_result.replace('\n*** {}'.format(yang_file_path), '')
+            result_yumadump = result_yumadump.strip()
+            result_yumadump = result_yumadump.replace('\n*** {}'.format(yang_file_path), '')
 
-            if '*** 0 Errors, 0 Warnings' in final_result:
-                final_result = ''
+            final_result = _remove_duplicates(result_yumadump)
         except Exception:
             final_result = 'Problem occured while running command: {}'.format(' '.join(bash_command))
 
