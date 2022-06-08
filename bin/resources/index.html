@@ -28,8 +28,6 @@
 	<li><a href="IEEEStandardDraft.json">JSON dictionary</a>, formatted after <a href="IEEEStandardDraftYANGPageCompilation.html">IEEEStandardDraftYANGPageCompilation.html</a></li>
     <li><a href="IEEEExperimental.json">JSON dictionary</a>, formatted after <a href="IEEEExperimentalYANGPageCompilation.html">IEEEExperimentalYANGPageCompilation.html</a></li>
     <li><a href="IANAStandard.json">JSON dictionary</a>, formatted after <a href="IANAStandardYANGPageCompilation.html">IANAStandardYANGPageCompilation.html</a></li>
-	<li><a href="ETSI261.json">JSON dictionary</a>, formatted after <a href="ETSI261YANGPageCompilation.html">ETSI261YANGPageCompilation.html</a></li>
-    <li><a href="ETSI271.json">JSON dictionary</a>, formatted after <a href="ETSI271YANGPageCompilation.html">ETSI271YANGPageCompilation.html</a></li>
     <li><a href="SysrepoInternal.json">JSON dictionary</a>, formatted after <a href="SysrepoInternalYANGPageCompilation.html">SysrepoInternalYANGPageCompilation.html</a></li>
 	<li><a href="SysrepoApplication.json">JSON dictionary</a>, formatted after <a href="SysrepoApplicationYANGPageCompilation.html">SysrepoApplicationYANGPageCompilation.html</a></li>
 	<li><a href="ONFOpenTransport.json">JSON dictionary</a>, formatted after <a href="ONFOpenTransportYANGPageCompilation.html">ONFOpenTransportYANGPageCompilation.html</a></li>
@@ -65,9 +63,9 @@
 <ul>
     <li><a href="https://github.com/YangModels/yang/blob/main/vendor/cisco/xr/612/README.md">IMPORTANT NOTE regarding the compliance of those CISCO native IOS-XR models</a>
     {% for os in XR %}
-    <li><a href="CiscoXR{{ os.alphaNumeric }}YANGPageCompilation.html">Cisco IOS XR {{ os.allCharacters }} native models</a>
-       <a href="CiscoXR{{ os.alphaNumeric }}YANGPageMain.html">Cisco IOS XR {{ os.allCharacters }} native models: stats</a>
-       <a href="CiscoXR{{ os.alphaNumeric }}.json">Cisco IOS XR {{ os.allCharacters }}: json</a>
+    <li><a href="CiscoXR{{ os.alphaNumeric }}YANGPageCompilation.html">Cisco IOS XR {{ os.allCharacters }} native models</a>&nbsp;
+       <a href="CiscoXR{{ os.alphaNumeric }}YANGPageMain.html">Cisco IOS XR {{ os.allCharacters }} stats</a>&nbsp;
+       <a href="CiscoXR{{ os.alphaNumeric }}.json">Cisco IOS XR {{ os.allCharacters }} json</a>
     {% endfor %}
 </ul>
 <hr />
@@ -76,9 +74,9 @@
 <ul>
     <li><a href="https://github.com/YangModels/yang/blob/main/vendor/cisco/xe/1631/README.md">IMPORTANT NOTE regarding the compliance of those CISCO native IOS-XE models</a>
         {% for os in XE %}
-    <li><a href="CiscoXE{{ os.alphaNumeric }}YANGPageCompilation.html">Cisco IOS XE {{ os.allCharacters }} native models</a>
-       <a href="CiscoXE{{ os.alphaNumeric }}YANGPageMain.html">Cisco IOS XE {{ os.allCharacters }} native models: stats</a>
-       <a href="CiscoXE{{ os.alphaNumeric }}.json">Cisco IOS XE {{ os.allCharacters }}: json</a>
+    <li><a href="CiscoXE{{ os.alphaNumeric }}YANGPageCompilation.html">Cisco IOS XE {{ os.allCharacters }} native models</a>&nbsp;
+       <a href="CiscoXE{{ os.alphaNumeric }}YANGPageMain.html">Cisco IOS XE {{ os.allCharacters }} stats</a>&nbsp;
+       <a href="CiscoXE{{ os.alphaNumeric }}.json">Cisco IOS XE {{ os.allCharacters }} json</a>
     {% endfor %}
 </ul>
 <hr />
@@ -87,9 +85,9 @@
 <ul>
     <li><a href="https://github.com/YangModels/yang/blob/main/vendor/cisco/nx/7.0-3-F1-1/README.md">IMPORTANT NOTE regarding the compliance of the native NX-OS models (check for the right version)</a>
         {% for os in NX %}
-    <li><a href="CiscoNX{{ os.alphaNumeric }}YANGPageCompilation.html">Cisco IOS NX {{ os.allCharacters }} native models</a>
-       <a href="CiscoNX{{ os.alphaNumeric }}YANGPageMain.html">Cisco IOS NX {{ os.allCharacters }} native models: stats</a>
-       <a href="CiscoNX{{ os.alphaNumeric }}.json">Cisco IOS NX {{ os.allCharacters }}: json</a>
+    <li><a href="CiscoNX{{ os.alphaNumeric }}YANGPageCompilation.html">Cisco IOS NX {{ os.allCharacters }} native models</a>&nbsp;
+       <a href="CiscoNX{{ os.alphaNumeric }}YANGPageMain.html">Cisco IOS NX {{ os.allCharacters }} stats</a>&nbsp;
+       <a href="CiscoNX{{ os.alphaNumeric }}.json">Cisco IOS NX {{ os.allCharacters }} json</a>
     {% endfor %}
 </ul>
 <hr />
@@ -100,10 +98,9 @@
             the compliance of those CISCO native IOS-SVO models</a>
         {% for os in SVO %}
     <li><a href="CiscoSVO{{ os.alphaNumeric }}YANGPageCompilation.html">Cisco IOS SVO {{ os.allCharacters }} native
-            models</a>
-        <a href="CiscoSVO{{ os.alphaNumeric }}YANGPageMain.html">Cisco IOS SVO {{ os.allCharacters }} native models:
-            stats</a>
-        <a href="CiscoSVO{{ os.alphaNumeric }}.json">Cisco IOS SVO {{ os.allCharacters }}: json</a>
+            models</a>&nbsp;
+        <a href="CiscoSVO{{ os.alphaNumeric }}YANGPageMain.html">Cisco IOS SVO {{ os.allCharacters }} stats</a>&nbsp;
+        <a href="CiscoSVO{{ os.alphaNumeric }}.json">Cisco IOS SVO {{ os.allCharacters }} json</a>
         {% endfor %}
 </ul>
 <hr />
@@ -111,9 +108,9 @@
 <h2>JUNIPER</H2>
 <ul>
     {% for os in juniper %}
-    <li><a href="Juniper{{ os.alphaNumeric }}YANGPageCompilation.html">Juniper {{ os.allCharacters }} </a>
-        <a href="Juniper{{ os.alphaNumeric }}YANGPageMain.html">Juniper {{ os.allCharacters }}: stats</a>
-        <a href="Juniper{{ os.alphaNumeric }}.json">Juniper {{ os.allCharacters }}: json</a>
+    <li><a href="Juniper{{ os.alphaNumeric }}YANGPageCompilation.html">Juniper {{ os.allCharacters }} </a>&nbsp;
+        <a href="Juniper{{ os.alphaNumeric }}YANGPageMain.html">Juniper {{ os.allCharacters }} stats</a>&nbsp;
+        <a href="Juniper{{ os.alphaNumeric }}.json">Juniper {{ os.allCharacters }} json</a>
         {% endfor %}
 </ul>
 <hr />
@@ -121,27 +118,27 @@
 <h2>HUAWEI</h2>
 <ul>
     {% for os in huawei %}
-    <li><a href="NETWORKROUTER{{ os.alphaNumeric }}YANGPageCompilation.html">Huawei {{ os.allCharacters }}</a>
-        <a href="NETWORKROUTER{{ os.alphaNumeric }}YANGPageMain.html">Huawei {{ os.allCharacters }}: stats</a>
-        <a href="NETWORKROUTER{{ os.alphaNumeric }}.json">Huawei {{ os.allCharacters }}: json</a>
+    <li><a href="NETWORKROUTER{{ os.alphaNumeric }}YANGPageCompilation.html">Huawei {{ os.allCharacters }}</a>&nbsp;
+        <a href="NETWORKROUTER{{ os.alphaNumeric }}YANGPageMain.html">Huawei {{ os.allCharacters }} stats</a>&nbsp;
+        <a href="NETWORKROUTER{{ os.alphaNumeric }}.json">Huawei {{ os.allCharacters }} json</a>
         {% endfor %}
 </ul>
 <hr />
 
 <h2>CIENA</h2>
 <ul>
-    <li><a href="CIENAYANGPageCompilation.html">Ciena</a>
-        <a href="CIENAYANGPageMain.html">Ciena: stats</a>
-        <a href="CIENA.json">Ciena: json</a>
+    <li><a href="CIENAYANGPageCompilation.html">Ciena</a>&nbsp;
+        <a href="CIENAYANGPageMain.html">Ciena stats</a>&nbsp;
+        <a href="CIENA.json">Ciena json</a>
 </ul>
 <hr />
 
 <h2>FUJITSU</h2>
 <ul>
     {% for os in fujitsu %}
-    <li><a href="Fujitsu{{ os.alphaNumeric }}YANGPageCompilation.html">Fujitsu {{ os.allCharacters }}</a>
-        <a href="Fujitsu{{ os.alphaNumeric }}YANGPageMain.html">Fujitsu {{ os.allCharacters }}: stats</a>
-        <a href="Fujitsu{{ os.alphaNumeric }}.json">Fujitsu {{ os.allCharacters }}: json</a>
+    <li><a href="Fujitsu{{ os.alphaNumeric }}YANGPageCompilation.html">Fujitsu {{ os.allCharacters }}</a>&nbsp;
+        <a href="Fujitsu{{ os.alphaNumeric }}YANGPageMain.html">Fujitsu {{ os.allCharacters }} stats</a>&nbsp;
+        <a href="Fujitsu{{ os.alphaNumeric }}.json">Fujitsu {{ os.allCharacters }} json</a>
         {% endfor %}
 </ul>
 <hr />
@@ -149,27 +146,37 @@
 <h2>NOKIA</h2>
 <ul>
     {% for os in nokia %}
-    <li><a href="Nokia{{ os.alphaNumeric }}YANGPageCompilation.html">Nokia {{ os.allCharacters }}</a>
-        <a href="Nokia{{ os.alphaNumeric }}YANGPageMain.html">Nokia {{ os.allCharacters }}: stats</a>
-        <a href="Nokia{{ os.alphaNumeric }}.json">Nokia {{ os.allCharacters }}: json</a>
+    <li><a href="Nokia{{ os.alphaNumeric }}YANGPageCompilation.html">Nokia {{ os.allCharacters }}</a>&nbsp;
+        <a href="Nokia{{ os.alphaNumeric }}YANGPageMain.html">Nokia {{ os.allCharacters }} stats</a>&nbsp;
+        <a href="Nokia{{ os.alphaNumeric }}.json">Nokia {{ os.allCharacters }} json</a>
         {% endfor %}
 </ul>
 <hr />
 
 <h2>YUMAWORKS</h2>
 <ul>
-    <li><a href="YUMAWORKSYANGPageCompilation.html">YUMAWorks</a>
-        <a href="YUMAWORKSYANGPageMain.html">YUMAWorks: stats</a>
-        <a href="YUMAWORKS.json">YUMAWORKS: json</a>
+    <li><a href="YUMAWORKSYANGPageCompilation.html">YUMAWorks</a>&nbsp;
+        <a href="YUMAWORKSYANGPageMain.html">YUMAWorks stats</a>&nbsp;
+        <a href="YUMAWORKS.json">YUMAWORKS json</a>
+</ul>
+<hr />
+
+<h2>ETSI</h2>
+<ul>
+    {% for os in etsi %}
+    <li><a href="ETSI{{ os.alphaNumeric }}YANGPageCompilation.html">ETSI v{{ os.allCharacters }}</a>&nbsp;
+        <a href="ETSI{{ os.alphaNumeric }}YANGPageMain.html">ETSI v{{ os.allCharacters }} stats</a>&nbsp;
+        <a href="ETSI{{ os.alphaNumeric }}.json">ETSI v{{ os.allCharacters }} json</a>
+        {% endfor %}
 </ul>
 <hr />
 
 <h2>OpenROADM</h2>
 <ul>
     {% for os in openroadm %}
-    <li><a href="OpenROADM{{ os.alphaNumeric }}YANGPageCompilation.html">OpenROADM {{ os.allCharacters }} Private Repo</a>
-        <a href="OpenROADM{{ os.alphaNumeric }}YANGPageMain.html">OpenROADM {{ os.allCharacters }} Private Repo: stats</a>
-    <li><a href="OpenROADM{{ os.alphaNumeric }}.json">OpenROADM {{ os.allCharacters }} JSON dictionary</a>
+    <li><a href="OpenROADM{{ os.alphaNumeric }}YANGPageCompilation.html">OpenROADM {{ os.allCharacters }}</a>&nbsp;
+        <a href="OpenROADM{{ os.alphaNumeric }}YANGPageMain.html">OpenROADM {{ os.allCharacters }} stats</a>&nbsp;
+        <a href="OpenROADM{{ os.alphaNumeric }}.json">OpenROADM {{ os.allCharacters }} json</a>
     {% endfor %}
 </ul>
 <hr />

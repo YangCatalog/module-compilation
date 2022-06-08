@@ -45,13 +45,6 @@ curl -s -H "Accept: application/json" $MY_URI/api/search/modules -o "$TMP/all_mo
 date +"%c: forking all sub-processes" >>$LOG
 
 declare -a PIDS
-# ETSI v2.6.1
-(python $BIN/yangGeneric.py --metadata "ETSI Complete Report: YANG Data Models compilation from https://github.com/etsi-forge/nfv-sol006/tree/v2.6.1" --lint True --prefix ETSI261 --rootdir "$NONIETFDIR/yangmodels/yang/standard/etsi/NFV-SOL006-v2.6.1/" >>$LOG 2>&1) &
-PIDS+=("$!")
-
-# ETSI v2.7.1
-(python $BIN/yangGeneric.py --metadata "ETSI Complete Report: YANG Data Models compilation from https://github.com/etsi-forge/nfv-sol006/tree/v2.7.1" --lint True --prefix ETSI271 --rootdir "$NONIETFDIR/yangmodels/yang/standard/etsi/NFV-SOL006-v2.7.1/" >>$LOG 2>&1) &
-PIDS+=("$!")
 
 # BBF
 (python $BIN/yangGeneric.py --metadata "BBF Complete Report: YANG Data Models compilation from https://github.com/BroadbandForum/yang/tree/master" --lint True --prefix BBF --rootdir "$TMP/bbf/" >>$LOG 2>&1) &
@@ -102,42 +95,55 @@ for PID in ${PIDS[@]}; do
    wait $PID || exit 1
 done
 
+# ETSI
+declare -a PIDSETSI
+for path in $(ls -d $NONIETFDIR/yangmodels/yang/standard/etsi/*); do
+   version=${path##*/etsi/NFV-SOL006-}
+   version_number=${version##*v}
+   version_alnum=$(echo $version_number | tr -cd '[:alnum:]')
+   (python $BIN/yangGeneric.py --metadata "ETSI Complete Report: YANG Data Models compilation from https://github.com/etsi-forge/nfv-sol006/tree/$version" --lint True --prefix ETSI$version_alnum --rootdir "$NONIETFDIR/yangmodels/yang/standard/etsi/NFV-SOL006-$version/src/yang" >>$LOG 2>&1) &
+   PIDSETSI+=("$!")
+done
+# Wait for all child-processes
+for PID in ${PIDSETSI[@]}; do
+   wait $PID || exit 1
+done
 # OpenROADM public
 #
 # OpenROADM directory structure need to be flattened
 # Each branch representing the version is copied to a separate folder
 # This allows to run the yangGeneric.py script on multiple folders in parallel
-cur_dir=$(pwd)
-cd $NONIETFDIR/openroadm/OpenROADM_MSA_Public
-branches=$(git branch -a | grep remotes)
-for b in $branches; do
-   version=${b##*/}
-   first_char=${version:0:1}
-   if [[ $first_char =~ ^[[:digit:]] ]]; then
-      git checkout $version >>$LOG 2>&1
-      mkdir -p $TMP/openroadm-public/$version >>$LOG 2>&1
-      rm -f $TMP/openroadm-public/$version/* >>$LOG 2>&1
-      find $NONIETFDIR/openroadm/OpenROADM_MSA_Public -name "*.yang" -exec cp {} $TMP/openroadm-public/$version/ \; >>$LOG 2>&1
-   fi
-done
-
-date +"%c: forking all sub-processes for OpenROADM versions" >>$LOG
-declare -a PIDS2
-running=0
-for path in $(ls -d $TMP/openroadm-public/*/); do
-   ((running = running + 1))
-   version=$(basename $path)
-   (python $BIN/yangGeneric.py --metadata "OpenRoadm $version: YANG Data Models compilation from https://github.com/OpenROADM/OpenROADM_MSA_Public/tree/master/model" --lint True --prefix OpenROADM$version --rootdir "$TMP/openroadm-public/$version/" >>$LOG 2>&1) &
-   PIDS2+=("$!")
-   wait_for_processes "${PIDS2[@]}"
-done
-# Wait for all child-processes
-for PID in ${PIDS2[@]}; do
-   wait $PID || exit 1
-done
-cd $cur_dir
-
 if [ "$IS_PROD" = "True" ]; then
+   cur_dir=$(pwd)
+   cd $NONIETFDIR/openroadm/OpenROADM_MSA_Public
+   branches=$(git branch -a | grep remotes)
+   for b in $branches; do
+      version=${b##*/}
+      first_char=${version:0:1}
+      if [[ $first_char =~ ^[[:digit:]] ]]; then
+         git checkout $version >>$LOG 2>&1
+         mkdir -p $TMP/openroadm-public/$version >>$LOG 2>&1
+         rm -f $TMP/openroadm-public/$version/* >>$LOG 2>&1
+         find $NONIETFDIR/openroadm/OpenROADM_MSA_Public -name "*.yang" -exec cp {} $TMP/openroadm-public/$version/ \; >>$LOG 2>&1
+      fi
+   done
+
+   date +"%c: forking all sub-processes for OpenROADM versions" >>$LOG
+   declare -a PIDS2
+   running=0
+   for path in $(ls -d $TMP/openroadm-public/*/); do
+      ((running = running + 1))
+      version=$(basename $path)
+      (python $BIN/yangGeneric.py --metadata "OpenRoadm $version: YANG Data Models compilation from https://github.com/OpenROADM/OpenROADM_MSA_Public/tree/master/model" --lint True --prefix OpenROADM$version --rootdir "$TMP/openroadm-public/$version/" >>$LOG 2>&1) &
+      PIDS2+=("$!")
+      wait_for_processes "${PIDS2[@]}"
+   done
+   # Wait for all child-processes
+   for PID in ${PIDS2[@]}; do
+      wait $PID || exit 1
+   done
+   cd $cur_dir
+
    # Cisco NX
    date +"%c: processing all Cisco NX modules " >>$LOG
    declare -a PIDSNX

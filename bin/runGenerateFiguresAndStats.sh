@@ -13,39 +13,38 @@
 # either express or implied.
 
 function on_exit {
-	local reason=$?
-	# Matplot seems to create temporary directories
-	rm -rf $TMP/matplot*
-	date +"%c: Abort of the script" >> $LOG
-	date +"%c: Abort of $0"
-	exit $reason
+  local reason=$?
+  # Matplot seems to create temporary directories
+  rm -rf $TMP/matplot*
+  date +"%c: Abort of the script" >>$LOG
+  date +"%c: Abort of $0"
+  exit $reason
 }
 
 trap on_exit EXIT ERR
-	
-date +"%c: Start of $0"
-export LOG=$LOGS/GenerateFiguresAndStats.log
-date +"%c: Starting" > $LOG
 
-source configure.sh >> $LOG 2>&1
+export LOG=$LOGS/GenerateFiguresAndStats.log
+date +"%c: Starting" >$LOG
+
+source configure.sh >>$LOG 2>&1
 # Generate the statistics since the beginning and ftp the files
 # the yangGetStats.py (without arguements) generates the full stats in json in $WEB_PRIVATE/stats/ :
 # this is necessary so that the figures are up to date with today stats, and yang-figures can pick those latest stats up
 # the yangGetStats.py --days 5 doesn't generate the json file.
-mkdir -p $WEB_PRIVATE/stats >> $LOG 2>&1
+mkdir -p $WEB_PRIVATE/stats >>$LOG 2>&1
 
-date +"%c: Generating the JSON files in $WEB_PRIVATE/stats" >> $LOG
-python $BIN/yangGetStats.py >> $LOG  2>&1
+date +"%c: Generating the JSON files in $WEB_PRIVATE/stats" >>$LOG
+python $BIN/yangGetStats.py >>$LOG 2>&1
 
-date +"%c: Generating the JSON files with --days 5" >> $LOG
-python $BIN/yangGetStats.py --days 5 >> $LOG 2>&1
+date +"%c: Generating the JSON files with --days 5" >>$LOG
+python $BIN/yangGetStats.py --days 5 >>$LOG 2>&1
 
-date +"%c: Generating the pictures" >> $LOG
-mkdir -p $WEB_PRIVATE/figures >> $LOG 2>&1
-python $BIN/yangFigures.py >> $LOG 2>&1
+date +"%c: Generating the pictures" >>$LOG
+mkdir -p $WEB_PRIVATE/figures >>$LOG 2>&1
+python $BIN/yangFigures.py >>$LOG 2>&1
 
-date +"%c: Generating the dependency pictures" >> $LOG
-cd $WEB_PRIVATE/figures >> $LOG
+date +"%c: Generating the dependency pictures" >>$LOG
+cd $WEB_PRIVATE/figures >>$LOG
 python $BIN/symd.py --draft-repos $IETFDIR/YANG/ --rfc-repos $IETFDIR/YANG-rfc/ --graph >>$LOG 2>&1
 mv modules.png modules-ietf.png
 python $BIN/symd.py --recurse --draft-repos $MODULES --rfc-repos $IETFDIR/YANG-rfc/ --graph >>$LOG 2>&1
@@ -55,7 +54,5 @@ mv ietf-interfaces.png ietf-interfaces-all.png
 python $BIN/symd.py --recurse --draft-repos $IETFDIR/YANG/ --rfc-repos $IETFDIR/YANG-rfc/ --sub-graph ietf-interfaces >>$LOG 2>&1
 python $BIN/symd.py --recurse --draft-repos $IETFDIR/YANG/ --rfc-repos $IETFDIR/YANG-rfc/ --sub-graph ietf-routing >>$LOG 2>&1
 
-
 trap - EXIT ERR
-date +"%c: End of the script" >> $LOG
-date +"%c: End of $0"
+date +"%c: End of the script" >>$LOG
