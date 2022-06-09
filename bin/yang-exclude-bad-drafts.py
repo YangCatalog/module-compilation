@@ -88,20 +88,20 @@ if __name__ == '__main__':
     config = create_config()
     ietf_directory = config.get('Directory-Section', 'ietf-directory')
 
-    parser = argparse.ArgumentParser(description='Remove drafts known as having xym errors, '
+    parser = argparse.ArgumentParser(description='Remove drafts well-known as having xym errors, '
                                                  'but that do not contain YANG models')
     parser.add_argument('--source', 
-                        help='Full path + file containing the drafts to be removed '
+                        help='Full path to the file containing the drafts to be removed. '
                              'Default is "/etc/yangcatalog/IETF-draft-list-with-no-YANG-problem.txt"',
                         type=str,
                         default= '/etc/yangcatalog/IETF-draft-list-with-no-YANG-problem.txt')
     parser.add_argument('--dstdir',
-                        help='Directory from which to remove the drafts '
+                        help='Directory from which to remove the drafts. '
                              'Default is "{}/my-id-mirror/"'.format(ietf_directory),
                         type=str,
-                        default=ietf_directory + '/my-id-mirror/')
+                        default='{}/my-id-mirror/'.format(ietf_directory))
     parser.add_argument('--debug',
-                        help='Debug level; default is 0',
+                        help='Debug level - default is 0',
                         type=int,
                         default=0)
     args = parser.parse_args()

@@ -15,11 +15,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from remove_directory_content import remove_directory_content
 import argparse
 import os
 
 from create_config import create_config
+from remove_directory_content import remove_directory_content
 
 __author__ = 'Benoit Claise'
 __copyright__ = "Copyright(c) 2015, Cisco Systems, Inc.,  Copyright The IETF Trust 2019, All Rights Reserved"
@@ -104,12 +104,12 @@ if __name__ == '__main__':
                         help='Directory where to find the source YANG data models. '
                              'Default is "{}/YANG/"'.format(ietf_directory),
                         type=str,
-                        default= ietf_directory + '/YANG/')
+                        default='{}/YANG/'.format(ietf_directory))
     parser.add_argument('--rfcpath',
-                        help='Directory where to find the source RFC-produced YANG data models. '
-                             'Default is "{}/YANG-rfc/"'.format(ietf_directory),
+                        help='Path to the directory where all the RFCs will be stored. '
+                             'Default is "{}/rfc/"'.format(ietf_directory),
                         type=str,
-                        default= ietf_directory + '/YANG-rfc/')
+                        default='{}/rfc/'.format(ietf_directory))
     parser.add_argument('--YANGmodule',
                         help='A specific YANG module, to be tested for YANG version 1.1 compliance, with the --test option',
                         type=str,
@@ -118,7 +118,7 @@ if __name__ == '__main__':
                         help='Path to store the version 1.1 YANG data models. '
                              'Default is "{}/YANG-v11/"'.format(ietf_directory),
                         type=str,
-                        default=ietf_directory + '/YANG-v11/')
+                        default='{}/YANG-v11/'.format(ietf_directory))
     # Following should be improve so that we don't need to enter a boolean
     # bug: whatever I enter in 'script --test' results in True
     parser.add_argument('--test',
@@ -127,7 +127,7 @@ if __name__ == '__main__':
                         type=bool,
                         default=False)
     parser.add_argument('--debug',
-                        help='Debug level; the default is 0',
+                        help='Debug level - default is 0',
                         type=int,
                         default=0)
 

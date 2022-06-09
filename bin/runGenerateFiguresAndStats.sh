@@ -28,7 +28,7 @@ date +"%c: Starting" >$LOG
 
 source configure.sh >>$LOG 2>&1
 # Generate the statistics since the beginning and ftp the files
-# the yangGetStats.py (without arguements) generates the full stats in json in $WEB_PRIVATE/stats/ :
+# the yangGetStats.py (without arguments) generates the full stats in json in $WEB_PRIVATE/stats/ :
 # this is necessary so that the figures are up to date with today stats, and yang-figures can pick those latest stats up
 # the yangGetStats.py --days 5 doesn't generate the json file.
 mkdir -p $WEB_PRIVATE/stats >>$LOG 2>&1

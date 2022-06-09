@@ -85,14 +85,14 @@ if __name__ == '__main__':
     config = create_config()
     ietf_directory = config.get('Directory-Section', 'ietf-directory')
 
-    parser = argparse.ArgumentParser(description='YANG RFC/Draft Processor')
+    parser = argparse.ArgumentParser(description='Extract comma-separated list of email addresses')
     parser.add_argument('--draftpath',
-                        help='Path to the directory where all the drafts will be stored.'
-                             'Default is {}/my-id-archive-mirror/'.format(ietf_directory),
+                        help='Path to the directory where all the drafts will be stored. '
+                             'Default is {}/my-id-mirror/'.format(ietf_directory),
                         type=str,
                         default='{}/my-id-mirror/'.format(ietf_directory))
     parser.add_argument('--debug',
-                        help='Debug level; the default is 0',
+                        help='Debug level - default is 0',
                         type=int,
                         default=0)
     args = parser.parse_args()

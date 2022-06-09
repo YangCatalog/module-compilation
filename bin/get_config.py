@@ -36,7 +36,7 @@ if __name__ == '__main__':
                         help='Mandatory configuration section.',
                         type=str)
     parser.add_argument('--key',
-                        help='Mandatory key to seach.',
+                        help='Mandatory key to search.',
                         type=str)
 
     args = parser.parse_args()

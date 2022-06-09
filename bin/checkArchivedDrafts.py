@@ -50,17 +50,17 @@ def main():
 
     parser = argparse.ArgumentParser(description='Check if modules from all the Drafts are populated in YANG Catalog')
     parser.add_argument('--draftpath',
-                        help='Path to the directory where all the drafts will be stored.'
+                        help='Path to the directory where all the drafts will be stored. '
                              'Default is {}/my-id-archive-mirror/'.format(ietf_directory),
                         type=str,
                         default='{}/my-id-archive-mirror/'.format(ietf_directory))
     parser.add_argument('--yangpath',
-                        help='Path to the directory where all the modules should be extracted.'
+                        help='Path to the directory where all the modules should be extracted. '
                              'Default is {}/archived-drafts-modules'.format(temp_dir),
                         type=str,
                         default='{}/archived-drafts-modules/'.format(temp_dir))
     parser.add_argument('--debug',
-                        help='Debug level; the default is 0',
+                        help='Debug level - default is 0',
                         type=int,
                         default=0)
     args = parser.parse_args()

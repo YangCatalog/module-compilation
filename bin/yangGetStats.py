@@ -161,40 +161,38 @@ def write_dictionary_file_in_json(in_dict, path, file_name):
 if __name__ == '__main__':
     config = create_config()
     web_private = config.get('Web-Section', 'private-directory')
-    backup_directory = config.get('Directory-Section', 'backup')
+    backup_directory = config.get('Directory-Section', 'backup') + '/'
     ietf_directory = config.get('Directory-Section', 'ietf-directory')
 
     parser = argparse.ArgumentParser(description='YANG Stats Extractor')
-    parser.add_argument('--htmlpath',
-                        help='Path to get the HTML file (optional). Default is "{}/"'.format(backup_directory),
-                        type=str,
-                        default=backup_directory + '/')
     parser.add_argument('--days',
-                        help='Numbers of days to get back in history. Default is unlimited',
+                        help='Numbers of days to get back in history. Default is -1 = unlimited',
                         type=int,
                         default=-1)
     parser.add_argument('--draftpathstrict',
-                        help='Path to get the ietf drafts containing YANG model(s), with xym strict flag = True. '
-                             'Default is "{}/draft-with-YANG-strict/"'.format(ietf_directory),
+                        help='Path to the directory where the drafts containing the YANG model(s) are stored - '
+                        'with xym flag strict=True. '
+                        'Default is "{}/draft-with-YANG-strict/"'.format(ietf_directory),
                         type=str,
-                        default=ietf_directory + '/draft-with-YANG-strict/')
+                        default='{}/draft-with-YANG-strict/'.format(ietf_directory))
     parser.add_argument('--draftpathnostrict',
-                        help='Path to get the ietf drafts containing YANG model(s), with xym strict flag = False. '
-                             'Default is "{}/draft-with-YANG-no-strict/"'.format(ietf_directory),
+                        help='Path to the directory where the drafts containing the YANG model(s) are stored - '
+                        'with xym flag strict=False. '
+                        'Default is "{}/draft-with-YANG-no-strict/"'.format(ietf_directory),
                         type=str,
-                        default=ietf_directory + '/draft-with-YANG-no-strict/')
+                        default='{}/draft-with-YANG-no-strict/'.format(ietf_directory))
     parser.add_argument('--draftpathdiff',
-                        help='Path where to put the ietf drafts containing YANG model(s), diff from flag = True and False. '
+                        help='Path to the directory where IETF drafts containing YANG model(s), diff from flag = True and False. '
                              'Default is "{}/draft-with-YANG-diff/"'.format(ietf_directory),
                         type=str,
-                        default=ietf_directory + '/draft-with-YANG-diff/')
+                        default='{}/draft-with-YANG-diff/'.format(ietf_directory))
     parser.add_argument('--statspath',
-                        help='Directory where to put the stat files. '
+                        help='Path to the directory where stat files are stored. '
                              'Default is "{}/stats/"'.format(web_private),
                         type=str,
-                        default=web_private + '/stats/')
+                        default='{}/stats/'.format(web_private))
     parser.add_argument('--debug',
-                        help='Debug level; the default is 0',
+                        help='Debug level - default is 0',
                         type=int,
                         default=0)
 
@@ -202,17 +200,17 @@ if __name__ == '__main__':
     debug_level = args.debug
 
     category_list = ["FAILED", "PASSED WITH WARNINGS", "PASSED", "Email All Authors"]
-    all_files = list_of_files_in_dir(args.htmlpath, "html", debug_level)
+    all_files = list_of_files_in_dir(backup_directory, "html", debug_level)
 
     # only select the files created wihin the number of days selected
     if int(args.days) > 0:
-        files = list_of_files_in_dir_created_after_date(all_files, args.htmlpath, int(args.days), debug_level)
+        files = list_of_files_in_dir_created_after_date(all_files, backup_directory, int(args.days), debug_level)
     else:
         files = all_files
     remove_old_html_files = []
 
     prefix = "YANGPageMain_"
-    json_history_file = '{}/{}history.json'.format(args.htmlpath, prefix)
+    json_history_file = '{}/{}history.json'.format(backup_directory, prefix)
     yangPageCompilationStats = {}
     yangPageCompilationHistoricalStats = {}
     if os.path.isfile(json_history_file):
@@ -236,10 +234,10 @@ if __name__ == '__main__':
         day = f_no_extension.split("_")[3]
         extracted_date = datetime.date(int(year), int(month), int(day))
         if (datetime.date.today() - extracted_date).days > 30:
-            remove_old_html_files.append(args.htmlpath + f)
+            remove_old_html_files.append(backup_directory + f)
             yangPageCompilationHistoricalStats[date2num(extracted_date)] = {}
         i = 0
-        for line in open(args.htmlpath + f):
+        for line in open(backup_directory + f):
             if i == 1:
                 generated_at = line.split('on')[-1].split('by')[0].strip()
             elif i == 4:
@@ -268,7 +266,7 @@ if __name__ == '__main__':
         write_dictionary_file_in_json(yangPageCompilationStats, args.statspath, "YANGPageMainStats.json")
 
     prefix = "IETFYANGPageMain_"
-    json_history_file = '{}/{}history.json'.format(args.htmlpath, prefix)
+    json_history_file = '{}/{}history.json'.format(backup_directory, prefix)
     yangPageCompilationStats = {}
     yangPageCompilationHistoricalStats = {}
     if os.path.isfile(json_history_file):
@@ -286,7 +284,7 @@ if __name__ == '__main__':
         passed = 0
         badly_formated = 0
         examples = 0
-        for line in open(args.htmlpath + f):
+        for line in open(backup_directory + f):
             if 'correctly extracted YANG models' in line:
                 total = int(line.split(':')[-1])
             elif 'without warnings' in line:
@@ -303,7 +301,7 @@ if __name__ == '__main__':
         day = f_no_extension.split("_")[3]
         extracted_date = datetime.date(int(year), int(month), int(day))
         if (datetime.date.today() - extracted_date).days > 30:
-            remove_old_html_files.append(args.htmlpath + f)
+            remove_old_html_files.append(backup_directory + f)
             yangPageCompilationStats[date2num(extracted_date)] = {'total': total,
                                                                   'warnings': passed_with_warnings,
                                                                   'passed': passed,
@@ -328,7 +326,7 @@ if __name__ == '__main__':
         print('')
         print("Looking at the files starting with: " + prefix)
         print("FILENAME: NUMBER OF DAYS SINCE EPOCH, TOTAL YANG MODULES, PASSED, PASSEDWITHWARNINGS, FAILED")
-        json_history_file = '{}/{}history.json'.format(args.htmlpath, prefix)
+        json_history_file = '{}/{}history.json'.format(backup_directory, prefix)
         yangPageCompilationStats = {}
         yangPageCompilationHistoricalStats = {}
         if os.path.isfile(json_history_file):
@@ -345,7 +343,7 @@ if __name__ == '__main__':
             passed_result = 0
             passed_with_warning_result = 0
             total_result = 0
-            for line in open(args.htmlpath + f, 'r'):
+            for line in open(backup_directory + f, 'r'):
                 if "FAILED" in line:
                     failed_result += 1
                 elif "PASSED WITH WARNINGS" in line:
@@ -364,7 +362,7 @@ if __name__ == '__main__':
             extracted_date = datetime.date(int(year), int(month), int(day))
             matplot_date = date2num(extracted_date)
             if (datetime.date.today() - extracted_date).days > 30:
-                remove_old_html_files.append(args.htmlpath + f)
+                remove_old_html_files.append(backup_directory + f)
                 yangPageCompilationStats[matplot_date] = {'total': total_result,
                                                           'warning': passed_with_warning_result,
                                                           'success': passed_result}
@@ -390,7 +388,7 @@ if __name__ == '__main__':
     print('')
     print("Looking at the files starting with :" + prefix)
     print("FILENAME: NUMBER OF DAYS SINCE EPOCH, NUMBER OF YANG MODELS IN RFCS")
-    json_history_file = '{}/{}history.json'.format(args.htmlpath, prefix)
+    json_history_file = '{}/{}history.json'.format(backup_directory, prefix)
     yangPageCompilationStats = {}
     yangPageCompilationHistoricalStats = {}
     if os.path.isfile(json_history_file):
@@ -403,7 +401,7 @@ if __name__ == '__main__':
             del yangPageCompilationStatsTemp
     for f in file_name_containing_keyword(files, prefix, debug_level):
         rfc_result = 0
-        for line in open(args.htmlpath + f):
+        for line in open(backup_directory + f):
             if '.yang' in line:
                 rfc_result += 1
         f_no_extension = f.split(".")[0]
@@ -412,7 +410,7 @@ if __name__ == '__main__':
         day = f_no_extension.split("_")[3]
         extracted_date = datetime.date(int(year), int(month), int(day))
         if (datetime.date.today() - extracted_date).days > 30:
-            remove_old_html_files.append(args.htmlpath + f)
+            remove_old_html_files.append(backup_directory + f)
             yangPageCompilationStats[date2num(extracted_date)] = {"total": rfc_result}
         IETFYANGOutOfRFC[date2num(extracted_date)] = {"total": rfc_result}
     # write IETFYANGOutOfRFC to a json file

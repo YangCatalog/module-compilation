@@ -75,76 +75,76 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='YANG RFC/Draft Processor')
     parser.add_argument('--draftpath',
-                        help='Directory where to find the source drafts. '
-                             'Default is "{}/my-id-mirror/". '
-                             'To get expired drafts as well, use "{}/my-id-archive-mirror/"'
+                        help='Path to the directory where all the drafts will be stored. '
+                             'Default is {}/my-id-mirror/ '
+                             'To get expired drafts as well, use {}/my-id-archive-mirror/'
                              .format(ietf_directory, ietf_directory),
                         type=str,
-                        default=ietf_directory + '/my-id-mirror/')
+                        default='{}/my-id-mirror/'.format(ietf_directory))
     parser.add_argument('--rfcpath',
-                        help='Directory where to find the source RFCs. '
-                             'Default is "{}/rfc/"'.format(ietf_directory),
+                        help='Path to the directory where all the RFCs will be stored. '
+                             'Default is {}/rfc/'.format(ietf_directory),
                         type=str,
-                        default=ietf_directory + "/rfc/")
-    parser.add_argument('--yangpath', 
-                        help='Directory where to put the correctly extracted models. '
+                        default='{}/rfc/'.format(ietf_directory))
+    parser.add_argument('--yangpath',
+                        help='Path to the directory where extracted models will be stored (only correct). '
                              'Default is "{}/YANG/"'.format(ietf_directory),
                         type=str,
-                        default=ietf_directory + '/YANG/')
+                        default='{}/YANG/'.format(ietf_directory))
     parser.add_argument('--allyangpath',
-                        help='Directory where to store all extracted models (including bad ones). '
+                        help='Path to the directory where extracted models will be stored (including bad ones). '
                              'Default is "{}/YANG-all/"'.format(ietf_directory),
                         type=str,
-                        default=ietf_directory + '/YANG-all/')
+                        default='{}/YANG-all/'.format(ietf_directory))
     parser.add_argument('--allyangexamplepath',
-                        help='Directory where to store '
-                             'all extracted example models (starting with example- and not with CODE BEGINS/END). '
-                             'Default is "{}/YANG-example/"'.format(ietf_directory),
+                        help='Path to the directory where extracted example models will be stored '
+                        '(starting with example- and not with CODE BEGINS/END). '
+                        'Default is "{}/YANG-example/"'.format(ietf_directory),
                         type=str,
-                        default=ietf_directory + '/YANG-example/')
+                        default='{}/YANG-example/'.format(ietf_directory))
     parser.add_argument('--yangexampleoldrfcpath',
                         help='Directory where to store '
                              'the hardcoded YANG module example models from old RFCs (not starting with example-). '
                              'Default is "{}/YANG-example-old-rfc/"'.format(ietf_directory),
                         type=str,
-                        default=ietf_directory + '/YANG-example-old-rfc/')
-    parser.add_argument('--allyangdraftpathstrict',
-                        help='Directory where to store '
-                             'all drafts containing YANG model(s), with strict xym rule = True. '
-                             'Default is "{}/draft-with-YANG-strict/"'.format(ietf_directory),
+                        default='{}/YANG-example-old-rfc/'.format(ietf_directory))
+    parser.add_argument('--draftpathstrict',
+                        help='Path to the directory where the drafts containing the YANG model(s) are stored - '
+                        'with xym flag strict=True. '
+                        'Default is "{}/draft-with-YANG-strict/"'.format(ietf_directory),
                         type=str,
-                        default=ietf_directory + '/draft-with-YANG-strict/')
-    parser.add_argument('--allyangdraftpathnostrict',
-                        help='Directory where to store '
-                             'all drafts containing YANG model(s), with strict xym rule = False. '
-                             'Default is "{}/draft-with-YANG-no-strict/"'.format(ietf_directory),
+                        default='{}/draft-with-YANG-strict/'.format(ietf_directory))
+    parser.add_argument('--draftpathnostrict',
+                        help='Path to the directory where the drafts containing the YANG model(s) are stored - '
+                        'with xym flag strict=False. '
+                        'Default is "{}/draft-with-YANG-no-strict/"'.format(ietf_directory),
                         type=str,
-                        default=ietf_directory + '/draft-with-YANG-no-strict/')
-    parser.add_argument('--allyangdraftpathonlyexample',
-                        help='Directory where to store all drafts containing YANG model(s) with examples, '
-                             'with strict xym rule = True, and strictexample True. '
-                             'Default is "{}/draft-with-YANG-example/"'.format(ietf_directory),
+                        default='{}/draft-with-YANG-no-strict/'.format(ietf_directory))
+    parser.add_argument('--draftpathonlyexample',
+                        help='Path to the directory where the drafts containing examples are stored -'
+                        'with xym flags strict=False and strict_examples=True. '
+                        'Default is "{}/draft-with-YANG-example/"'.format(ietf_directory),
                         type=str,
-                        default=ietf_directory + '/draft-with-YANG-example/')
+                        default='{}/draft-with-YANG-example/'.format(ietf_directory))
     parser.add_argument('--rfcyangpath',
                         help='Directory where to store the data models extracted from RFCs. '
                              'Default is "{}/YANG-rfc/"'.format(ietf_directory),
                         type=str,
-                        default=ietf_directory + '/YANG-rfc/')
+                        default='{}/YANG-rfc/'.format(ietf_directory))
     parser.add_argument('--rfcextractionyangpath',
                         help='Directory where to store '
                              'the typedef, grouping, identity from data models extracted from RFCs. '
                              'Default is "{}/YANG-rfc-extraction/"'.format(ietf_directory),
                         type=str,
-                        default=ietf_directory + '/YANG-rfc-extraction/')
+                        default='{}/YANG-rfc-extraction/'.format(ietf_directory))
     parser.add_argument('--draftelementspath',
                         help='Directory where to store '
                              'the typedef, grouping, identity from data models correctely extracted from drafts. '
                              'Default is "{}/draft-elements/"'.format(ietf_directory),
                         type=str,
-                        default=ietf_directory + '/draft-elements/')
+                        default='{}/draft-elements/'.format(ietf_directory))
     parser.add_argument('--debug',
-                        help='Debug level; the default is 0',
+                        help='Debug level - default is 0',
                         type=int,
                         default=0)
     parser.add_argument('--forcecompilation',
@@ -183,11 +183,11 @@ if __name__ == '__main__':
         'draft_path': args.draftpath,
         'yang_path': args.yangpath,
         'draft_elements_path': args.draftelementspath,
-        'all_yang_draft_path_strict': args.allyangdraftpathstrict,
+        'draft_path_strict': args.draftpathstrict,
         'all_yang_example_path': args.allyangexamplepath,
-        'all_yang_draft_path_only_example': args.allyangdraftpathonlyexample,
+        'draft_path_only_example': args.draftpathonlyexample,
         'all_yang_path': args.allyangpath,
-        'all_yang_draft_path_no_strict': args.allyangdraftpathnostrict
+        'draft_path_no_strict': args.draftpathnostrict
     }
 
     # ----------------------------------------------------------------------
@@ -198,9 +198,9 @@ if __name__ == '__main__':
     remove_directory_content(args.rfcyangpath, debug_level)
     remove_directory_content(args.allyangexamplepath, debug_level)
     remove_directory_content(args.yangexampleoldrfcpath, debug_level)
-    remove_directory_content(args.allyangdraftpathstrict, debug_level)
-    remove_directory_content(args.allyangdraftpathnostrict, debug_level)
-    remove_directory_content(args.allyangdraftpathonlyexample, debug_level)
+    remove_directory_content(args.draftpathstrict, debug_level)
+    remove_directory_content(args.draftpathnostrict, debug_level)
+    remove_directory_content(args.draftpathonlyexample, debug_level)
     remove_directory_content(args.rfcextractionyangpath, debug_level)
     remove_directory_content(args.draftelementspath, debug_level)
 
