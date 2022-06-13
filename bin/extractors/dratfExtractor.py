@@ -12,13 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__author__ = "Slavomir Mazur"
-__copyright__ = "Copyright The IETF Trust 2021, All Rights Reserved"
-__license__ = "Apache License, Version 2.0"
-__email__ = "slavomir.mazur@pantheon.tech"
+__author__ = 'Slavomir Mazur'
+__copyright__ = 'Copyright The IETF Trust 2021, All Rights Reserved'
+__license__ = 'Apache License, Version 2.0'
+__email__ = 'slavomir.mazur@pantheon.tech'
 
+import json
 import os
 import shutil
+import sys
+from io import StringIO
 
 from extract_elem import extract_elem
 from xym import xym
@@ -48,6 +51,7 @@ class DraftExtractor:
         self.inverted_draft_yang_dict = {}
         self.inverted_draft_yang_example_dict = {}
         self.inverted_draft_yang_all_dict = {}
+        self.drafts_missing_code_section = {}
         self._create_ietf_drafts_list()
 
     def _create_ietf_drafts_list(self):
@@ -124,9 +128,23 @@ class DraftExtractor:
 
     def extract_from_draft_file(self, draft_file: str, srcdir: str, dstdir: str,
                                 strict: bool = False, strict_examples: bool = False):
-        return xym.xym(draft_file, srcdir, dstdir, strict=strict, strict_examples=strict_examples,
-                       debug_level=self.debug_level, add_line_refs=False, force_revision_pyang=False,
-                       force_revision_regexp=True)
+
+        extracted = []
+        old_stderr = None
+        try:
+            old_stderr = sys.stderr
+            result = StringIO()
+            sys.stderr = result
+            extracted = xym.xym(draft_file, srcdir, dstdir, strict=strict, strict_examples=strict_examples,
+                                debug_level=self.debug_level, add_line_refs=False, force_revision_pyang=False,
+                                force_revision_regexp=True)
+            result_string = result.getvalue()
+        finally:
+            sys.stderr = old_stderr
+        print(result_string, file=sys.stderr)
+        if '<CODE' in result_string:
+            self.drafts_missing_code_section[draft_file] = result_string
+        return extracted
 
     def invert_dict(self):
         self.inverted_draft_yang_dict = invert_yang_modules_dict(self.draft_yang_dict, self.debug_level)
@@ -149,3 +167,18 @@ class DraftExtractor:
                 extract_elem(module_fname, self.draft_elements_path, 'typedef')
                 extract_elem(module_fname, self.draft_elements_path, 'grouping')
                 extract_elem(module_fname, self.draft_elements_path, 'identity')
+
+    def dump_incorrect_drafts(self, public_directory: str):
+        """ Dump names of the IETF drafts with xym extraction error to
+        problematic_drafts.json file.
+        """
+        base_path = os.path.join(public_directory, 'drafts')
+        file_path = os.path.join(base_path, 'problematic_drafts.json')
+
+        try:
+            with open(file_path, 'w') as writer:
+                json.dump(self.drafts_missing_code_section, writer)
+        except FileNotFoundError:
+            os.makedirs(base_path)
+            with open(file_path, 'w') as writer:
+                json.dump(self.drafts_missing_code_section, writer)
