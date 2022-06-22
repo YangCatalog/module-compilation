@@ -44,8 +44,7 @@ def main():
     config = create_config()
     ietf_directory = config.get('Directory-Section', 'ietf-directory')
     temp_dir = config.get('Directory-Section', 'temp')
-    api_ip = config.get('Web-Section', 'ip')
-    protocol = config.get('Web-Section', 'protocol-api')
+    yangcatalog_api_prefix = config.get('Web-Section', 'yangcatalog-api-prefix')
     var_path = config.get('Directory-Section', 'var')
 
     archived_draft_path = os.path.join(ietf_directory, 'my-id-archive-mirror')
@@ -86,8 +85,7 @@ def main():
         return
 
     custom_print('Loading all modules data from API')
-    prefix = '{}://{}'.format(protocol, api_ip)
-    all_modules = requests.get('{}/api/search/modules'.format(prefix)).json()
+    all_modules = requests.get('{}/search/modules'.format(yangcatalog_api_prefix)).json()
     all_modules_keys = []
     if all_modules:
         all_modules = all_modules.get('module', [])

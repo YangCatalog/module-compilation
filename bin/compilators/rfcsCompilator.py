@@ -32,8 +32,6 @@ class RfcsCompilator:
         self.config = create_config()
         self.html_path = self.config.get('Web-Section', 'private-directory')
         self.result_html_dir = self.config.get('Web-Section', 'result-html-dir')
-        self.protocol = self.config.get('Web-Section', 'protocol-api')
-        self.api_ip = self.config.get('Web-Section', 'ip')
 
         self.extracted_rfcs_dir = extracted_rfcs_dir
         self.rfcs_dict = rfcs_dict

@@ -61,13 +61,11 @@ def custom_print(message: str):
 # ----------------------------------------------------------------------
 if __name__ == '__main__':
     config = create_config()
-    web_url = config.get('Web-Section', 'my-uri')
     web_private = config.get('Web-Section', 'private-directory')
     ietf_directory = config.get('Directory-Section', 'ietf-directory')
     temp_dir = config.get('Directory-Section', 'temp')
     modules_directory = config.get('Directory-Section', 'modules-directory')
-    api_ip = config.get('Web-Section', 'ip')
-    protocol = config.get('Web-Section', 'protocol-api')
+    yangcatalog_api_prefix = config.get('Web-Section', 'yangcatalog-api-prefix')
     resutl_html_dir = config.get('Web-Section', 'result-html-dir')
     draft_path = config.get('Directory-Section', 'ietf-drafts')
     rfc_path = config.get('Directory-Section', 'ietf-rfcs')
@@ -156,7 +154,6 @@ if __name__ == '__main__':
     filesGenerator = FilesGenerator(web_private)
 
     all_yang_catalog_metadata = {}
-    prefix = '{}://{}'.format(protocol, api_ip)
 
     modules = {}
     try:
@@ -166,7 +163,7 @@ if __name__ == '__main__':
     except Exception:
         modules = {}
     if modules == {}:
-        modules = requests.get('{}/api/search/modules'.format(prefix)).json()
+        modules = requests.get('{}/search/modules'.format(yangcatalog_api_prefix)).json()
         custom_print('All the modules data loaded from API')
 
     for mod in modules['module']:

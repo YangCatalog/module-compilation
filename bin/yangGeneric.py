@@ -223,8 +223,7 @@ def get_name_with_revision(yang_file: str):
 # ----------------------------------------------------------------------
 if __name__ == '__main__':
     config = create_config()
-    api_ip = config.get('Web-Section', 'ip')
-    protocol = config.get('Web-Section', 'protocol-api')
+    yangcatalog_api_prefix = config.get('Web-Section', 'yangcatalog-api-prefix')
     resutl_html_dir = config.get('Web-Section', 'result-html-dir')
     web_private = config.get('Web-Section', 'private-directory') + '/'
     modules_directory = config.get('Directory-Section', 'modules-directory')
@@ -280,8 +279,6 @@ if __name__ == '__main__':
     fileHasher = FileHasher(args.forcecompilation)
 
     all_yang_catalog_metadata = {}
-    prefix = '{}://{}'.format(protocol, api_ip)
-
     modules = {}
     try:
         with open(os.path.join(temp_dir, 'all_modules_data.json'), 'r') as f:
@@ -290,7 +287,7 @@ if __name__ == '__main__':
     except Exception:
         modules = {}
     if modules == {}:
-        modules = requests.get('{}/api/search/modules'.format(prefix)).json()
+        modules = requests.get('{}/search/modules'.format(yangcatalog_api_prefix)).json()
         custom_print('All the modules data loaded from API')
 
     for mod in modules['module']:

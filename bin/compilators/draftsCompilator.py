@@ -37,9 +37,7 @@ class DraftsCompilator:
         self.config = create_config()
         self.html_path = self.config.get('Web-Section', 'private-directory')
         self.result_html_dir = self.config.get('Web-Section', 'result-html-dir')
-        self.protocol = self.config.get('Web-Section', 'protocol-api')
-        self.api_ip = self.config.get('Web-Section', 'ip')
-        self.web_url = self.config.get('Web-Section', 'my-uri')
+        self.domain_prefix = self.config.get('Web-Section', 'domain-prefix')
 
         self.extracted_drafts_dir = extracted_drafts_dir
         self.drafts_dict = drafts_dict
@@ -112,7 +110,7 @@ class DraftsCompilator:
                 draft_url_anchor = '<a href="{}">{}</a>'.format(datatracker_url, document_name)
                 email_anchor = '<a href="mailto:{}">Email Authors</a>'.format(mailto)
                 cisco_email_anchor = '<a href="mailto:{}">Email Cisco Authors Only</a>'.format(draft_emails)
-                yang_model_url = '{}/YANG-modules/{}'.format(self.web_url, yang_file)
+                yang_model_url = '{}/YANG-modules/{}'.format(self.domain_prefix, yang_file)
                 yang_model_anchor = '<a href="{}">Download the YANG model</a>'.format(yang_model_url)
 
                 is_rfc = os.path.isfile(os.path.join(paths['rfcpath'], yang_file))

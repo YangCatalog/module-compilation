@@ -39,7 +39,7 @@ class MessageFactory:
         self.__email_to = config.get('Message-Section', 'email-to').split()
         self.__developers_email = config.get('Message-Section', 'developers-email').split()
         self._temp_dir = config.get('Directory-Section', 'temp')
-        self.__me = config.get('Web-Section', 'my-uri')
+        self.__me = config.get('Web-Section', 'domain-prefix')
         self.__me = self.__me.split('/')[-1]
         self.__smtp = smtplib.SMTP('localhost')
 

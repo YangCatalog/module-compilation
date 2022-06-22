@@ -32,11 +32,8 @@ from utility.staticVariables import IETF_RFC_MAP
 
 def push_to_confd(updated_modules: list, config: configparser.ConfigParser):
     json_modules_data = json.dumps({'modules': {'module': updated_modules}})
-    confd_protocol = config.get('Web-Section', 'protocol-confd')
-    confd_port = config.get('Web-Section', 'confd-port')
-    confd_host = config.get('Web-Section', 'confd-ip')
     credentials = config.get('Secrets-Section', 'confd-credentials').strip('"').split()
-    confd_prefix = '{}://{}:{}'.format(confd_protocol, confd_host, confd_port)
+    confd_prefix = config.get('Web-Section', 'confd-prefix')
 
     if '{"module": []}' not in json_modules_data:
         print('Creating patch request to ConfD with updated data')
@@ -158,10 +155,8 @@ def check_yangcatalog_data(config: configparser.ConfigParser, yang_file_path: st
 
     pyang_exec = config.get('Tool-Section', 'pyang-exec')
     result_html_dir = config.get('Web-Section', 'result-html-dir')
-    protocol = config.get('Web-Section', 'protocol-api')
-    api_ip = config.get('Web-Section', 'ip')
+    domain_prefix = config.get('Web-Section', 'domain-prefix')
 
-    prefix = '{}://{}'.format(protocol, api_ip)
     yang_path, yang_file = os.path.split(yang_file_path)
 
     updated_modules = []
@@ -257,7 +252,7 @@ def check_yangcatalog_data(config: configparser.ConfigParser, yang_file_path: st
             if module_data.get('compilation-status') == 'unknown':
                 comp_result = ''
             else:
-                comp_result = '{}/results/{}'.format(prefix, file_url)
+                comp_result = '{}/results/{}'.format(domain_prefix, file_url)
             if module_data.get('compilation-result') != comp_result:
                 update = True
                 module_data['compilation-result'] = comp_result
