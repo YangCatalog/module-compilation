@@ -22,7 +22,7 @@ import os
 from create_config import create_config
 
 
-def _remove_duplicates(result: str) -> str:
+def _remove_duplicate_messages(result: str) -> str:
     """ Same result messages are often found in the compilation result multiple times.
     This method filter out duplicate messages.
     """
@@ -69,7 +69,7 @@ class YanglintParser:
             result_yanglint = result_yanglint.replace('\n\n', '\n').replace('\n', '\n\n')
             result_yanglint = result_yanglint.replace(workdir, '')
 
-            final_result = _remove_duplicates(result_yanglint)
+            final_result = _remove_duplicate_messages(result_yanglint)
         except Exception:
             final_result = 'libyang err : Problem occured while running command: {}'.format(' '.join(bash_command))
 

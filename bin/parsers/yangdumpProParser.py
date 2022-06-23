@@ -20,15 +20,23 @@ __email__ = 'slavomir.mazur@pantheon.tech'
 import os
 
 
-def _remove_duplicates(result: str) -> str:
+def _remove_duplicate_messages(result: str, module_name: str) -> str:
     """ Same result messages are often found in the compilation result multiple times.
     This method filter out duplicate messages.
     """
     splitted_result = result.split('\n\n')
     unique_results_list = sorted(set(splitted_result), key=splitted_result.index)
-    final_result = '\n\n'.join(unique_results_list)
 
-    return final_result
+    # NOTE - WORKAROUND: remove 'iana-if-type@2021-06-21.yang:128.3: warning(1054): Revision date has already been used'
+    # from most compilation results
+    # This can be removed in the future with the release of 'iana-if-type' revision
+    # that will PASS the compilation.
+    final_result = []
+    for result in unique_results_list:
+        if 'iana-if-type@2021-06-21' not in result and 'iana-if-type' not in module_name:
+            final_result.append(result)
+
+    return '\n\n'.join(final_result)
 
 
 class YangdumpProParser:
@@ -62,9 +70,9 @@ class YangdumpProParser:
         try:
             result_yumadump = os.popen(' '.join(bash_command)).read()
             result_yumadump = result_yumadump.strip()
-            result_yumadump = result_yumadump.replace('\n*** {}'.format(yang_file_path), '')
+            result_yumadump = result_yumadump.split('\n\n***')[0]
 
-            final_result = _remove_duplicates(result_yumadump)
+            final_result = _remove_duplicate_messages(result_yumadump, yang_file_path)
         except Exception:
             final_result = 'Problem occured while running command: {}'.format(' '.join(bash_command))
 
