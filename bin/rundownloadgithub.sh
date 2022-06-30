@@ -39,30 +39,20 @@ git submodule update --init --recursive >>$LOG 2>&1
 
 # get the entire content of github (openconfig)
 mkdir -p $NONIETFDIR/openconfig
-if [ ! -d $NONIETFDIR/openconfig/yang ]; then
-	cd $NONIETFDIR/openconfig
-	git clone --recurse-submodules https://github.com/openconfig/yang.git >>$LOG 2>&1
-fi
-cd $NONIETFDIR/openconfig/yang
-git init >>$LOG 2>&1
-git pull --recurse-submodules https://github.com/openconfig/yang.git >>$LOG 2>&1
-
-#
-# A lot of ugly things here... including a 'clone' rather than a 'pull' which does not work as file structure is changed
-#
-
 cd $NONIETFDIR/openconfig
-rm -rf public
-git clone --recurse-submodules https://github.com/openconfig/public.git >>$LOG 2>&1
+if [ ! -d $NONIETFDIR/openconfig/public ]; then
+	git clone --recurse-submodules https://github.com/openconfig/public.git >>$LOG 2>&1
+fi
+cd $NONIETFDIR/openconfig/public
+git pull --recurse-submodules https://github.com/openconfig/public.git >>$LOG 2>&1
 
-# the trick below is "flatten" all .yang files from subdirectories into one directory, to avoid the confd path issues. The old structure has been removed
-# TODO check for overwrite errors !!!
-mkdir -p $NONIETFDIR/openconfig/public/release/models-flat
+# Trick below is "flatten" all .yang files from subdirectories into one directory, to avoid the ConfD path issues
 cd $NONIETFDIR/openconfig/public/release/models
-find . -name "*.yang" -exec cp -t $NONIETFDIR/openconfig/public/release/models-flat/ {} + >>$LOG 2>&1
-cd ..
-rm -rf $NONIETFDIR/openconfig/public/release/models
-mv $NONIETFDIR/openconfig/public/release/models-flat $NONIETFDIR/openconfig/public/release/models
+if [ -d $NONIETFDIR/openconfig-flat/public/release/models ]; then
+	rm -rf $NONIETFDIR/openconfig-flat/public/release/models
+fi
+mkdir -p $NONIETFDIR/openconfig-flat/public/release/models
+find . -name "*.yang" -exec cp -t $NONIETFDIR/openconfig-flat/public/release/models/ {} + >>$LOG 2>&1
 
 # get the entire content of github (sysrepo)
 mkdir -p $NONIETFDIR/sysrepo
