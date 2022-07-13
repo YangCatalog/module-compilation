@@ -25,7 +25,8 @@ from datetime import datetime
 
 from create_config import create_config
 
-if __name__ == '__main__':
+
+def main():
     config = create_config()
     web_private = config.get('Web-Section', 'private-directory')
     backup_directory = config.get('Directory-Section', 'backup')
@@ -44,26 +45,28 @@ if __name__ == '__main__':
                       'IEEEStandardYANGPageCompilation.html', 'IEEEStandardDraftYANGPageCompilation.html',
                       'IANAStandardYANGPageCompilation.html', 'IEEEExperimentalYANGPageCompilation.html',
                       'YANGPageMain.html', 'IETFYANGRFC.html']
-    # name_to_backup = ['temp.html']
     for file in name_to_backup:
         file_no_extension = file.split('.')[0]
         file_extension = file.split('.')[-1]
         full_path_file = os.path.join(web_private, file)
-        if os.path.isfile(full_path_file):
-            modifiedTime = os.path.getmtime(full_path_file)
-            timestamp = (datetime.fromtimestamp(modifiedTime).strftime("%Y_%m_%d"))
-            if file_no_extension == 'IETFYANGRFC':
-                file_no_extension = 'IETFYANGOutOfRFC'
-            new_filename = '{}_{}.{}'.format(file_no_extension, timestamp, file_extension)
-            new_full_path_file = os.path.join(backup_directory, new_filename)
-            if debug_level > 0:
-                print("file full path: " + full_path_file)
-                print("file without extension: " + file_no_extension)
-                print("file extension: " + file_extension)
-                print("full path: " + full_path_file)
-                print("last modified: %s" % time.ctime(os.path.getmtime(full_path_file)))
-                print("timestamp: " + str(timestamp))
-                print("new file name: " + new_full_path_file)
-            shutil.copy2(full_path_file, new_full_path_file)
-        else:
+        if not os.path.isfile(full_path_file):
             print('*** file {} not present!'.format(full_path_file))
+            continue
+        modifiedTime = os.path.getmtime(full_path_file)
+        timestamp = (datetime.fromtimestamp(modifiedTime).strftime("%Y_%m_%d"))
+        if file_no_extension == 'IETFYANGRFC':
+            file_no_extension = 'IETFYANGOutOfRFC'
+        new_filename = '{}_{}.{}'.format(file_no_extension, timestamp, file_extension)
+        new_full_path_file = os.path.join(backup_directory, new_filename)
+        if debug_level > 0:
+            print('file full path: {}'.format(full_path_file))
+            print('file without extension: {}'.format(file_no_extension))
+            print('file extension: {}'.format(file_extension))
+            print('last modified: %s' % time.ctime(os.path.getmtime(full_path_file)))
+            print('timestamp: {}'.format(timestamp))
+            print('new file name: {}'.format(new_full_path_file))
+        shutil.copy2(full_path_file, new_full_path_file)
+
+
+if __name__ == '__main__':
+    main()

@@ -17,18 +17,19 @@ import datetime
 import json
 import os
 import re
-import typing as t
 
 import requests
 from filelock import FileLock
 
-from create_config import create_config
 from compilation_status import combined_compilation, pyang_compilation_status
+from create_config import create_config
 from file_hasher import FileHasher
 from files_generator import FilesGenerator
 from metadata_generators.base_metadata_generator import BaseMetadataGenerator
-from metadata_generators.draft_metadata_generator import DraftMetadataGenerator, ArchivedMetadataGenerator
-from metadata_generators.example_metadata_generator import ExampleMetadataGenerator
+from metadata_generators.draft_metadata_generator import (
+    ArchivedMetadataGenerator, DraftMetadataGenerator)
+from metadata_generators.example_metadata_generator import \
+    ExampleMetadataGenerator
 from metadata_generators.rfc_metadata_generator import RfcMetadataGenerator
 from parsers.confdc_parser import ConfdcParser
 from parsers.pyang_parser import PyangParser
@@ -139,7 +140,7 @@ def get_modules(temp_dir: str, prefix: str) -> dict:
         with open(os.path.join(temp_dir, 'all_modules_data.json'), 'r') as f:
             modules = json.load(f)
             custom_print('All the modules data loaded from JSON files')
-    except Exception:
+    except (FileNotFoundError, json.decoder.JSONDecodeError):
         modules = {}
     if modules == {}:
         modules = requests.get('{}/api/search/modules'.format(prefix)).json()
@@ -168,8 +169,8 @@ def parse_example_module(parsers: dict, yang_file: str, root_directory: str, lin
     result_pyang = parsers['pyang'].run_pyang(root_directory, yang_file, lint, allinclusive, True)
     result_no_pyang_param = parsers['pyang'].run_pyang(root_directory, yang_file, lint, allinclusive, False)
     module_compilation_results = {
-    'pyang_lint': result_pyang,
-    'pyang': result_no_pyang_param
+        'pyang_lint': result_pyang,
+        'pyang': result_no_pyang_param
     }
     compilation_status = pyang_compilation_status(result_pyang)
     return compilation_status, module_compilation_results
@@ -231,9 +232,11 @@ def validate(prefix: str, modules: dict, yang_list: list, parser_args: dict, doc
     return agregate_results
 
 
-def write_page_main(prefix: str, compilation_stats: dict) -> dict: # pyright: ignore
-    with FileLock('{}/stats/stats.json.lock'.format(web_private)):
-        stats_file_path = os.path.join(web_private, 'stats/AllYANGPageMain.json')
+def write_page_main(prefix: str, compilation_stats: dict) -> dict:  # pyright: ignore
+    stats_directory = os.path.join(web_private, 'stats')
+    os.makedirs(stats_directory, exist_ok=True)
+    with FileLock(os.path.join(stats_directory, 'stats.json.lock')):
+        stats_file_path = os.path.join(stats_directory, 'AllYANGPageMain.json')
         counter = 5
         while True:
             try:
@@ -418,8 +421,6 @@ def main():
         headers = filesGenerator.getYANGPageCompilationHeaders(args.lint)
         filesGenerator.generateYANGPageCompilationHTML(agregate_results['no_submodules'], headers, args.prefix, args.metadata)
 
-
-
     # Generate modules compilation results statistics HTML page
     passed = number_that_passed_compilation(agregate_results['all'], 0, 'PASSED')
     passed_with_warnings = number_that_passed_compilation(agregate_results['all'], 0, 'PASSED WITH WARNINGS')
@@ -456,16 +457,16 @@ def main():
     print('--------------------------')
     if ietf == 'ietf-draft':
         print('Number of correctly extracted YANG models from IETF drafts: {}'
-            .format(compilation_stats['total-drafts']))
+              .format(compilation_stats['total-drafts']))
         print('Number of YANG models in IETF drafts that passed compilation: {}/{}'
-            .format(compilation_stats['draft-passed'], compilation_stats.get('total-drafts')))
+              .format(compilation_stats['draft-passed'], compilation_stats.get('total-drafts')))
         print('Number of YANG models in IETF drafts that passed compilation with warnings: {}/{}'
-            .format(compilation_stats['draft-warnings'], compilation_stats.get('total-drafts'))),
+              .format(compilation_stats['draft-warnings'], compilation_stats.get('total-drafts'))),
         print('Number of all YANG models in IETF drafts (examples, badly formatted, etc. ): {}'
-            .format(compilation_stats['all-ietf-drafts']))
+              .format(compilation_stats['all-ietf-drafts']))
     elif ietf == 'ietf-example':
         print('Number of correctly extracted example YANG models from IETF drafts: {}'
-            .format(compilation_stats['example-drafts']), flush=True)
+              .format(compilation_stats['example-drafts']), flush=True)
     else:
         print('Number of YANG data models from {}: {}'.format(args.prefix, compilation_stats['total']))
         print('Number of YANG data models from {} that passed compilation: {}/{}'
@@ -479,6 +480,7 @@ def main():
 
     # Update files content hashes and dump into .json file
     fileHasher.dump_hashed_files_list()
+
 
 if __name__ == '__main__':
     main()

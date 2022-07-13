@@ -1,5 +1,5 @@
+import os
 import shutil
-from os import path
 
 import requests
 
@@ -12,6 +12,8 @@ def main():
     all_modules_dir = config.get('Directory-Section', 'save-file-dir')
     ietf_dir = config.get('Directory-Section', 'ietf-directory')
     orgs = ['ieee', 'ietf']
+    ietf_dependencies_dir = os.path.join(ietf_dir, 'dependencies')
+    os.makedirs(ietf_dependencies_dir, exist_ok=True)
     for org in orgs:
         url = '{}/search-filter'.format(yangcatalog_api_prefix)
         body = {'input': {'organization': org}}
@@ -24,9 +26,10 @@ def main():
             name = mod['name']
             revision = mod['revision']
             yang_file = '{}@{}.yang'.format(name, revision)
-            yang_file_dir = path.join(all_modules_dir, yang_file)
-            if path.exists(yang_file_dir):
-                shutil.copy2(yang_file_dir, '{}/dependencies/{}'.format(ietf_dir, yang_file))
+            yang_file_dir = os.path.join(all_modules_dir, yang_file)
+            if os.path.exists(yang_file_dir):
+                dst = os.path.join(ietf_dependencies_dir, yang_file)
+                shutil.copy2(yang_file_dir, dst)
 
 
 if __name__ == '__main__':

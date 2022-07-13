@@ -18,17 +18,17 @@ __license__ = 'Apache License, Version 2.0'
 __email__ = 'slavomir.mazur@pantheon.tech'
 
 import configparser
-from imp import new_module
 import json
 import os
 import time
 import typing as t
+
 import jinja2
 import requests
 from redis_connections.redis_connection import RedisConnection
+from versions import ValidatorsVersions
 
 from utility.static_variables import IETF_RFC_MAP
-from versions import ValidatorsVersions
 
 
 def push_to_redis(updated_modules: list, config: configparser.ConfigParser):
@@ -194,7 +194,7 @@ def _generate_compilation_result_file(module_data: dict, compilation_results: di
     compilation_results['generated'] = time.strftime('%d/%m/%Y')
 
     context = {'result': compilation_results,
-                'ths': _generate_ths(versions, ietf_type)}
+               'ths': _generate_ths(versions, ietf_type)}
     template = os.path.dirname(os.path.realpath(__file__)) + '/../resources/compilationStatusTemplate.html'
     rendered_html = _render(template, context)
     result_html_file = os.path.join(result_html_dir, file_url)
@@ -241,7 +241,7 @@ def check_yangcatalog_data(config: configparser.ConfigParser, yang_file_pseudo_p
                 module_data[field] = new_module_data[field]
 
         if new_module_data.get('compilation-status') \
-            and module_data.get('compilation-status') != new_module_data['compilation-status'].lower().replace(' ', '-'):
+                and module_data.get('compilation-status') != new_module_data['compilation-status'].lower().replace(' ', '-'):
             # Module parsed with --ietf flag (= RFC) has higher priority
             if is_rfc and ietf_type is None:
                 pass
@@ -279,7 +279,7 @@ def check_yangcatalog_data(config: configparser.ConfigParser, yang_file_pseudo_p
             updated_modules.append(module_data)
             print('DEBUG: updated_modules: {}'.format(name_revision))
     else:
-        print('WARN: {} not in confd yet'.format(name_revision))
+        print('WARN: {} not in Redis yet'.format(name_revision))
     return updated_modules
 
 

@@ -112,4 +112,4 @@ WORKDIR $VIRTUAL_ENV
 
 USER root:root
 # Run the command on container startup
-CMD cron && service postfix start && service rsyslog start && tail -f /var/yang/logs/cronjob-daily.log
+CMD cron && service postfix start && service rsyslog start && touch /var/yang/logs/cronjob-daily.log && tail -f /var/yang/logs/cronjob-daily.log
