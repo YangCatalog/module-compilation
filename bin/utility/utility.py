@@ -187,7 +187,8 @@ def _generate_compilation_result_file(module_data: dict, compilation_results: di
                                       is_rfc: bool, versions: dict, ietf_type: t.Optional[str]) -> str:
     name = module_data['name']
     rev = module_data['revision']
-    file_url = '{}@{}.html'.format(name, rev)
+    org = module_data['organization']
+    file_url = '{}@{}_{}.html'.format(name, rev, org)
     compilation_results['name'] = name
     compilation_results['revision'] = rev
     compilation_results['generated'] = time.strftime('%d/%m/%Y')
@@ -233,57 +234,52 @@ def check_yangcatalog_data(config: configparser.ConfigParser, yang_file_pseudo_p
     if name_revision in all_modules:
         module_data = all_modules[name_revision].copy()
         update = False
+
+        for field in ['document-name', 'reference', 'author-email']:
+            if new_module_data.get(field) and module_data.get(field) != new_module_data[field]:
+                update = True
+                module_data[field] = new_module_data[field]
+
+        if new_module_data.get('compilation-status') \
+                and module_data.get('compilation-status') != new_module_data['compilation-status'].lower().replace(' ', '-'):
+            # Module parsed with --ietf flag (= RFC) has higher priority
+            if is_rfc and ietf_type is None:
+                pass
+            else:
+                update = True
+                module_data['compilation-status'] = new_module_data['compilation-status'].lower().replace(' ', '-')
+
+        if new_module_data.get('compilation-status') is not None:
+            file_url = _generate_compilation_result_file(module_data, compilation_results,
+                                                         result_html_dir, is_rfc, versions, ietf_type)
+            if module_data.get('compilation-status') == 'unknown':
+                comp_result = ''
+            else:
+                comp_result = '{}/results/{}'.format(domain_prefix, file_url)
+            if module_data.get('compilation-result') != comp_result:
+                update = True
+                module_data['compilation-result'] = comp_result
+
+        if ietf_type is not None and module_data.get('organization') == 'ietf' and 'document-name' in new_module_data:
+            wg = _resolve_working_group(name_revision, ietf_type, new_module_data['document-name'])
+            if (module_data.get('ietf') is None or module_data['ietf']['ietf-wg'] != wg) and wg is not None:
+                update = True
+                module_data['ietf'] = {}
+                module_data['ietf']['ietf-wg'] = wg
+
+        mat_level = _resolve_maturity_level(ietf_type, new_module_data.get('document-name'))
+        if module_data.get('maturity-level') != mat_level:
+            if mat_level == 'not-applicable' and module_data.get('maturity-level'):
+                pass
+            else:
+                update = True
+                module_data['maturity-level'] = mat_level
+
+        if update:
+            updated_modules.append(module_data)
+            print('DEBUG: updated_modules: {}'.format(name_revision))
     else:
         print('WARN: {} not in Redis yet'.format(name_revision))
-        name, revision = name_revision.split('@')
-        module_data: t.Dict[str, t.Any] = {
-            'name': name,
-            'revision': revision,
-        }
-        update = True
-    for field in ['document-name', 'reference', 'author-email']:
-        if new_module_data.get(field) and module_data.get(field) != new_module_data[field]:
-            update = True
-            module_data[field] = new_module_data[field]
-
-    if new_module_data.get('compilation-status') \
-            and module_data.get('compilation-status') != new_module_data['compilation-status'].lower().replace(' ', '-'):
-        # Module parsed with --ietf flag (= RFC) has higher priority
-        if is_rfc and ietf_type is None:
-            pass
-        else:
-            update = True
-            module_data['compilation-status'] = new_module_data['compilation-status'].lower().replace(' ', '-')
-
-    if new_module_data.get('compilation-status') is not None:
-        file_url = _generate_compilation_result_file(module_data, compilation_results,
-                                                        result_html_dir, is_rfc, versions, ietf_type)
-        if module_data.get('compilation-status') == 'unknown':
-            comp_result = ''
-        else:
-            comp_result = '{}/results/{}'.format(domain_prefix, file_url)
-        if module_data.get('compilation-result') != comp_result:
-            update = True
-            module_data['compilation-result'] = comp_result
-
-    if ietf_type is not None and module_data.get('organization') == 'ietf' and 'document-name' in new_module_data:
-        wg = _resolve_working_group(name_revision, ietf_type, new_module_data['document-name'])
-        if (module_data.get('ietf') is None or module_data['ietf']['ietf-wg'] != wg) and wg is not None:
-            update = True
-            module_data['ietf'] = {}
-            module_data['ietf']['ietf-wg'] = wg
-
-    mat_level = _resolve_maturity_level(ietf_type, new_module_data.get('document-name'))
-    if module_data.get('maturity-level') != mat_level:
-        if mat_level == 'not-applicable' and module_data.get('maturity-level'):
-            pass
-        else:
-            update = True
-            module_data['maturity-level'] = mat_level
-
-    if update:
-        updated_modules.append(module_data)
-        print('DEBUG: updated_modules: {}'.format(name_revision))
     return updated_modules
 
 
