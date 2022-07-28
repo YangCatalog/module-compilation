@@ -18,6 +18,7 @@ __license__ = 'Apache License, Version 2.0'
 __email__ = 'slavomir.mazur@pantheon.tech'
 
 import configparser
+import glob
 import json
 import os
 import time
@@ -26,9 +27,44 @@ import typing as t
 import jinja2
 import requests
 from redis_connections.redis_connection import RedisConnection
+from utility.static_variables import NS_MAP, ORGANIZATIONS, IETF_RFC_MAP
 from versions import ValidatorsVersions
 
-from utility.static_variables import IETF_RFC_MAP
+
+
+def json_parse_organization(module: dict) -> t.Optional[str]:
+    if 'organization' in module:
+        parsed_organization = module['organization'].lower()
+        for known_org in ORGANIZATIONS:
+            if known_org in parsed_organization:
+                return known_org
+
+
+def json_parse_namespace(module: dict, save_file_dir: str, pyang_exec: str) -> t.Optional[str]:
+    if 'belongs-to' in module:
+        belongs_to = module['belongs-to']
+        try:
+            filename = max(glob.glob(os.path.join(save_file_dir, '{}@*.yang'.format(belongs_to))))
+            json_module_command = 'pypy3 {} -fbasic-info --path="$MODULES" {} 2> /dev/null'.format(pyang_exec, filename)
+            parent_module = json.loads(os.popen(json_module_command).read())
+            return json_parse_namespace(parent_module, save_file_dir, pyang_exec)
+        except ValueError:
+            return None
+    else:
+        return module.get('namespace')
+
+
+def namespace_to_organization(namespace: str) -> str:
+    for ns, org in NS_MAP:
+        if ns in namespace:
+            return org
+    if 'cisco' in namespace:
+        return 'cisco'
+    elif 'ietf' in namespace:
+        return 'ietf'
+    elif 'urn:' in namespace:
+        return namespace.split('urn:')[1].split(':')[0]
+    return 'independent'
 
 
 def push_to_redis(updated_modules: list, config: configparser.ConfigParser):
@@ -221,65 +257,86 @@ def check_yangcatalog_data(config: configparser.ConfigParser, yang_file_pseudo_p
     pyang_exec = config.get('Tool-Section', 'pyang-exec')
     result_html_dir = config.get('Web-Section', 'result-html-dir')
     domain_prefix = config.get('Web-Section', 'domain-prefix')
+    save_file_dir = config.get('Directory-Section', 'save-file-dir')
     versions = ValidatorsVersions().get_versions()
 
     yang_file_path = _path_in_dir(yang_file_pseudo_path)
     is_rfc = ietf_type == 'ietf-rfc'
 
     updated_modules = []
-    name_revision_command = 'pypy3 {} -fname --name-print-revision --path="$MODULES" {} 2> /dev/null'.format(pyang_exec, yang_file_path)
-    name_revision = os.popen(name_revision_command).read().rstrip().split(' ')[0]
-    if '@' not in name_revision:
-        name_revision += '@1970-01-01'
+    json_module_command = 'pypy3 {} -fbasic-info --path="$MODULES" {} 2> /dev/null'.format(pyang_exec, yang_file_path)
+    with os.popen(json_module_command) as pipe:
+        module_basic_info = json.load(pipe)
+    name = module_basic_info['name']
+    revision = module_basic_info.get('revision')
+    if revision is None:
+        revision = '1970-01-01'
+    name_revision = '{}@{}'.format(name, revision)
+
     if name_revision in all_modules:
         module_data = all_modules[name_revision].copy()
         update = False
-
-        for field in ['document-name', 'reference', 'author-email']:
-            if new_module_data.get(field) and module_data.get(field) != new_module_data[field]:
-                update = True
-                module_data[field] = new_module_data[field]
-
-        if new_module_data.get('compilation-status') \
-                and module_data.get('compilation-status') != new_module_data['compilation-status'].lower().replace(' ', '-'):
-            # Module parsed with --ietf flag (= RFC) has higher priority
-            if is_rfc and ietf_type is None:
-                pass
-            else:
-                update = True
-                module_data['compilation-status'] = new_module_data['compilation-status'].lower().replace(' ', '-')
-
-        if new_module_data.get('compilation-status') is not None:
-            file_url = _generate_compilation_result_file(module_data, compilation_results,
-                                                         result_html_dir, is_rfc, versions, ietf_type)
-            if module_data.get('compilation-status') == 'unknown':
-                comp_result = ''
-            else:
-                comp_result = '{}/results/{}'.format(domain_prefix, file_url)
-            if module_data.get('compilation-result') != comp_result:
-                update = True
-                module_data['compilation-result'] = comp_result
-
-        if ietf_type is not None and 'document-name' in new_module_data:
-            wg = _resolve_working_group(name_revision, ietf_type, new_module_data['document-name'])
-            if (module_data.get('ietf') is None or module_data['ietf']['ietf-wg'] != wg) and wg is not None:
-                update = True
-                module_data['ietf'] = {}
-                module_data['ietf']['ietf-wg'] = wg
-
-        mat_level = _resolve_maturity_level(ietf_type, new_module_data.get('document-name'))
-        if module_data.get('maturity-level') != mat_level:
-            if mat_level == 'not-applicable' and module_data.get('maturity-level'):
-                pass
-            else:
-                update = True
-                module_data['maturity-level'] = mat_level
-
-        if update:
-            updated_modules.append(module_data)
-            print('DEBUG: updated_modules: {}'.format(name_revision))
     else:
         print('WARN: {} not in Redis yet'.format(name_revision))
+        organization = json_parse_organization(module_basic_info)
+        if organization is None:
+            namespace = json_parse_namespace(module_basic_info, save_file_dir, pyang_exec)
+            if namespace is None:
+                organization = 'independent'
+            else:
+                organization = namespace_to_organization(namespace)
+
+        name, revision = name_revision.split('@')
+        module_data: t.Dict[str, t.Any] = {
+            'name': name,
+            'revision': revision,
+            'organization': organization
+        }
+
+        update = True
+    for field in ['document-name', 'reference', 'author-email']:
+        if new_module_data.get(field) and module_data.get(field) != new_module_data[field]:
+            update = True
+            module_data[field] = new_module_data[field]
+
+    if new_module_data.get('compilation-status') \
+            and module_data.get('compilation-status') != new_module_data['compilation-status'].lower().replace(' ', '-'):
+        # Module parsed with --ietf flag (= RFC) has higher priority
+        if is_rfc and ietf_type is None:
+            pass
+        else:
+            update = True
+            module_data['compilation-status'] = new_module_data['compilation-status'].lower().replace(' ', '-')
+
+    if new_module_data.get('compilation-status') is not None:
+        file_url = _generate_compilation_result_file(module_data, compilation_results,
+                                                        result_html_dir, is_rfc, versions, ietf_type)
+        if module_data.get('compilation-status') == 'unknown':
+            comp_result = ''
+        else:
+            comp_result = '{}/results/{}'.format(domain_prefix, file_url)
+        if module_data.get('compilation-result') != comp_result:
+            update = True
+            module_data['compilation-result'] = comp_result
+
+    if ietf_type is not None and 'document-name' in new_module_data:
+        wg = _resolve_working_group(name_revision, ietf_type, new_module_data['document-name'])
+        if (module_data.get('ietf') is None or module_data['ietf']['ietf-wg'] != wg) and wg is not None:
+            update = True
+            module_data['ietf'] = {}
+            module_data['ietf']['ietf-wg'] = wg
+
+    mat_level = _resolve_maturity_level(ietf_type, new_module_data.get('document-name'))
+    if module_data.get('maturity-level') != mat_level:
+        if mat_level == 'not-applicable' and module_data.get('maturity-level'):
+            pass
+        else:
+            update = True
+            module_data['maturity-level'] = mat_level
+
+    if update:
+        updated_modules.append(module_data)
+        print('DEBUG: updated_modules: {}'.format(name_revision))
     return updated_modules
 
 

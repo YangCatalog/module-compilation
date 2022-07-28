@@ -24,6 +24,7 @@ ENV CONF=$YANG/sdo_analysis/conf
 ENV BACKUPDIR="get_config.py --section Directory-Section --key backup"
 ENV CONFD_DIR="get_config.py --section Tool-Section --key confd-dir"
 ENV PYANG="get_config.py --section Tool-Section --key pyang-exec"
+ENV PYANG_PLUGINPATH="/sdo_analysis/bin/utility/pyang_plugin"
 ENV IS_PROD="get_config.py --section General-Section --key is-prod"
 
 #

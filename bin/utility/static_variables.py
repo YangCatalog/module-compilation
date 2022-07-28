@@ -47,3 +47,22 @@ IETF_RFC_MAP = {
     'ietf-yang-types@2010-09-24.yang': 'NETMOD',
     'ietf-yang-types@2013-07-15.yang': 'NETMOD'
 }
+
+NS_MAP = (
+    ('http://cisco.com/', 'cisco'),
+    ('http://www.cisco.com/', 'cisco'),
+    ('http://www.huawei.com/netconf', 'huawei'),
+    ('http://openconfig.net/yang', 'openconfig'),
+    ('http://tail-f.com/', 'tail-f'),
+    ('http://yang.juniper.net/', 'juniper'),
+    ('http://www.ciena.com/ns/yang/', 'ciena'),
+    ('https://www.broadband-forum.org', 'bbf'),
+    ('http://ackl.io/', 'acklio'),
+    ('http://ni.com/ns', 'ni'),
+    ('http://metroethernetforum.org/ns', 'mef')
+)
+
+ORGANIZATIONS = [
+    'ietf', 'ieee', 'etsi', 'bbf', 'openconfig', 'tail-f', 'opendaylight',
+    'ciena', 'cisco', 'fujitsu', 'huawei', 'juniper', 'nokia', 'acklio'
+]
