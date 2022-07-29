@@ -13,46 +13,47 @@
 # either express or implied.
 
 
+__author__ = 'Benoit Claise'
+__copyright__ = 'Copyright(c) 2015-2018, Cisco Systems, Inc., Copyright The IETF Trust 2019, All Rights Reserved'
+__license__ = 'Apache License, Version 2.0'
+__email__ = 'bclaise@cisco.com'
+
+
 import argparse
 import os
 import shutil
 
-__author__ = 'bclaise@cisco.com'
 
-
-def remove_directory_content(directory: str, debug_level: int = 0):
+def remove_directory_content(directory: str, debug_level: int = 0) -> None:
     """
-    Empty content of the directory passed as an argument.
+    Empty the content of the directory passed as an argument.
 
     Arguments:
         :param directory    (str) Path to the directory from which the content should be removed
         :param debug_level  (int) debug level; If > 0 print some debug statements to the console
     """
+    if not directory:
+        return
     if not os.path.isdir(directory):
         os.makedirs(directory)
     for filename in os.listdir(directory):
         file_path = os.path.join(directory, filename)
         try:
-            if os.path.isfile(file_path):
-                os.unlink(file_path)
-                if debug_level > 0:
-                    print('DEBUG: removing the file {}'.format(file_path))
-            elif os.path.isdir(file_path) and not os.path.islink(file_path):
-                shutil.rmtree(file_path)
-                if debug_level > 0:
-                    print('DEBUG: removing the subdirectory {}'.format(file_path))
-        except Exception as e:
-            print('Exception: %s' % e)
+            os.unlink(file_path)
+            if debug_level > 0:
+                print('DEBUG: removing the file {}'.format(file_path))
+        except IsADirectoryError:
+            shutil.rmtree(file_path)
+            if debug_level > 0:
+                print('DEBUG: removing the subdirectory {}'.format(file_path))
 
 
 if __name__ == '__main__':
-    """
-    Testing functions
-    """
     parser = argparse.ArgumentParser(description='Remove directory content')
     parser.add_argument('--dir',
                         help='Directory the content of which to remove',
-                        type=str)
+                        type=str,
+                        default='')
     parser.add_argument('--debug',
                         help='Debug level - default is 0',
                         type=int,
