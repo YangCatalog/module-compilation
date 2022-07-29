@@ -13,7 +13,7 @@
 # either express or implied.
 
 __author__ = 'Benoit Claise'
-__copyright__ = 'Copyright(c) 2015-2018, Cisco Systems, Inc.,  Copyright The IETF Trust 2019, All Rights Reserved'
+__copyright__ = 'Copyright(c) 2015-2018, Cisco Systems, Inc., Copyright The IETF Trust 2019, All Rights Reserved'
 __license__ = 'Apache V2.0'
 __email__ = 'bclaise@cisco.com'
 
@@ -26,47 +26,65 @@ from datetime import datetime
 from create_config import create_config
 
 
-def main():
-    config = create_config()
-    web_private = config.get('Web-Section', 'private-directory')
-    backup_directory = config.get('Directory-Section', 'backup')
-    parser = argparse.ArgumentParser(description='Append creation timestamps to filenames')
-    parser.add_argument('--debug',
-                        help='Debug level - default is 0',
-                        type=int,
-                        default=0)
+def rename_file_backup(src_dir: str, backup_dir: str, debug_level: int = 0) -> None:
+    """ Backup each of the files by renaming them with the current timestamp appended to the file name.
 
-    args = parser.parse_args()
-    debug_level = args.debug
+    Arguments:
+        :param src_dir      (str) Directory where the files to backup are stored
+        :param backup_dir   (str) Directory where to save backup files
+        :param debug_level  (int) debug level; If > 0 print some debug statements to the console
+    """
+    if not os.path.exists(src_dir):
+        return
 
-    name_to_backup = ['IETFYANGPageMain.html', 'HydrogenODLPageCompilation.html', 'HeliumODLPageCompilation.html',
-                      'LithiumODLPageCompilation.html', 'IETFCiscoAuthorsYANGPageCompilation.html',
-                      'IETFYANGOutOfRFC.html', 'IETFDraftYANGPageCompilation.html',
-                      'IEEEStandardYANGPageCompilation.html', 'IEEEStandardDraftYANGPageCompilation.html',
-                      'IANAStandardYANGPageCompilation.html', 'IEEEExperimentalYANGPageCompilation.html',
-                      'YANGPageMain.html', 'IETFYANGRFC.html']
-    for file in name_to_backup:
-        file_no_extension = file.split('.')[0]
-        file_extension = file.split('.')[-1]
-        full_path_file = os.path.join(web_private, file)
+    if not os.path.exists(backup_dir):
+        try:
+            os.makedirs(backup_dir)
+        except OSError:
+            print('Unable to create directory: {}'.format(backup_dir))
+            return
+
+    files_to_backup = ['IETFYANGPageMain.html', 'IETFCiscoAuthorsYANGPageCompilation.html',
+                       'IETFYANGOutOfRFC.html', 'IETFDraftYANGPageCompilation.html',
+                       'IEEEStandardYANGPageCompilation.html', 'IEEEStandardDraftYANGPageCompilation.html',
+                       'IANAStandardYANGPageCompilation.html', 'IEEEExperimentalYANGPageCompilation.html',
+                       'YANGPageMain.html', 'IETFYANGRFC.html']
+    for filename in files_to_backup:
+        name, extension = filename.split('.')
+        full_path_file = os.path.join(src_dir, filename)
         if not os.path.isfile(full_path_file):
             print('*** file {} not present!'.format(full_path_file))
             continue
-        modifiedTime = os.path.getmtime(full_path_file)
-        timestamp = (datetime.fromtimestamp(modifiedTime).strftime("%Y_%m_%d"))
-        if file_no_extension == 'IETFYANGRFC':
-            file_no_extension = 'IETFYANGOutOfRFC'
-        new_filename = '{}_{}.{}'.format(file_no_extension, timestamp, file_extension)
-        new_full_path_file = os.path.join(backup_directory, new_filename)
+        modified_time = os.path.getmtime(full_path_file)
+        timestamp = (datetime.fromtimestamp(modified_time).strftime("%Y_%m_%d"))
+        if name == 'IETFYANGRFC':
+            name = 'IETFYANGOutOfRFC'
+        new_filename = '{}_{}.{}'.format(name, timestamp, extension)
+        new_full_path_file = os.path.join(backup_dir, new_filename)
         if debug_level > 0:
-            print('file full path: {}'.format(full_path_file))
-            print('file without extension: {}'.format(file_no_extension))
-            print('file extension: {}'.format(file_extension))
-            print('last modified: %s' % time.ctime(os.path.getmtime(full_path_file)))
-            print('timestamp: {}'.format(timestamp))
-            print('new file name: {}'.format(new_full_path_file))
+            print('DEBUG: file full path: {}'.format(full_path_file))
+            print('DEBUG: last modified: %s' % time.ctime(os.path.getmtime(full_path_file)))
+            print('DEBUG: new file name: {}'.format(new_full_path_file))
         shutil.copy2(full_path_file, new_full_path_file)
 
 
 if __name__ == '__main__':
-    main()
+    config = create_config()
+    web_private = config.get('Web-Section', 'private-directory')
+    backup_directory = config.get('Directory-Section', 'backup')
+    parser = argparse.ArgumentParser(description='Append creation timestamps to filenames')
+    parser.add_argument('--srcdir',
+                        help='Directory the content of which to remove',
+                        type=str,
+                        default=web_private)
+    parser.add_argument('--backupdir',
+                        help='Directory the content of which to remove',
+                        type=str,
+                        default=backup_directory)
+    parser.add_argument('--debug',
+                        help='Debug level - default is 0',
+                        type=int,
+                        default=0)
+    args = parser.parse_args()
+
+    rename_file_backup(args.srcdir, args.backupdir, args.debug)
