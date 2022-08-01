@@ -13,7 +13,7 @@
 # either express or implied.
 
 __author__ = 'Benoit Claise, Eric Vyncke'
-__copyright__ = 'Copyright(c) 2015-2018, Cisco Systems, Inc., Copyright The IETF Trust 2019, All Rights Reserved'
+__copyright__ = 'Copyright(c) 2015-2019, Cisco Systems, Inc., Copyright The IETF Trust 2019, All Rights Reserved'
 __license__ = 'Apache License, Version 2.0'
 __email__ = 'bclaise@cisco.com, evyncke@cisco.com'
 
