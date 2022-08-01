@@ -57,15 +57,16 @@ def main():
                         default=0)
     args = parser.parse_args()
 
-    custom_print('Starting check_archived_drafts.py script')
+    custom_print('Starting {} script'.format(os.path.basename(__file__)))
 
     all_yang_drafts_strict = os.path.join(temp_dir, 'draft-with-YANG-strict')
     missing_modules_directory = os.path.join(temp_dir, 'drafts-missing-modules')
+    all_yang_path = os.path.join(temp_dir, 'YANG-ALL')
     draft_extractor_paths = {
         'draft_path': archived_draft_path,
         'yang_path': yang_path,
         'all_yang_draft_path_strict': all_yang_drafts_strict,
-        'all_yang_path': '{}/YANG-ALL'.format(temp_dir)
+        'all_yang_path': all_yang_path
     }
 
     try:
@@ -74,14 +75,13 @@ def main():
         remove_directory_content(all_yang_drafts_strict, args.debug)
 
         custom_print('Extracting modules from drafts stored in {}'.format(archived_draft_path))
-        draftExtractor = DraftExtractor(draft_extractor_paths, args.debug, extract_elements=False, extract_examples=False)
-        draftExtractor.extract_drafts()
-        draftExtractor.invert_dict()
-        draftExtractor.remove_invalid_files()
-    except Exception:
+        draftExtractor = DraftExtractor(draft_extractor_paths, args.debug,
+                                        extract_elements=False, extract_examples=False, copy_drafts=False)
+        draftExtractor.extract()
+    except Exception as err:
         custom_print('Error occured while extracting modules')
         end = int(time.time())
-        job_log(start, end, temp_dir, 'check_archived_drafts', status='Fail')
+        job_log(start, end, temp_dir, os.path.basename(__file__), error=repr(err), status='Fail')
         return
 
     custom_print('Loading all modules data from API')
@@ -92,14 +92,15 @@ def main():
         all_modules_keys = ['{}@{}'.format(m.get('name'), m.get('revision')) for m in all_modules]
 
     try:
-        with open('{}/resources/old-rfcs.json'.format(os.path.dirname(os.path.realpath(__file__))), 'r') as f:
+        resources_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'resources')
+        with open(os.path.join(resources_dir, 'old-rfcs.json'), 'r') as f:
             old_modules = json.load(f)
-    except Exception:
+    except (FileNotFoundError, json.decoder.JSONDecodeError):
         old_modules = []
     try:
-        with open('{}/unparsable-modules.json'.format(var_path), 'r') as f:
+        with open(os.path.join(var_path, 'unparsable-modules.json'), 'r') as f:
             unparsable_modules = json.load(f)
-    except Exception:
+    except (FileNotFoundError, json.decoder.JSONDecodeError):
         unparsable_modules = []
 
     # Prepare a directory where the missing modules will be copied
@@ -121,11 +122,12 @@ def main():
                 continue
         else:
             name_revision += '@1970-01-01'
-        if name_revision not in all_modules_keys:
-            missing_modules.append(yang_file)
-            src = os.path.join(yang_path, yang_file)
-            dst = os.path.join(dst_path, yang_file)
-            shutil.copy2(src, dst)
+        if name_revision in all_modules_keys:
+            continue
+        missing_modules.append(yang_file)
+        src = os.path.join(yang_path, yang_file)
+        dst = os.path.join(dst_path, yang_file)
+        shutil.copy2(src, dst)
 
     custom_print('Following modules from Drafts are missing in YANG Catalog')
     for module in missing_modules:
@@ -140,7 +142,8 @@ def main():
 
     message = {'label': 'Number of missing modules', 'message': len(missing_modules)}
     end = int(time.time())
-    job_log(start, end, temp_dir, 'check_archived_drafts', messages=[message], status='Success')
+    job_log(start, end, temp_dir, os.path.basename(__file__), messages=[message], status='Success')
+    custom_print('end of {} job'.format(os.path.basename(__file__)))
 
 
 if __name__ == '__main__':

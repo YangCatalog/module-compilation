@@ -22,19 +22,22 @@ import json
 from create_config import create_config
 
 
-def job_log(start_time: int, end_time: int, temp_dir: str, filename: str, messages: list = [], status: str = ''):
+def job_log(start_time: int, end_time: int, temp_dir: str, filename: str,
+            messages: list = [], error: str = '', status: str = ''):
     result = {}
     result['start'] = start_time
     result['end'] = end_time
     result['status'] = status
+    result['error'] = error
     result['messages'] = messages
 
     try:
         with open('{}/cronjob.json'.format(temp_dir), 'r') as f:
             file_content = json.load(f)
-    except:
+    except (FileNotFoundError, json.decoder.JSONDecodeError):
         file_content = {}
 
+    filename = filename.split('.py')[0]
     last_successfull = None
     # If successfull rewrite, otherwise use last_successfull value from JSON
     if status == 'Success':

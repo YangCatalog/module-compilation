@@ -71,7 +71,7 @@ class TestRenameFileBackup(unittest.TestCase):
 
     def test_rename_file_backup_from_console(self) -> None:
         """ Run the script from the console by passing the arguments. """
-        bash_command = 'python3 {} --srcdir {} --backupdir {} --debug 1'.format(
+        bash_command = 'python {} --srcdir {} --backupdir {} --debug 1'.format(
             self.script_path, self.private_directory, self.backup_directory)
         subprocess.run(bash_command, shell=True, capture_output=True, check=False).stdout.decode()
 

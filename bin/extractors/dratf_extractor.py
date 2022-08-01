@@ -32,7 +32,7 @@ from extractors.helper import (check_after_xym_extraction,
 
 class DraftExtractor:
     def __init__(self, draft_extractor_paths: dict, debug_level: int,
-                 extract_elements: bool = True, extract_examples: bool = True):
+                 extract_elements: bool = True, extract_examples: bool = True, copy_drafts: bool = True):
         self.draft_path = draft_extractor_paths.get('draft_path', '')
         self.yang_path = draft_extractor_paths.get('yang_path', '')
         self.draft_elements_path = draft_extractor_paths.get('draft_elements_path', '')
@@ -44,6 +44,7 @@ class DraftExtractor:
         self.debug_level = debug_level
         self.extract_examples = extract_examples
         self.extract_elements = extract_elements
+        self.copy_drafts = copy_drafts
         self.ietf_drafts = []
         self.draft_yang_dict = {}
         self.draft_yang_example_dict = {}
@@ -96,7 +97,8 @@ class DraftExtractor:
 
                 self.draft_yang_dict[draft_file] = extracted_yang_models
                 # copy the draft file in a specific directory for strict = True
-                shutil.copy2(draft_file_path, self.draft_path_strict)
+                if self.copy_drafts:
+                    shutil.copy2(draft_file_path, self.draft_path_strict)
 
             # Extract the correctly formatted example YANG Models into all_yang_example_path
             if self.extract_examples:
@@ -113,7 +115,8 @@ class DraftExtractor:
 
                     self.draft_yang_example_dict[draft_file] = extracted_yang_models
                     # copy the draft file in a specific directory for strict = True
-                    shutil.copy2(draft_file_path, self.draft_path_only_example)
+                    if self.copy_drafts:
+                        shutil.copy2(draft_file_path, self.draft_path_only_example)
 
             # Extract all YANG Models, including the wrongly formatted ones, in all_yang_path
             extracted_yang_models = self.extract_from_draft_file(draft_file, self.draft_path, self.all_yang_path)
@@ -129,7 +132,8 @@ class DraftExtractor:
 
                 self.draft_yang_all_dict[draft_file] = extracted_yang_models
                 # copy the draft file in a specific directory for strict = False
-                shutil.copy2(draft_file_path, self.draft_path_no_strict)
+                if self.copy_drafts:
+                    shutil.copy2(draft_file_path, self.draft_path_no_strict)
 
     def extract_from_draft_file(self, draft_file: str, srcdir: str, dstdir: str,
                                 strict: bool = False, strict_examples: bool = False):

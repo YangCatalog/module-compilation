@@ -2,7 +2,6 @@
 
 # Copyright The IETF Trust 2019, All Rights Reserved
 # Copyright (c) 2015-2018 Cisco and/or its affiliates.
-
 # This software is licensed to you under the terms of the Apache License, Version 2.0 (the "License").
 # You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
 # The code, technical concepts, and all information contained herein, are the property of Cisco Technology, Inc.
@@ -14,7 +13,8 @@
 # either express or implied.
 
 __author__ = 'Benoit Claise, Eric Vyncke'
-__copyright__ = 'Copyright(c) 2015-2019, Cisco Systems, Inc.,  Copyright The IETF Trust 2019, All Rights Reserved'
+__copyright__ = 'Copyright(c) 2015-2018, Cisco Systems, Inc., Copyright The IETF Trust 2019, All Rights Reserved'
+__license__ = 'Apache License, Version 2.0'
 __email__ = 'bclaise@cisco.com, evyncke@cisco.com'
 
 import argparse
@@ -27,10 +27,10 @@ from extractors.dratf_extractor import DraftExtractor
 from extractors.rfc_extractor import RFCExtractor
 from remove_directory_content import remove_directory_content
 
-
 # ----------------------------------------------------------------------
 # Functions
 # ----------------------------------------------------------------------
+
 
 def custom_print(message: str):
     timestamp = '{} ({}):'.format(datetime.datetime.now().time(), os.getpid())
@@ -147,7 +147,7 @@ def main():
         args.draftpathonlyexample,
         args.rfcextractionyangpath,
         args.draftelementspath
-        ]:
+    ]:
         remove_directory_content(dir, debug_level)
 
     # Extract YANG models from IETF RFCs files
