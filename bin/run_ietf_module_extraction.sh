@@ -35,8 +35,8 @@ rsync -avlz --delete --delete-excluded --exclude=dummy.txt --exclude="std-*.txt"
 
 #remove the drafts with xym.py error, but that don't contain YANG data modules
 date +"%c: Removing bad IETF drafts" >>$LOG
-python $BIN/yang_exclude_bad_drafts.py >>$LOG 2>&1
-python $BIN/yang_exclude_bad_drafts.py --dstdir $IETFDIR/my-id-archive-mirror >>$LOG 2>&1
+python $BIN/exclude_bad_drafts.py >>$LOG 2>&1
+python $BIN/exclude_bad_drafts.py --dstdir $IETFDIR/my-id-archive-mirror >>$LOG 2>&1
 
 #copy the current content to the -old files
 if [ -f $WEB_PRIVATE/IETFDraftYANGPageCompilation.html ]; then

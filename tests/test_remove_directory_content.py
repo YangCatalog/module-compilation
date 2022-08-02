@@ -42,8 +42,8 @@ class TestRemoveDirectoryContent(unittest.TestCase):
 
         os.makedirs(self.resource_path)
         os.makedirs(subdir_path)
-        open(file_path, 'w').close()
-        open(symlink_src_file, 'w').close()
+        open(file_path, 'w', encoding='utf-8').close()
+        open(symlink_src_file, 'w', encoding='utf-8').close()
         os.symlink(symlink_src_file, symlink_dst_file)
 
     def tearDown(self) -> None:
