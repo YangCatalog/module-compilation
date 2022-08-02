@@ -1,0 +1,12 @@
+module ietf-test {
+  yang-version "1.1";
+  namespace "urn:ietf:params:xml:ns:yang:ietf-test";
+
+  organization
+    "IETF NETMOD (Network Modeling) Working Group";
+  
+  revision 2022-08-01 {
+    description
+      "Test IETF module.";
+  }
+}

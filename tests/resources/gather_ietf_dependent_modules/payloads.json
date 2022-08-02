@@ -1,0 +1,20 @@
+{
+  "search-filter-ietf": {
+    "yang-catalog:modules": {
+      "module": [
+        {
+          "name": "ietf-test",
+          "revision": "2022-08-01"
+        },
+        {
+          "name": "ietf-test",
+          "revision": "2022-01-01"
+        }
+      ]
+    }
+  },
+  "search-filter-ietf-400-response": {
+    "description": "body request has to start with \"input\" container",
+    "error": "YangCatalog did not understand the message you have sent"
+  }
+}
