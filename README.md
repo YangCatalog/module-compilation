@@ -9,8 +9,6 @@ Most of the code is in the `bin/` directory and uses `bash` and Python3 scripts.
 
 Some configuration files are in the `conf/` directory including `paths.sh` which defines all paths used by the scripts. This script merely reads the global configuration file `/etc/yangcatalog/yangcatalog.conf` and creates the required environement variables required by the shell scripts.
 
-The file `/etc/yangcatalog/IETF-drafts-list-with-no-YANG-models.txt` contains a list of IETF drafts having a `xym`extraction error but containing no actual YANG modules. Those I-D are removed from the local I-D repository.
-
 *Some pre-requisistes are defined int he README.md in bin directory*
 
 Overall data flow
