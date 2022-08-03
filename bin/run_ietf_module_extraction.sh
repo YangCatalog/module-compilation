@@ -33,11 +33,6 @@ rsync -avz --include 'draft-*.txt' --exclude '*' --delete rsync.ietf.org::id-arc
 date +"%c: Retrieving IETF RFCs" >>$LOG
 rsync -avlz --delete --delete-excluded --exclude=dummy.txt --exclude="std-*.txt" --exclude="bcp-*.txt" --exclude="rfc-retrieval.txt" --exclude="rfc-index*.txt" --exclude="RFCs_for_errata.txt" --exclude="rfc-ref.txt" --exclude="rfcxx00.txt" --exclude="*index*" --include="*.txt" --exclude="*" ftp.rfc-editor.org::rfcs rfc >>$LOG 2>&1
 
-#remove the drafts with xym.py error, but that don't contain YANG data modules
-date +"%c: Removing bad IETF drafts" >>$LOG
-python $BIN/exclude_bad_drafts.py >>$LOG 2>&1
-python $BIN/exclude_bad_drafts.py --dstdir $IETFDIR/my-id-archive-mirror >>$LOG 2>&1
-
 #copy the current content to the -old files
 if [ -f $WEB_PRIVATE/IETFDraftYANGPageCompilation.html ]; then
 	cp $WEB_PRIVATE/IETFDraftYANGPageCompilation.html $WEB_PRIVATE/IETFDraftYANGPageCompilation-old.html
