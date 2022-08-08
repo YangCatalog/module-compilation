@@ -27,9 +27,9 @@ import typing as t
 import jinja2
 import requests
 from redis_connections.redis_connection import RedisConnection
-from utility.static_variables import NS_MAP, ORGANIZATIONS, IETF_RFC_MAP
 from versions import ValidatorsVersions
 
+from utility.static_variables import IETF_RFC_MAP, NAMESPACE_MAP, ORGANIZATIONS
 
 
 def json_parse_organization(module: dict) -> t.Optional[str]:
@@ -55,7 +55,7 @@ def json_parse_namespace(module: dict, save_file_dir: str, pyang_exec: str) -> t
 
 
 def namespace_to_organization(namespace: str) -> str:
-    for ns, org in NS_MAP:
+    for ns, org in NAMESPACE_MAP:
         if ns in namespace:
             return org
     if 'cisco' in namespace:
@@ -152,18 +152,17 @@ def list_br_html_addition(modules_list: list):
     return modules_list
 
 
-def _resolve_maturity_level(ietf_type: t.Optional[str], document_name: t.Optional[str]):
+def _resolve_maturity_level(ietf_type: t.Optional[str], document_name: t.Optional[str]) -> t.Optional[str]:
+    if not document_name:
+        return 'not-applicable'
     if ietf_type == 'ietf-rfc':
         return 'ratified'
-    elif ietf_type in ['ietf-draft', 'ietf-example']:
-        assert document_name, 'If this is an IETF module, it ought to have a reference document'
+    if ietf_type in ['ietf-draft', 'ietf-example']:
         maturity_level = document_name.split('-')[1]
         if 'ietf' in maturity_level:
             return 'adopted'
-        else:
-            return 'initial'
-    else:
-        return 'not-applicable'
+        return 'initial'
+    return 'not-applicable'
 
 
 def _resolve_working_group(name_revision: str, ietf_type: str, document_name: str):
@@ -265,11 +264,17 @@ def check_yangcatalog_data(config: configparser.ConfigParser, yang_file_pseudo_p
 
     updated_modules = []
     json_module_command = 'pypy3 {} -fbasic-info --path="$MODULES" {} 2> /dev/null'.format(pyang_exec, yang_file_path)
-    with os.popen(json_module_command) as pipe:
-        module_basic_info = json.load(pipe)
-    name = module_basic_info['name']
+    module_basic_info = {}
+    try:
+        with os.popen(json_module_command) as pipe:
+            module_basic_info = json.load(pipe)
+    except json.decoder.JSONDecodeError:
+        print('Problem with pyang command:\n{}'.format(json_module_command))
+    name = module_basic_info.get('name')
     revision = module_basic_info.get('revision')
-    if revision is None:
+    if not name:
+        return
+    if not revision:
         revision = '1970-01-01'
     name_revision = '{}@{}'.format(name, revision)
 
@@ -310,7 +315,7 @@ def check_yangcatalog_data(config: configparser.ConfigParser, yang_file_pseudo_p
 
     if new_module_data.get('compilation-status') is not None:
         file_url = _generate_compilation_result_file(module_data, compilation_results,
-                                                        result_html_dir, is_rfc, versions, ietf_type)
+                                                     result_html_dir, is_rfc, versions, ietf_type)
         if module_data.get('compilation-status') == 'unknown':
             comp_result = ''
         else:
