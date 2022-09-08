@@ -16,9 +16,8 @@
 
 MAX_PROCESSES=4
 
-wait_for_processes () {
-   while [ $(jobs -r | wc -l) -ge $MAX_PROCESSES ]
-   do
+wait_for_processes() {
+   while [ $(jobs -r | wc -l) -ge $MAX_PROCESSES ]; do
       sleep 1s
    done
 }
@@ -41,7 +40,7 @@ curl -s -H "Accept: application/json" $MY_URI/api/search/modules -o "$TMP/all_mo
 
 date +"%c: forking all sub-processes" >>$LOG
 
-compile_modules () {
+compile_modules() {
    python $BIN/compile_modules.py "$@" >>$LOG 2>&1 &
    wait_for_processes
 }
@@ -55,7 +54,6 @@ if [ $(date +%u) -eq 6 ]; then
 else
    compile_modules --draft
 fi
-
 
 # IETF examples
 compile_modules --example
@@ -92,7 +90,6 @@ compile_modules --metadata "Sysrepo: internal YANG Data Models compilation from 
 
 # sysrepo applications
 compile_modules --metadata "Sysrepo: applications YANG Data Models compilation from https://github.com/sysrepo/yang/tree/master/applications" --lint --prefix SysrepoApplication --rootdir "$NONIETFDIR/sysrepo/yang/applications/"
-
 
 # ETSI
 for path in $(ls -d $NONIETFDIR/yangmodels/yang/standard/etsi/*); do
@@ -131,7 +128,7 @@ if [ "$IS_PROD" = "True" ]; then
    done
    cd $cur_dir
 
-   cisco () {
+   cisco() {
       # syntax: cisco meta os
       local meta=$1
       local os_upper=$2
