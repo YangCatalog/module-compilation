@@ -40,7 +40,7 @@ def invert_yang_modules_dict(in_dict: dict, debug_level: int = 0):
         print('DEBUG: invert_yang_modules_dict: dictionary before inversion:\n{}'.format(str(in_dict)))
 
     inv_dict = {}
-    for key, value in in_dict.items():
+    for key in in_dict.keys():
         for yang_model in in_dict[key]:
             inv_dict[yang_model] = key
 

@@ -33,8 +33,8 @@ from remove_directory_content import remove_directory_content
 
 
 def custom_print(message: str):
-    timestamp = '{} ({}):'.format(datetime.datetime.now().time(), os.getpid())
-    print('{} {}'.format(timestamp, message), flush=True)
+    timestamp = f'{datetime.datetime.now().time()} ({os.getpid()}):'
+    print(f'{timestamp} {message}', flush=True)
 
 
 # ----------------------------------------------------------------------
@@ -55,61 +55,61 @@ def main():
                         default=False)
     parser.add_argument('--yangpath',
                         help='Path to the directory where to extract models (only correct). '
-                             'Default is "{}/YANG/"'.format(ietf_directory),
+                             f'Default is "{ietf_directory}/YANG/"',
                         type=str,
-                        default='{}/YANG/'.format(ietf_directory))
+                        default=f'{ietf_directory}/YANG/')
     parser.add_argument('--allyangpath',
                         help='Path to the directory where to extract models (including bad ones). '
-                             'Default is "{}/YANG-all/"'.format(ietf_directory),
+                             f'Default is "{ietf_directory}/YANG-all/"',
                         type=str,
-                        default='{}/YANG-all/'.format(ietf_directory))
+                        default=f'{ietf_directory}/YANG-all/')
     parser.add_argument('--allyangexamplepath',
                         help='Path to the directory where to extract example models '
                         '(starting with example- and not with CODE BEGINS/END). '
-                        'Default is "{}/YANG-example/"'.format(ietf_directory),
+                        f'Default is "{ietf_directory}/YANG-example/"',
                         type=str,
-                        default='{}/YANG-example/'.format(ietf_directory))
+                        default=f'{ietf_directory}/YANG-example/')
     parser.add_argument('--yangexampleoldrfcpath',
                         help='Path to the directory where to extract '
                              'the hardcoded YANG module example models from old RFCs (not starting with example-). '
-                             'Default is "{}/YANG-example-old-rfc/"'.format(ietf_directory),
+                             f'Default is "{ietf_directory}/YANG-example-old-rfc/"',
                         type=str,
-                        default='{}/YANG-example-old-rfc/'.format(ietf_directory))
+                        default=f'{ietf_directory}/YANG-example-old-rfc/')
     parser.add_argument('--draftpathstrict',
                         help='Path to the directory where to extract the drafts containing the YANG model(s) - '
                         'with xym flag strict=True. '
-                        'Default is "{}/draft-with-YANG-strict/"'.format(ietf_directory),
+                        f'Default is "{ietf_directory}/draft-with-YANG-strict/"',
                         type=str,
-                        default='{}/draft-with-YANG-strict/'.format(ietf_directory))
+                        default=f'{ietf_directory}/draft-with-YANG-strict/')
     parser.add_argument('--draftpathnostrict',
                         help='Path to the directory where to extract the drafts containing the YANG model(s) - '
                         'with xym flag strict=False. '
-                        'Default is "{}/draft-with-YANG-no-strict/"'.format(ietf_directory),
+                        f'Default is "{ietf_directory}/draft-with-YANG-no-strict/"',
                         type=str,
-                        default='{}/draft-with-YANG-no-strict/'.format(ietf_directory))
+                        default=f'{ietf_directory}/draft-with-YANG-no-strict/')
     parser.add_argument('--draftpathonlyexample',
                         help='Path to the directory where to extract the drafts containing examples -'
                         'with xym flags strict=False and strict_examples=True. '
-                        'Default is "{}/draft-with-YANG-example/"'.format(ietf_directory),
+                        f'Default is "{ietf_directory}/draft-with-YANG-example/"',
                         type=str,
-                        default='{}/draft-with-YANG-example/'.format(ietf_directory))
+                        default=f'{ietf_directory}/draft-with-YANG-example/')
     parser.add_argument('--rfcyangpath',
                         help='Path to the directory where to extract the data models extracted from RFCs. '
-                             'Default is "{}/YANG-rfc/"'.format(ietf_directory),
+                             f'Default is "{ietf_directory}/YANG-rfc/"',
                         type=str,
-                        default='{}/YANG-rfc/'.format(ietf_directory))
+                        default=f'{ietf_directory}/YANG-rfc/')
     parser.add_argument('--rfcextractionyangpath',
                         help='Path to the directory where to extract '
                              'the typedef, grouping, identity from data models extracted from RFCs. '
-                             'Default is "{}/YANG-rfc-extraction/"'.format(ietf_directory),
+                             f'Default is "{ietf_directory}/YANG-rfc-extraction/"',
                         type=str,
-                        default='{}/YANG-rfc-extraction/'.format(ietf_directory))
+                        default=f'{ietf_directory}/YANG-rfc-extraction/')
     parser.add_argument('--draftelementspath',
                         help='Path to the directory where to extract '
                              'the typedef, grouping, identity from data models correctely extracted from drafts. '
-                             'Default is "{}/draft-elements/"'.format(ietf_directory),
+                             f'Default is "{ietf_directory}/draft-elements/"',
                         type=str,
-                        default='{}/draft-elements/'.format(ietf_directory))
+                        default=f'{ietf_directory}/draft-elements/')
     parser.add_argument('--debug',
                         help='Debug level - default is 0',
                         type=int,
@@ -118,7 +118,7 @@ def main():
     args = parser.parse_args()
     if args.archived:
         draft_path = os.path.join(ietf_directory, 'my-id-archive-mirror')
-    custom_print('Start of {} job in {}'.format(os.path.basename(__file__), draft_path))
+    custom_print(f'Start of {os.path.basename(__file__)} job in {draft_path}')
     debug_level = args.debug
 
     draft_extractor_paths = {
@@ -151,29 +151,29 @@ def main():
         remove_directory_content(dir, debug_level)
 
     # Extract YANG models from IETF RFCs files
-    rfcExtractor = RFCExtractor(rfc_path, args.rfcyangpath, args.rfcextractionyangpath, debug_level)
-    rfcExtractor.extract()
-    rfcExtractor.clean_old_RFC_YANG_modules(args.rfcyangpath, args.yangexampleoldrfcpath)
+    rfc_extractor = RFCExtractor(rfc_path, args.rfcyangpath, args.rfcextractionyangpath, debug_level)
+    rfc_extractor.extract()
+    rfc_extractor.clean_old_RFC_YANG_modules(args.rfcyangpath, args.yangexampleoldrfcpath)
     custom_print('Old examples YANG modules moved')
     custom_print('All IETF RFCs pre-processed')
 
     # Extract YANG models from IETF draft files
-    draftExtractor = DraftExtractor(draft_extractor_paths, debug_level)
-    draftExtractor.extract()
-    draftExtractor.dump_incorrect_drafts(public_directory)
+    draft_extractor = DraftExtractor(draft_extractor_paths, debug_level)
+    draft_extractor.extract()
+    draft_extractor.dump_incorrect_drafts(public_directory)
     custom_print('All IETF Drafts pre-processed')
 
     # Dump dicts for later use by compile_modules.py
     with open(os.path.join(cache_directory, 'rfc_dict.json'), 'w') as f:
-        json.dump(rfcExtractor.inverted_rfc_yang_dict, f)
+        json.dump(rfc_extractor.inverted_rfc_yang_dict, f)
 
     with open(os.path.join(cache_directory, 'draft_dict.json'), 'w') as f:
-        json.dump(draftExtractor.inverted_draft_yang_dict, f)
+        json.dump(draft_extractor.inverted_draft_yang_dict, f)
 
     with open(os.path.join(cache_directory, 'example_dict.json'), 'w') as f:
-        json.dump(draftExtractor.inverted_draft_yang_example_dict, f)
+        json.dump(draft_extractor.inverted_draft_yang_example_dict, f)
 
-    custom_print('end of {} job'.format(os.path.basename(__file__)))
+    custom_print(f'end of {os.path.basename(__file__)} job')
 
 
 if __name__ == '__main__':

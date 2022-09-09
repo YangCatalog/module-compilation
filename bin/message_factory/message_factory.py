@@ -28,51 +28,55 @@ GREETINGS = 'Hello from yang-catalog'
 
 
 class MessageFactory:
-    """This class serves to automatically send an email to a group of admin/developers.
-    """
+    """This class serves to automatically email a group of admin/developers."""
 
     def __init__(self, config_path=os.environ['YANGCATALOG_CONFIG_PATH']):
         config = create_config(config_path)
-        self.__email_from = config.get('Message-Section', 'email-from')
-        self.__is_production = config.get('General-Section', 'is-prod')
-        self.__is_production = True if self.__is_production == 'True' else False
-        self.__email_to = config.get('Message-Section', 'email-to').split()
-        self.__developers_email = config.get('Message-Section', 'developers-email').split()
+        self._email_from = config.get('Message-Section', 'email-from')
+        self._is_production = config.get('General-Section', 'is-prod') == 'True'
+        self._email_to = config.get('Message-Section', 'email-to').split()
+        self._developers_email = config.get('Message-Section', 'developers-email').split()
         self._temp_dir = config.get('Directory-Section', 'temp')
-        self.__me = config.get('Web-Section', 'domain-prefix')
-        self.__me = self.__me.split('/')[-1]
-        self.__smtp = smtplib.SMTP('localhost')
+        self._me = config.get('Web-Section', 'domain-prefix').split('/')[-1]
+        self._smtp = smtplib.SMTP('localhost')
 
-    def __post_to_email(self, message: str, email_to: t.Optional[list] = None, subject: t.Optional[str] = None):
+    def _post_to_email(self, message: str, email_to: t.Optional[list] = None, subject: t.Optional[str] = None):
         """Send message to the list of e-mails.
 
             Arguments:
                 :param message      (str) message to send
                 :param email_to     (list) list of emails to send the message to
         """
-        send_to = email_to if email_to else self.__email_to
-        msg = MIMEText('{}\n\nMessage sent from {}'.format(message, self.__me))
-        msg['Subject'] = subject if subject else 'Automatic generated message - RFC IETF'
-        msg['From'] = self.__email_from
+        send_to = email_to or self._email_to
+        msg = MIMEText(f'{message}\n\nMessage sent from {self._me}')
+        msg['Subject'] = subject or 'Automatic generated message - RFC IETF'
+        msg['From'] = self._email_from
         msg['To'] = ', '.join(send_to)
 
-        if not self.__is_production:
-            print('You are in local env. Skip sending message to emails. The message was {}'.format(msg))
-            self.__smtp.quit()
+        if not self._is_production:
+            print(f'You are in local env. Skip sending message to emails. The message was {msg}')
+            self._smtp.quit()
             return
-        self.__smtp.sendmail(self.__email_from, send_to, msg.as_string())
-        self.__smtp.quit()
+        self._smtp.sendmail(self._email_from, send_to, msg.as_string())
+        self._smtp.quit()
 
     def send_missing_modules(self, modules_list: list, incorrect_revision_modules: list):
-        message = ('Following modules extracted from drafts are missing in YANG Catalog:\n')
-        path = os.path.join(self._temp_dir, 'drafts-missing-modules/yangmodels/yang/experimental/ietf-extracted-YANG-modules')
+        message = 'Following modules extracted from drafts are missing in YANG Catalog:\n'
+        path = os.path.join(
+            self._temp_dir, 'drafts-missing-modules/yangmodels/yang/experimental/ietf-extracted-YANG-modules',
+        )
         for module in modules_list:
-            message += '{}\n'.format(module)
-        message += '\nAll missing modules have been copied to the directory: {}'.format(path)
+            message += f'{module}\n'
+        message += f'\nAll missing modules have been copied to the directory: {path}'
 
         if incorrect_revision_modules:
             message += '\n\nFollowing missing modules do not have revision in the correct format:\n'
             for module in incorrect_revision_modules:
-                message += '{}\n'.format(module)
+                message += f'{module}\n'
 
-        self.__post_to_email(message, self.__developers_email)
+        self._post_to_email(message, self._developers_email)
+
+    def send_problematic_draft(self, email_to: list[str], draft_filename: str, errors: str):
+        subject = f'"{draft_filename}" had errors during extraction'
+        message = f'errors:\n{errors}'
+        self._post_to_email(message, email_to=email_to, subject=subject)

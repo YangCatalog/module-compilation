@@ -21,18 +21,27 @@ import json
 import os
 import shutil
 import sys
+import typing as t
 from io import StringIO
+from json import JSONDecodeError
 
-from extract_elem import extract_elem
 from xym import xym
 
-from extractors.helper import (check_after_xym_extraction,
-                               invert_yang_modules_dict, remove_invalid_files)
+from extract_elem import extract_elem
+from extractors.helper import check_after_xym_extraction, invert_yang_modules_dict, remove_invalid_files
+from message_factory.message_factory import MessageFactory
 
 
 class DraftExtractor:
-    def __init__(self, draft_extractor_paths: dict, debug_level: int,
-                 extract_elements: bool = True, extract_examples: bool = True, copy_drafts: bool = True):
+    def __init__(
+            self,
+            draft_extractor_paths: dict,
+            debug_level: int,
+            extract_elements: bool = True,
+            extract_examples: bool = True,
+            copy_drafts: bool = True,
+            message_factory: t.Optional[MessageFactory] = None,
+    ):
         self.draft_path = draft_extractor_paths.get('draft_path', '')
         self.yang_path = draft_extractor_paths.get('yang_path', '')
         self.draft_elements_path = draft_extractor_paths.get('draft_elements_path', '')
@@ -54,6 +63,17 @@ class DraftExtractor:
         self.inverted_draft_yang_all_dict = {}
         self.drafts_missing_code_section = {}
         self._create_ietf_drafts_list()
+        self.message_factory = message_factory
+
+    @property
+    def message_factory(self):
+        if not self._message_factory:
+            self.message_factory = MessageFactory()
+        return self._message_factory
+
+    @message_factory.setter
+    def message_factory(self, value: t.Optional[MessageFactory]):
+        self._message_factory = value
 
     def _create_ietf_drafts_list(self):
         for filename in os.listdir(self.draft_path):
@@ -135,8 +155,9 @@ class DraftExtractor:
                 if self.copy_drafts:
                     shutil.copy2(draft_file_path, self.draft_path_no_strict)
 
-    def extract_from_draft_file(self, draft_file: str, srcdir: str, dstdir: str,
-                                strict: bool = False, strict_examples: bool = False):
+    def extract_from_draft_file(
+            self, draft_file: str, srcdir: str, dstdir: str, strict: bool = False, strict_examples: bool = False,
+    ):
 
         extracted = []
         old_stderr = None
@@ -177,17 +198,27 @@ class DraftExtractor:
                 extract_elem(module_fname, self.draft_elements_path, 'grouping')
                 extract_elem(module_fname, self.draft_elements_path, 'identity')
 
-    def dump_incorrect_drafts(self, public_directory: str):
-        """ Dump names of the IETF drafts with xym extraction error to
-        problematic_drafts.json file.
-        """
-        base_path = os.path.join(public_directory, 'drafts')
-        file_path = os.path.join(base_path, 'problematic_drafts.json')
+    def dump_incorrect_drafts(self, public_directory: str, send_emails_about_problematic_drafts: bool = True):
+        """Dump names of the IETF drafts with xym extraction error to problematic_drafts.json file."""
+        drafts_directory = os.path.join(public_directory, 'drafts')
+        os.makedirs(drafts_directory, exist_ok=True)
+        file_path = os.path.join(drafts_directory, 'problematic_drafts.json')
+        if send_emails_about_problematic_drafts:
+            if not os.path.exists(file_path):
+                with open(file_path, 'w') as f:
+                    f.write('{}')
+                old_incorrect_drafts = []
+            else:
+                with open(file_path, 'r') as f:
+                    old_incorrect_drafts = json.load(f)
+            self._send_email_about_new_problematic_drafts(old_incorrect_drafts)
+        with open(file_path, 'w') as writer:
+            json.dump(self.drafts_missing_code_section, writer)
 
-        try:
-            with open(file_path, 'w') as writer:
-                json.dump(self.drafts_missing_code_section, writer)
-        except FileNotFoundError:
-            os.makedirs(base_path)
-            with open(file_path, 'w') as writer:
-                json.dump(self.drafts_missing_code_section, writer)
+    def _send_email_about_new_problematic_drafts(self, old_incorrect_drafts: dict[str, str]):
+        for draft_filename, errors_string in self.drafts_missing_code_section.items():
+            if draft_filename in old_incorrect_drafts:
+                continue
+            author_email = f'{draft_filename.split(".")[0]}@ietf.org'
+            self.message_factory.send_problematic_draft([author_email], draft_filename, errors_string)
+
