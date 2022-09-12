@@ -30,7 +30,11 @@ GREETINGS = 'Hello from yang-catalog'
 class MessageFactory:
     """This class serves to automatically email a group of admin/developers."""
 
-    def __init__(self, config_path=os.environ['YANGCATALOG_CONFIG_PATH']):
+    def __init__(
+            self,
+            config_path=os.environ['YANGCATALOG_CONFIG_PATH'],
+            close_connection_after_message_sending: bool = True,
+    ):
         config = create_config(config_path)
         self._email_from = config.get('Message-Section', 'email-from')
         self._is_production = config.get('General-Section', 'is-prod') == 'True'
@@ -39,6 +43,11 @@ class MessageFactory:
         self._temp_dir = config.get('Directory-Section', 'temp')
         self._me = config.get('Web-Section', 'domain-prefix').split('/')[-1]
         self._smtp = smtplib.SMTP('localhost')
+        self.close_connection_after_message_sending = close_connection_after_message_sending
+
+    def __del__(self):
+        if not self.close_connection_after_message_sending:
+            self._smtp.quit()
 
     def _post_to_email(self, message: str, email_to: t.Optional[list] = None, subject: t.Optional[str] = None):
         """Send message to the list of e-mails.
@@ -58,7 +67,8 @@ class MessageFactory:
             self._smtp.quit()
             return
         self._smtp.sendmail(self._email_from, send_to, msg.as_string())
-        self._smtp.quit()
+        if self.close_connection_after_message_sending:
+            self._smtp.quit()
 
     def send_missing_modules(self, modules_list: list, incorrect_revision_modules: list):
         message = 'Following modules extracted from drafts are missing in YANG Catalog:\n'

@@ -68,7 +68,7 @@ class DraftExtractor:
     @property
     def message_factory(self):
         if not self._message_factory:
-            self.message_factory = MessageFactory()
+            self.message_factory = MessageFactory(close_connection_after_message_sending=False)
         return self._message_factory
 
     @message_factory.setter
@@ -207,15 +207,15 @@ class DraftExtractor:
             if not os.path.exists(file_path):
                 with open(file_path, 'w') as f:
                     f.write('{}')
-                old_incorrect_drafts = []
+                old_incorrect_drafts_keys = []
             else:
                 with open(file_path, 'r') as f:
-                    old_incorrect_drafts = json.load(f)
-            self._send_email_about_new_problematic_drafts(old_incorrect_drafts)
+                    old_incorrect_drafts_keys = json.load(f).keys()
+            self._send_email_about_new_problematic_drafts(old_incorrect_drafts_keys)
         with open(file_path, 'w') as writer:
             json.dump(self.drafts_missing_code_section, writer)
 
-    def _send_email_about_new_problematic_drafts(self, old_incorrect_drafts: dict[str, str]):
+    def _send_email_about_new_problematic_drafts(self, old_incorrect_drafts: t.Iterable[str]):
         for draft_filename, errors_string in self.drafts_missing_code_section.items():
             if draft_filename in old_incorrect_drafts:
                 continue
