@@ -43,10 +43,10 @@ class MessageFactory:
         self._temp_dir = config.get('Directory-Section', 'temp')
         self._me = config.get('Web-Section', 'domain-prefix').split('/')[-1]
         self._smtp = smtplib.SMTP('localhost')
-        self.close_connection_after_message_sending = close_connection_after_message_sending
+        self._close_connection_after_message_sending = close_connection_after_message_sending
 
     def __del__(self):
-        if not self.close_connection_after_message_sending:
+        if not self._close_connection_after_message_sending:
             self._smtp.quit()
 
     def _post_to_email(self, message: str, email_to: t.Optional[list] = None, subject: t.Optional[str] = None):
@@ -67,7 +67,7 @@ class MessageFactory:
             self._smtp.quit()
             return
         self._smtp.sendmail(self._email_from, send_to, msg.as_string())
-        if self.close_connection_after_message_sending:
+        if self._close_connection_after_message_sending:
             self._smtp.quit()
 
     def send_missing_modules(self, modules_list: list, incorrect_revision_modules: list):
