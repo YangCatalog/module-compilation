@@ -87,6 +87,6 @@ class MessageFactory:
         self._post_to_email(message, self._developers_email)
 
     def send_problematic_draft(self, email_to: list[str], draft_filename: str, errors: str):
-        subject = f'"{draft_filename}" had errors during extraction'
-        message = f'errors:\n{errors}'
+        subject = f'{GREETINGS}, "{draft_filename}" had errors during an extraction'
+        message = f'During a daily check of IETF drafts, some errors were found in "{draft_filename}":\n{errors}'
         self._post_to_email(message, email_to=email_to, subject=subject)
