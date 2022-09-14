@@ -219,6 +219,6 @@ class DraftExtractor:
         for draft_filename, errors_string in self.drafts_missing_code_section.items():
             if draft_filename in old_incorrect_drafts:
                 continue
-            author_email = f'{draft_filename.split(".")[0]}@ietf.org'
+            author_email = f'{draft_filename.split(".")[0].split("-")[0]}@ietf.org'
             self.message_factory.send_problematic_draft([author_email], draft_filename, errors_string)
 
