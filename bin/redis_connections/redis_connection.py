@@ -28,9 +28,9 @@ class RedisConnection:
 
     def __init__(self, modules_db: int = 1):
         config = create_config()
-        self.__redis_host = config.get('DB-Section', 'redis-host')
-        self.__redis_port = config.get('DB-Section', 'redis-port')
-        self.modulesDB = Redis(host=self.__redis_host, port=self.__redis_port, db=modules_db) # pyright: ignore
+        self._redis_host = config.get('DB-Section', 'redis-host')
+        self._redis_port = config.get('DB-Section', 'redis-port')
+        self.modulesDB = Redis(host=self._redis_host, port=self._redis_port, db=modules_db)  # pyright: ignore
 
     def populate_module(self, new_module: dict):
         """Create the redis key and set the module."""
