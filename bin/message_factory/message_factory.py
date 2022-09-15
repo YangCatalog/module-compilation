@@ -18,12 +18,13 @@ __license__ = 'Apache License, Version 2.0'
 __email__ = 'slavomir.mazur@pantheon.tech'
 
 import os
+import re
 import smtplib
 import typing as t
 from email.mime.text import MIMEText
 
 from create_config import create_config
-from redis_connections.redis_users_conection import RedisUsersConnection, EmailsUnsubscribingTypes
+from redis_connections.redis_user_notifications_connection import RedisUserNotificationsConnection
 
 GREETINGS = 'Hello from yang-catalog'
 
@@ -35,7 +36,7 @@ class MessageFactory:
             self,
             config_path=os.environ['YANGCATALOG_CONFIG_PATH'],
             close_connection_after_message_sending: bool = True,
-            redis_connection: t.Optional[RedisUsersConnection] = None,
+            redis_user_notifications_connection: t.Optional[RedisUserNotificationsConnection] = None,
     ):
         config = create_config(config_path)
         self._email_from = config.get('Message-Section', 'email-from')
@@ -48,7 +49,9 @@ class MessageFactory:
 
         self._smtp = smtplib.SMTP('localhost')
         self._close_connection_after_message_sending = close_connection_after_message_sending
-        self._redis_connection = redis_connection or RedisUsersConnection(config=config)
+        self._redis_user_notifications_connection = (
+                redis_user_notifications_connection or RedisUserNotificationsConnection(config=config)
+        )
 
     def __del__(self):
         if not self._close_connection_after_message_sending:
@@ -70,19 +73,31 @@ class MessageFactory:
 
         self._post_to_email(message, self._developers_email)
 
-    def send_problematic_draft(self, email_to: list[str], draft_filename: str, errors: str):
+    def send_problematic_draft(
+            self,
+            email_to: list[str],
+            draft_filename: str,
+            errors: str,
+            draft_name_without_revision: t.Optional[str] = None
+    ):
         subject = f'{GREETINGS}, "{draft_filename}" had errors during an extraction'
         errors = errors.replace('\n', '<br>')
-        message = f'During a daily check of IETF drafts, some errors were found in "{draft_filename}":<br>{errors}'
+        message = f'During a daily check of IETF drafts, some errors were found in "{draft_filename}":<br><br>{errors}'
+        draft_name_without_revision = (
+            draft_name_without_revision if draft_name_without_revision else
+            re.sub(r'-\d+', '', draft_filename.split('.')[0])
+        )
         email_to = [
             email for email in email_to
-            if email not in self._redis_connection.get_all_unsubscribed_emails(EmailsUnsubscribingTypes.DRAFTS)
+            if email not in self._redis_user_notifications_connection.get_emails_unsubscribed_from_draft_errors_emails(
+                draft_name_without_revision
+            )
         ]
         message_subtype = 'html'
         for email in email_to:
-            unsubscribing_link = self._create_unsubscribing_link(
-                email, EmailsUnsubscribingTypes.DRAFTS, link_text='Unsubscribe from messages about errors in drafts',
-                message_subtype=message_subtype
+            unsubscribing_link = (
+                f'<a href="{self._domain_prefix}/api/notifications/unsubscribe_from_draft_errors_emails/'
+                f'{draft_name_without_revision}/{email}">Unsubscribe from messages about errors in this draft</a>'
             )
             message = f'{message}<br><br>{unsubscribing_link}'
             self._post_to_email(message, email_to=[email], subject=subject, subtype=message_subtype)
@@ -115,17 +130,3 @@ class MessageFactory:
         self._smtp.sendmail(self._email_from, send_to, msg.as_string())
         if self._close_connection_after_message_sending:
             self._smtp.quit()
-
-    def _create_unsubscribing_link(
-            self,
-            email: str,
-            email_type: EmailsUnsubscribingTypes,
-            link_text: str = 'Unsubscribe from all messages',
-            message_subtype: str = 'plain',
-    ) -> str:
-        if message_subtype == 'html':
-            return (
-                f'<a href="{self._domain_prefix}/api/notifications/unsubscribe_from_emails/{email_type}/{email}">'
-                f'{link_text}</a>'
-            )
-        return f'{link_text}: {self._domain_prefix}/api/notifications/unsubscribe_from_emails/{email_type}/{email}'
