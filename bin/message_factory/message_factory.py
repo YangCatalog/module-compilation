@@ -87,16 +87,14 @@ class MessageFactory:
             draft_name_without_revision if draft_name_without_revision else
             re.sub(r'-\d+', '', draft_filename.split('.')[0])
         )
-        email_to = [
-            email for email in email_to
-            if email not in self._redis_user_notifications_connection.get_emails_unsubscribed_from_draft_errors_emails(
-                draft_name_without_revision
-            )
-        ]
+        unsubscribed_emails = self._redis_user_notifications_connection.get_unsubscribed_emails(
+            draft_name_without_revision
+        )
+        email_to = [email for email in email_to if email not in unsubscribed_emails]
         message_subtype = 'html'
         for email in email_to:
             unsubscribing_link = (
-                f'<a href="{self._domain_prefix}/api/notifications/unsubscribe_from_draft_errors_emails/'
+                f'<a href="{self._domain_prefix}/api/notifications/unsubscribe_from_emails/'
                 f'{draft_name_without_revision}/{email}">Unsubscribe from messages about errors in this draft</a>'
             )
             message = f'{message}<br><br>{unsubscribing_link}'
