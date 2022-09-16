@@ -83,9 +83,10 @@ class MessageFactory:
         subject = f'{GREETINGS}, "{draft_filename}" had errors during an extraction'
         errors = errors.replace('\n', '<br>')
         message = f'During a daily check of IETF drafts, some errors were found in "{draft_filename}":<br><br>{errors}'
+        draft_filename_without_format = draft_filename.split('.')[0]
         draft_name_without_revision = (
             draft_name_without_revision if draft_name_without_revision else
-            re.sub(r'-\d+', '', draft_filename.split('.')[0])
+            re.sub(r'-\d+', '', draft_filename_without_format)
         )
         unsubscribed_emails = self._redis_user_notifications_connection.get_unsubscribed_emails(
             draft_name_without_revision
@@ -93,11 +94,15 @@ class MessageFactory:
         email_to = [email for email in email_to if email not in unsubscribed_emails]
         message_subtype = 'html'
         for email in email_to:
+            link_to_view_the_draft = (
+                f'<a href="{self._domain_prefix}/yangvalidator?draft={draft_filename_without_format}">'
+                'View it on YANG Catalog</a>'
+            )
             unsubscribing_link = (
                 f'<a href="{self._domain_prefix}/api/notifications/unsubscribe_from_emails/'
-                f'{draft_name_without_revision}/{email}">Unsubscribe from messages about errors in this draft</a>'
+                f'{draft_name_without_revision}/{email}">unsubscribe</a>'
             )
-            message = f'{message}<br><br>{unsubscribing_link}'
+            message = f'{message}<br><br>{link_to_view_the_draft} or {unsubscribing_link}'
             self._post_to_email(message, email_to=[email], subject=subject, subtype=message_subtype)
 
     def _post_to_email(
