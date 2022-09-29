@@ -24,7 +24,6 @@ import shutil
 import sys
 import typing as t
 from io import StringIO
-from json import JSONDecodeError
 
 from xym import xym
 
