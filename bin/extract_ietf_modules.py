@@ -48,7 +48,7 @@ def main():
     cache_directory = config.get('Directory-Section', 'cache')
     public_directory = config.get('Web-Section', 'public-directory')
     send_emails_about_problematic_drafts = config.get(
-        'Directory-Section', 'send_emails_about_problematic_drafts', fallback='True'
+        'General-Section', 'send_emails_about_problematic_drafts', fallback='True'
     ) == 'True'
 
     parser = argparse.ArgumentParser(description='YANG RFC/Draft Processor')
