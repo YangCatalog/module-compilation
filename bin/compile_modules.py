@@ -197,7 +197,7 @@ def validate(prefix: str, modules: dict, yang_list: list, parser_args: dict, doc
             path = os.path.join(web_private, '{}.json'.format(prefix))
         with open(path, 'r') as f:
             cached_compilation_results = json.load(f)
-    except FileNotFoundError:
+    except (FileNotFoundError, json.JSONDecodeError):
         cached_compilation_results = {}
 
     for yang_file in yang_list:

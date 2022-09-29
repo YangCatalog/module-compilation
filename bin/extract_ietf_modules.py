@@ -23,7 +23,7 @@ import json
 import os
 
 from create_config import create_config
-from extractors.dratf_extractor import DraftExtractor
+from extractors.draft_extractor import DraftExtractor
 from extractors.rfc_extractor import RFCExtractor
 from remove_directory_content import remove_directory_content
 
