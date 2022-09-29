@@ -77,6 +77,8 @@ class DraftExtractor:
 
     def _create_ietf_drafts_list(self):
         for filename in os.listdir(self.draft_path):
+            if not filename.endswith('.txt'):
+                continue
             full_path = os.path.join(self.draft_path, filename)
             if os.path.isfile(full_path):
                 try:
@@ -172,8 +174,10 @@ class DraftExtractor:
         finally:
             sys.stderr = old_stderr
         print(result_string, file=sys.stderr)
-        if '<CODE' in result_string:
-            self.drafts_missing_code_section[draft_file] = result_string
+        if 'WARNING' in result_string or 'ERROR' in result_string:
+            # remove "File <file name> exists" error messages
+            clean = ''.join(line for line in result_string.splitlines(True) if 'exists' not in line)
+            self.drafts_missing_code_section[draft_file] = clean
         return extracted
 
     def invert_dict(self):
