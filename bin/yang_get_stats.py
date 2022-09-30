@@ -22,7 +22,6 @@ import datetime
 import json
 import os
 import re
-import typing as t
 from configparser import ConfigParser
 
 import matplotlib as mpl
@@ -253,7 +252,7 @@ class GetStats:
                 yang_page_compilation_stats, self.stats_path, 'IETFYANGOutOfRFCStats.json'
             )
 
-    def _load_compilation_stats_from_history_file(self, json_history_file: t.Union[str, os.path]) -> dict:
+    def _load_compilation_stats_from_history_file(self, json_history_file: str) -> dict:
         compilation_stats = {}
         if os.path.isfile(json_history_file):
             with open(json_history_file, 'r') as f:
