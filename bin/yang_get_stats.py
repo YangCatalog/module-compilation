@@ -13,15 +13,17 @@
 # either express or implied.
 
 __author__ = 'Benoit Claise'
-__copyright__ = "Copyright(c) 2015-2018, Cisco Systems, Inc.,  Copyright The IETF Trust 2019, All Rights Reserved"
-__license__ = "Apache V2.0"
-__email__ = "bclaise@cisco.com"
+__copyright__ = 'Copyright(c) 2015-2018, Cisco Systems, Inc.,  Copyright The IETF Trust 2019, All Rights Reserved'
+__license__ = 'Apache V2.0'
+__email__ = 'bclaise@cisco.com'
 
 import argparse
 import datetime
 import json
 import os
 import re
+import typing as t
+from configparser import ConfigParser
 
 import matplotlib as mpl
 from matplotlib.dates import date2num
@@ -30,386 +32,16 @@ from create_config import create_config
 
 mpl.use('Agg')
 
-# ----------------------------------------------------------------------
-# Functions
-# ----------------------------------------------------------------------
 
-
-def list_of_files_in_dir(srcdir, extension, debug_level):
-    """
-    Returns the list of file in a directory
-    :param srcdir: directory to search for files
-    :param extension: file extension to search for
-    :param debug_level: If > 0 print(some debug statements to the console
-    :return: list of files
-    """
-    files = [f for f in os.listdir(srcdir) if os.path.isfile(os.path.join(srcdir, f))]
-    yang_files = []
-    for f in files:
-        if f.endswith(extension):
-            yang_files.append(f)
-            if debug_level > 0:
-                print("DEBUG: " + f + " in list_of_files_in_dir: ends with " + extension)
-        else:
-            if debug_level > 0:
-                print("DEBUG: " + f + " in list_of_files_in_dir: doesn't ends with " + extension)
-    return yang_files
-
-
-def list_of_files_in_dir_created_after_date(files, srcdir, d, debug_level):
-    """
-    only select the files created wihin the number of days selected
-    :param files: list of files
-    :param srcdir: directory to search for files
-    :param d: number of days
-    :param debug_level: If > 0 print(some debug statements to the console
-    :return: list of files
-    """
-    new_files = []
-    dt = datetime.datetime.utcnow()  # datetime now (all in UTC)
-    if debug_level > 0:
-        print(dt)
-    delta = datetime.timedelta(d)  # x days interval
-    dtdays = dt - delta  # datetime x days earlier than now
-    dtdays = dtdays.date()
-    if debug_level > 0:
-        print(dtdays)
-    for f in files:
-        if debug_level > 0:
-            print(srcdir + "/" + f)
-        t_date = re.findall(r'\d+[_-]\d+[_-]\d+', f)[0]
-        t_date = re.findall(r'\d+', t_date)
-        dt = datetime.date(int(t_date[0]), int(t_date[1]), int(t_date[2]))  # time of last modification in seconds
-        if dt >= dtdays:
-            if debug_level > 0:
-                print("Keep")
-            new_files.append(f)
-        else:
-            if debug_level > 0:
-                print("Dont keep")
-    return new_files
-
-
-def file_name_containing_keyword(drafts, keyword, debug_level):
-    """
-    Return the list of file whose name contains a specific keyword
-
-    :param drafts: list of ietf drafts
-    :param keyword: keyword for which to search
-    :return: list of drafts containing the keyword
-    """
-    keyword = keyword.lower()
-    drafts_with_keyword = []
-    for f in drafts:
-        if keyword in f.lower():
-            if debug_level > 0:
-                print("DEBUG: " + f + " in file_name_containing_keyword: contains " + keyword)
-            drafts_with_keyword.append(f)
-    if debug_level > 0:
-        print("DEBUG: " + " in file_name_containing_keyword: drafts_with_keyword contains " +
-              str(drafts_with_keyword))
-    drafts_with_keyword.sort()
-    return drafts_with_keyword
-
-
-def list_of_ietf_draft_containing_keyword(drafts, keyword, draftpath, debug_level):
-    """
-    Returns the IETF drafts that contains a specific keyword
-    # status: troubleshooting done
-
-    :param drafts: List of ietf drafts to search for the keyword
-    :param keyword: Keyword to search for
-    :return: List of ietf drafts containing the keyword
-    """
-    keyword = keyword.lower()
-    list_of_ietf_draft_with_keyword = []
-    for f in drafts:
-        file_included = False
-        for line in open(os.path.join(draftpath , f), 'r', encoding='utf-8'):
-            if keyword in line.lower():
-                file_included = True
-                if debug_level > 0:
-                    print("DEBUG: " + f + " in list_of_ietf_draft_containing_keyword: contains " + keyword)
-                break
-        if file_included:
-            list_of_ietf_draft_with_keyword.append(f)
-    if debug_level > 0:
-        print("DEBUG: " + " in list_of_ietf_draft_containing_keyword: list_of_ietf_draft_with_keyword contains "
-              + str(list_of_ietf_draft_with_keyword))
-    return list_of_ietf_draft_with_keyword
-
-
-def write_dictionary_file_in_json(in_dict, path, file_name):
-    """
-    Create a file, in json, with my directory data
-    For testing purposes.
-    # status: in progress.
-
-    :param in_dict: The dictionary
-    :param path: The directory where the json file with be created
-    :param file_name: The file name to be created
-    :return: None
-    """
-    with open(os.path.join(path, file_name), 'w', encoding='utf-8') as outfile:
-        json.dump(in_dict, outfile, indent=2, sort_keys=True, separators=(',', ': '), ensure_ascii=True)
-    os.chmod(os.path.join(path, file_name), 0o664)
-
-
-# ----------------------------------------------------------------------
-# Main
-# ----------------------------------------------------------------------
-if __name__ == '__main__':
-    config = create_config()
-    web_private = config.get('Web-Section', 'private-directory')
-    backup_directory = config.get('Directory-Section', 'backup') + '/'
-    ietf_directory = config.get('Directory-Section', 'ietf-directory')
-
-    draft_path_strict = os.path.join(ietf_directory, 'draft-with-YANG-strict')
-    draft_path_nostrict = os.path.join(ietf_directory, 'draft-with-YANG-no-strict')
-    draft_path_diff = os.path.join(ietf_directory, 'draft-with-YANG-diff')
-    stats_path = os.path.join(web_private, 'stats')
-
-    parser = argparse.ArgumentParser(description='YANG Stats Extractor')
-    parser.add_argument('--days',
-                        help='Numbers of days to get back in history. Default is -1 = unlimited',
-                        type=int,
-                        default=-1)
-    parser.add_argument('--debug',
-                        help='Debug level - default is 0',
-                        type=int,
-                        default=0)
-
-    args = parser.parse_args()
-    debug_level = args.debug
-
-    category_list = ["FAILED", "PASSED WITH WARNINGS", "PASSED", "Email All Authors"]
-    all_files = list_of_files_in_dir(backup_directory, "html", debug_level)
-
-    # only select the files created wihin the number of days selected
-    if int(args.days) > 0:
-        files = list_of_files_in_dir_created_after_date(all_files, backup_directory, int(args.days), debug_level)
-    else:
-        files = all_files
-    remove_old_html_files = []
-
-    prefix = "YANGPageMain_"
-    json_history_file = '{}/{}history.json'.format(backup_directory, prefix)
-    yangPageCompilationStats = {}
-    yangPageCompilationHistoricalStats = {}
-    if os.path.isfile(json_history_file):
-        with open(json_history_file, 'r') as f:
-            yangPageCompilationStatsTemp = json.load(f)
-            remove_keys = []
-            for key, value in yangPageCompilationStatsTemp.items():
-                yangPageCompilationStats[float(key)] = value
-                remove_keys.append(key)
-            del yangPageCompilationStatsTemp
-
-    for f in file_name_containing_keyword(files, prefix, debug_level):
-        name = 0
-        generated_at = 0
-        passed = 0
-        passed_with_warnings = 0
-        failed = 0
-        f_no_extension = f.split(".")[0]
-        year = f_no_extension.split("_")[1]
-        month = f_no_extension.split("_")[2]
-        day = f_no_extension.split("_")[3]
-        extracted_date = datetime.date(int(year), int(month), int(day))
-        if (datetime.date.today() - extracted_date).days > 30:
-            remove_old_html_files.append(backup_directory + f)
-            yangPageCompilationHistoricalStats[date2num(extracted_date)] = {}
-        i = 0
-        for line in open(backup_directory + f):
-            if i == 1:
-                generated_at = line.split('on')[-1].split('by')[0].strip()
-            elif i == 4:
-                name = line.split('<LI>')[-1].split(' ')[0]
-            elif i == 5:
-                passed = int(line.split(':')[-1].split('/')[0])
-            elif i == 6:
-                passed_with_warnings = int(line.split(':')[-1].split('/')[0])
-            elif i == 7:
-                failed = int(line.split(':')[-1].split('/')[0])
-            elif i == 8:
-                i = 0
-                if (datetime.date.today() - extracted_date).days > 30:
-                    yangPageCompilationStats[date2num(extracted_date)] = {
-                        "name": {"generated-at": generated_at,
-                                 "passed": passed,
-                                 "warnings": passed_with_warnings,
-                                 "failed": failed}}
-                yangPageCompilationStats[date2num(extracted_date)] = {"name": {"generated-at": generated_at,
-                                                                               "passed": passed,
-                                                                               "warnings": passed_with_warnings,
-                                                                               "failed": failed}}
-    if int(args.days) == -1:
-        with open(json_history_file, 'w') as f:
-            json.dump(yangPageCompilationStats, f)
-        write_dictionary_file_in_json(yangPageCompilationStats, stats_path, "YANGPageMainStats.json")
-
-    prefix = "IETFYANGPageMain_"
-    json_history_file = '{}/{}history.json'.format(backup_directory, prefix)
-    yangPageCompilationStats = {}
-    yangPageCompilationHistoricalStats = {}
-    if os.path.isfile(json_history_file):
-        with open(json_history_file, 'r') as f:
-            yangPageCompilationStatsTemp = json.load(f)
-            remove_keys = []
-            for key, value in yangPageCompilationStatsTemp.items():
-                yangPageCompilationStats[float(key)] = value
-                remove_keys.append(key)
-            del yangPageCompilationStatsTemp
-
-    for f in file_name_containing_keyword(files, prefix, debug_level):
-        total = 0
-        passed_with_warnings = 0
-        passed = 0
-        badly_formated = 0
-        examples = 0
-        for line in open(backup_directory + f):
-            if 'correctly extracted YANG models' in line:
-                total = int(line.split(':')[-1])
-            elif 'without warnings' in line:
-                passed = int(line.split(':')[-1].split('/')[0])
-            elif 'with warnings' in line:
-                passed_with_warnings = int(line.split(':')[-1].split('/')[0])
-            elif '(example, badly formatted, etc. )' in line:
-                badly_formated = int(line.split(':')[-1])
-            elif 'correctly extracted example YANG' in line:
-                examples = int(line.split(':')[-1])
-        f_no_extension = f.split(".")[0]
-        year = f_no_extension.split("_")[1]
-        month = f_no_extension.split("_")[2]
-        day = f_no_extension.split("_")[3]
-        extracted_date = datetime.date(int(year), int(month), int(day))
-        if (datetime.date.today() - extracted_date).days > 30:
-            remove_old_html_files.append(backup_directory + f)
-            yangPageCompilationStats[date2num(extracted_date)] = {'total': total,
-                                                                  'warnings': passed_with_warnings,
-                                                                  'passed': passed,
-                                                                  'badly formated': badly_formated,
-                                                                  'examples': examples}
-        yangPageCompilationStats[date2num(extracted_date)] = {'total': total,
-                                                              'warnings': passed_with_warnings,
-                                                              'passed': passed,
-                                                              'badly formated': badly_formated,
-                                                              'examples': examples}
-    if int(args.days) == -1:
-        with open(json_history_file, 'w') as f:
-            json.dump(yangPageCompilationStats, f)
-        write_dictionary_file_in_json(yangPageCompilationStats, stats_path, "IETFYANGPageMainStats.json")
-
-    backup_prefix = ['HydrogenODLPageCompilation_', 'HeliumODLPageCompilation_',
-                     'LithiumODLPageCompilation_', 'IETFCiscoAuthorsYANGPageCompilation_',
-                     'IETFDraftYANGPageCompilation_', 'IANAStandardYANGPageCompilation_',
-                     'IEEEStandardYANGPageCompilation_', 'IEEEStandardDraftYANGPageCompilation_', 'IEEEExperimentalYANGPageCompilation_']
-    # !!! there are two IEEE IEEEExperimentalYANGPageCompilation and IEEEStandardYANGPageCompilation_
-    for prefix in backup_prefix:
-        print('')
-        print("Looking at the files starting with: " + prefix)
-        print("FILENAME: NUMBER OF DAYS SINCE EPOCH, TOTAL YANG MODULES, PASSED, PASSEDWITHWARNINGS, FAILED")
-        json_history_file = '{}/{}history.json'.format(backup_directory, prefix)
-        yangPageCompilationStats = {}
-        yangPageCompilationHistoricalStats = {}
-        if os.path.isfile(json_history_file):
-            with open(json_history_file, 'r') as f:
-                yangPageCompilationStatsTemp = json.load(f)
-                remove_keys = []
-                for key, value in yangPageCompilationStatsTemp.items():
-                    yangPageCompilationStats[float(key)] = value
-                    remove_keys.append(key)
-                del yangPageCompilationStatsTemp
-
-        for f in file_name_containing_keyword(files, prefix, debug_level):
-            failed_result = 0
-            passed_result = 0
-            passed_with_warning_result = 0
-            total_result = 0
-            for line in open(backup_directory + f, 'r'):
-                if "FAILED" in line:
-                    failed_result += 1
-                elif "PASSED WITH WARNINGS" in line:
-                    passed_with_warning_result += 1
-                elif "PASSED" in line:
-                    passed_result += 1
-                elif ".txt" in line:
-                    total_result += 1
-            if "ODLPageCompilation_" in prefix:
-                total_result = str(int(failed_result) + int(passed_with_warning_result) + int(passed_result))
-
-            f_no_extension = f.split(".")[0]
-            year = f_no_extension.split("_")[1]
-            month = f_no_extension.split("_")[2]
-            day = f_no_extension.split("_")[3]
-            extracted_date = datetime.date(int(year), int(month), int(day))
-            matplot_date = date2num(extracted_date)
-            if (datetime.date.today() - extracted_date).days > 30:
-                remove_old_html_files.append(backup_directory + f)
-                yangPageCompilationStats[matplot_date] = {'total': total_result,
-                                                          'warning': passed_with_warning_result,
-                                                          'success': passed_result}
-            yangPageCompilationStats[matplot_date] = {'total': total_result,
-                                                      'warning': passed_with_warning_result,
-                                                      'success': passed_result}
-
-        if int(args.days) == -1:
-            if prefix == "IETFDraftYANGPageCompilation_":
-                with open(json_history_file, 'w') as f:
-                    json.dump(yangPageCompilationStats, f)
-                write_dictionary_file_in_json(yangPageCompilationStats, stats_path,
-                                              "IETFYANGPageCompilationStats.json")
-            else:
-                with open(json_history_file, 'w') as f:
-                    json.dump(yangPageCompilationStats, f)
-                write_dictionary_file_in_json(yangPageCompilationStats, stats_path,
-                                              "{}Stats.json".format(prefix[:-1]))
-
-    # Print the number of RFCs per date, and store the info into a json file
-    IETFYANGOutOfRFC = {}
-    prefix = "IETFYANGOutOfRFC_"
-    print('')
-    print("Looking at the files starting with :" + prefix)
-    print("FILENAME: NUMBER OF DAYS SINCE EPOCH, NUMBER OF YANG MODELS IN RFCS")
-    json_history_file = '{}/{}history.json'.format(backup_directory, prefix)
-    yangPageCompilationStats = {}
-    yangPageCompilationHistoricalStats = {}
-    if os.path.isfile(json_history_file):
-        with open(json_history_file, 'r') as f:
-            yangPageCompilationStatsTemp = json.load(f)
-            remove_keys = []
-            for key, value in yangPageCompilationStatsTemp.items():
-                yangPageCompilationStats[float(key)] = value
-                remove_keys.append(key)
-            del yangPageCompilationStatsTemp
-    for f in file_name_containing_keyword(files, prefix, debug_level):
-        rfc_result = 0
-        for line in open(backup_directory + f):
-            if '.yang' in line:
-                rfc_result += 1
-        f_no_extension = f.split(".")[0]
-        year = f_no_extension.split("_")[1]
-        month = f_no_extension.split("_")[2]
-        day = f_no_extension.split("_")[3]
-        extracted_date = datetime.date(int(year), int(month), int(day))
-        if (datetime.date.today() - extracted_date).days > 30:
-            remove_old_html_files.append(backup_directory + f)
-            yangPageCompilationStats[date2num(extracted_date)] = {"total": rfc_result}
-        IETFYANGOutOfRFC[date2num(extracted_date)] = {"total": rfc_result}
-    # write IETFYANGOutOfRFC to a json file
-    if int(args.days) == -1:
-        with open(json_history_file, 'w') as f:
-            json.dump(yangPageCompilationStats, f)
-        write_dictionary_file_in_json(yangPageCompilationStats, stats_path, "IETFYANGOutOfRFCStats.json")
-
-    # determine the number of company authored drafts
-    files = [f for f in os.listdir(draft_path_strict) if os.path.isfile(os.path.join(draft_path_strict, f))]
-    files_no_strict = [f for f in os.listdir(draft_path_nostrict) if
-                       os.path.isfile(os.path.join(draft_path_nostrict, f))]
-    total_number_drafts = len(files)
-    total_number_drafts_no_strict = len(files_no_strict)
-
-    companies = (
+class GetStats:
+    CATEGORIES_LIST = ['FAILED', 'PASSED WITH WARNINGS', 'PASSED', 'Email All Authors']
+    BACKUPS_PREFIXES = [
+        'HydrogenODLPageCompilation_', 'HeliumODLPageCompilation_', 'LithiumODLPageCompilation_',
+        'IETFCiscoAuthorsYANGPageCompilation_', 'IETFDraftYANGPageCompilation_', 'IANAStandardYANGPageCompilation_',
+        'IEEEStandardYANGPageCompilation_', 'IEEEStandardDraftYANGPageCompilation_',
+        'IEEEExperimentalYANGPageCompilation_',
+    ]
+    COMPANIES = (
         ('Yumaworks', 'yumaworks.com'),
         ('Tail-f', 'tail-f.com'),
         ('Cisco', 'cisco.com'),
@@ -441,43 +73,380 @@ if __name__ == '__main__':
         ('Packet Design', 'packetdesign.com'),
         ('Qosmos', 'qosmos.com')
     )
+    YANG_PAGE_MAIN_PREFIX = 'YANGPageMain_'
+    IETF_YANG_PAGE_MAIN_PREFIX = 'IETFYANGPageMain_'
+    IETF_YANG_OUT_OF_RFC_PREFIX = 'IETFYANGOutOfRFC_'
 
-    def print_attribution(name, domain):
-        if not name and not domain:
-            print()
+    def __init__(self, args: argparse.Namespace, config: ConfigParser = create_config()):
+        self.args = args
+        self.debug_level = args.debug
+        self.web_private = config.get('Web-Section', 'private-directory')
+        self.backup_directory = config.get('Directory-Section', 'backup') + '/'
+        self.ietf_directory = config.get('Directory-Section', 'ietf-directory')
+
+        self.draft_path_strict = os.path.join(self.ietf_directory, 'draft-with-YANG-strict')
+        self.draft_path_nostrict = os.path.join(self.ietf_directory, 'draft-with-YANG-no-strict')
+        self.draft_path_diff = os.path.join(self.ietf_directory, 'draft-with-YANG-diff')
+        self.stats_path = os.path.join(self.web_private, 'stats')
+
+    def start_process(self):
+        all_files = self._list_of_files_in_dir(self.backup_directory, 'html')
+        # only select the files created within the number of days selected
+        if int(args.days) > 0:
+            self.files = self._list_of_files_in_dir_created_after_date(all_files, self.backup_directory, int(args.days))
         else:
-            strict = len(list_of_ietf_draft_containing_keyword(files, domain, draft_path_strict, debug_level))
-            non_strict = len(list_of_ietf_draft_containing_keyword(files_no_strict, domain,
-                                                                   draft_path_nostrict, debug_level))
-            print('{}: {} - non strict rules: {}'.format(name, strict, non_strict))
+            self.files = all_files
+        self.remove_old_html_files = []
 
-    print()
-    print('Print, per company, the number of IETF drafts containing YANG model(s)')
-    print('Total numbers of drafts with YANG Model(s): {} - non strict rules: {}'
-          .format(total_number_drafts, total_number_drafts_no_strict))
-    print()
+        self.gather_yang_page_main_compilation_stats()
+        self.gather_ietf_yang_page_main_compilation_stats()
+        self.gather_backups_compilation_stats()
+        self.gather_ietf_yang_out_of_rfc_compilation_stats()
 
-    for company in companies:
-        print_attribution(*company)
+        self.print_files_information()
 
-    for f in remove_old_html_files:
-        try:
-            os.unlink(f)
-        except:
-            # ignore if the file does not exist
-            pass
+        for filename in self.remove_old_html_files:
+            try:
+                os.unlink(filename)
+            except FileNotFoundError:
+                pass
 
-    # diff between files and files_no_strict lists
-    files_diff = []
-    for f in files_no_strict:
-        if f not in files:
-            files_diff.append(f)
-            bash_command = "cp " + draft_path_nostrict + f + " " + draft_path_diff
-            temp_result = os.popen(bash_command).read()
-            if debug_level > 0:
-                print(
-                    "DEBUG: " + " copy the IETF draft containing a YANG model in draft-with-YANG-diff:  error " + temp_result)
-    if debug_level > 0:
+    def gather_yang_page_main_compilation_stats(self):
+        json_history_file = os.path.join(self.backup_directory, f'{self.YANG_PAGE_MAIN_PREFIX}history.json')
+        yang_page_compilation_stats = self._load_compilation_stats_from_history_file(json_history_file)
+        for filename in self._file_names_containing_keyword(self.files, self.YANG_PAGE_MAIN_PREFIX):
+            generated_at = 0
+            passed = 0
+            passed_with_warnings = 0
+            failed = 0
+            extracted_date = self._extract_date_from_filename(filename)
+            if (datetime.date.today() - extracted_date).days > 30:
+                self.remove_old_html_files.append(self.backup_directory + filename)
+            i = 0
+            for line in open(self.backup_directory + filename):
+                if i == 1:
+                    generated_at = line.split('on')[-1].split('by')[0].strip()
+                elif i == 5:
+                    passed = int(line.split(':')[-1].split('/')[0])
+                elif i == 6:
+                    passed_with_warnings = int(line.split(':')[-1].split('/')[0])
+                elif i == 7:
+                    failed = int(line.split(':')[-1].split('/')[0])
+                elif i == 8:
+                    i = 0
+                    yang_page_compilation_stats[date2num(extracted_date)] = {
+                        'name': {
+                            'generated-at': generated_at,
+                            'passed': passed,
+                            'warnings': passed_with_warnings,
+                            'failed': failed
+                        }
+                    }
+        if int(args.days) == -1:
+            with open(json_history_file, 'w') as filename:
+                json.dump(yang_page_compilation_stats, filename)
+            self._write_dictionary_file_in_json(yang_page_compilation_stats, self.stats_path, 'YANGPageMainStats.json')
+
+    def gather_ietf_yang_page_main_compilation_stats(self):
+        json_history_file = os.path.join(self.backup_directory, f'{self.IETF_YANG_PAGE_MAIN_PREFIX}history.json')
+        yang_page_compilation_stats = self._load_compilation_stats_from_history_file(json_history_file)
+        for filename in self._file_names_containing_keyword(self.files, self.IETF_YANG_PAGE_MAIN_PREFIX):
+            total = 0
+            passed_with_warnings = 0
+            passed = 0
+            badly_formated = 0
+            examples = 0
+            for line in open(self.backup_directory + filename):
+                if 'correctly extracted YANG models' in line and (total_extracted := line.split(':')[-1]).isnumeric():
+                    total = int(total_extracted)
+                elif 'without warnings' in line and (
+                        total_without_warnings := line.split(':')[-1].split('/')[0]
+                ).isnumeric():
+                    passed = int(total_without_warnings)
+                elif 'with warnings' in line and (total_with_warnings := line.split(':')[-1].split('/')[0]).isnumeric():
+                    passed_with_warnings = int(total_with_warnings)
+                elif '(example, badly formatted, etc. )' in line and (
+                        total_badly_formated := line.split(':')[-1]
+                ).isnumeric():
+                    badly_formated = int(total_badly_formated)
+                elif 'correctly extracted example YANG' in line and (total_examples := line.split(':')[-1]).isnumeric():
+                    examples = int(total_examples)
+            extracted_date = self._extract_date_from_filename(filename)
+            if (datetime.date.today() - extracted_date).days > 30:
+                self.remove_old_html_files.append(self.backup_directory + filename)
+            yang_page_compilation_stats[date2num(extracted_date)] = {
+                'total': total,
+                'warnings': passed_with_warnings,
+                'passed': passed,
+                'badly formated': badly_formated,
+                'examples': examples
+            }
+        if int(args.days) == -1:
+            with open(json_history_file, 'w') as filename:
+                json.dump(yang_page_compilation_stats, filename)
+            self._write_dictionary_file_in_json(
+                yang_page_compilation_stats, self.stats_path, 'IETFYANGPageMainStats.json'
+            )
+
+    def gather_backups_compilation_stats(self):
+        for prefix in self.BACKUPS_PREFIXES:
+            print(f'\nLooking at the files starting with: {prefix}')
+            print('FILENAME: NUMBER OF DAYS SINCE EPOCH, TOTAL YANG MODULES, PASSED, PASSEDWITHWARNINGS, FAILED')
+            json_history_file = os.path.join(self.backup_directory, f'{prefix}history.json')
+            yang_page_compilation_stats = {}
+            if os.path.isfile(json_history_file):
+                yang_page_compilation_stats = self._load_compilation_stats_from_history_file(json_history_file)
+            for filename in self._file_names_containing_keyword(self.files, prefix):
+                failed_result = 0
+                passed_result = 0
+                passed_with_warning_result = 0
+                total_result = 0
+                for line in open(self.backup_directory + filename, 'r'):
+                    if 'FAILED' in line:
+                        failed_result += 1
+                    elif 'PASSED WITH WARNINGS' in line:
+                        passed_with_warning_result += 1
+                    elif 'PASSED' in line:
+                        passed_result += 1
+                    elif '.txt' in line:
+                        total_result += 1
+                if 'ODLPageCompilation_' in prefix:
+                    total_result = str(int(failed_result) + int(passed_with_warning_result) + int(passed_result))
+                extracted_date = self._extract_date_from_filename(filename)
+                if (datetime.date.today() - extracted_date).days > 30:
+                    self.remove_old_html_files.append(self.backup_directory + filename)
+                yang_page_compilation_stats[date2num(extracted_date)] = {
+                    'total': total_result,
+                    'warning': passed_with_warning_result,
+                    'success': passed_result
+                }
+            if int(args.days) == -1:
+                filename = (
+                    'IETFYANGPageCompilationStats.json' if
+                    prefix == 'IETFDraftYANGPageCompilation_' else
+                    f'{prefix[:-1]}Stats.json'
+                )
+                with open(json_history_file, 'w') as f:
+                    json.dump(yang_page_compilation_stats, f)
+                self._write_dictionary_file_in_json(yang_page_compilation_stats, self.stats_path, filename)
+
+    def gather_ietf_yang_out_of_rfc_compilation_stats(self):
+        ietf_yang_out_of_rfc = {}
+        print(f'\nLooking at the files starting with: {self.IETF_YANG_OUT_OF_RFC_PREFIX}')
+        print('FILENAME: NUMBER OF DAYS SINCE EPOCH, NUMBER OF YANG MODELS IN RFCS')
+        json_history_file = os.path.join(self.backup_directory, f'{self.IETF_YANG_OUT_OF_RFC_PREFIX}history.json')
+        yang_page_compilation_stats = self._load_compilation_stats_from_history_file(json_history_file)
+        for filename in self._file_names_containing_keyword(self.files, self.IETF_YANG_OUT_OF_RFC_PREFIX):
+            rfc_result = 0
+            for line in open(self.backup_directory + filename):
+                if '.yang' in line:
+                    rfc_result += 1
+            extracted_date = self._extract_date_from_filename(filename)
+            if (datetime.date.today() - extracted_date).days > 30:
+                self.remove_old_html_files.append(self.backup_directory + filename)
+                yang_page_compilation_stats[date2num(extracted_date)] = {'total': rfc_result}
+            ietf_yang_out_of_rfc[date2num(extracted_date)] = {'total': rfc_result}
+        if int(args.days) == -1:
+            with open(json_history_file, 'w') as f:
+                json.dump(yang_page_compilation_stats, f)
+            self._write_dictionary_file_in_json(
+                yang_page_compilation_stats, self.stats_path, 'IETFYANGOutOfRFCStats.json'
+            )
+
+    def _load_compilation_stats_from_history_file(self, json_history_file: t.Union[str, os.path]) -> dict:
+        compilation_stats = {}
+        if os.path.isfile(json_history_file):
+            with open(json_history_file, 'r') as f:
+                compilation_stats_temp = json.load(f)
+            for key, value in compilation_stats_temp.items():
+                compilation_stats[float(key)] = value
+            del compilation_stats_temp
+        return compilation_stats
+
+    def _extract_date_from_filename(self, filename: str) -> datetime.date:
+        filename_without_extension = filename.split('.')[0]
+        year = filename_without_extension.split('_')[1]
+        month = filename_without_extension.split('_')[2]
+        day = filename_without_extension.split('_')[3]
+        return datetime.date(int(year), int(month), int(day))
+
+    def print_files_information(self):
+        # determine the number of company authored drafts
+        files = [
+            filename for filename in os.listdir(self.draft_path_strict) if
+            os.path.isfile(os.path.join(self.draft_path_strict, filename))
+        ]
+        files_no_strict = [
+            filename for filename in os.listdir(self.draft_path_nostrict) if
+            os.path.isfile(os.path.join(self.draft_path_nostrict, filename))
+        ]
+        total_number_drafts = len(files)
+        total_number_drafts_no_strict = len(files_no_strict)
+        print('\nPrint, per company, the number of IETF drafts containing YANG model(s)')
         print(
-            "DEBUG: " + " print the diff between files and files_no_strict lists, so the files with xym extraction issues: " + str(
-                files_diff))
+            f'Total numbers of drafts with YANG Model(s): {total_number_drafts} - '
+            f'non strict rules: {total_number_drafts_no_strict}\n'
+        )
+
+        def print_attribution(name: str, domain: str):
+            if not name and not domain:
+                print()
+            else:
+                strict = len(self._list_of_ietf_draft_containing_keyword(files, domain, self.draft_path_strict))
+                non_strict = len(
+                    self._list_of_ietf_draft_containing_keyword(files_no_strict, domain, self.draft_path_nostrict)
+                )
+                print(f'{name}: {strict} - non strict rules: {non_strict}')
+
+        for company in self.COMPANIES:
+            print_attribution(*company)
+
+        # diff between files and files_no_strict lists
+        files_diff = []
+        for filename in files_no_strict:
+            if filename in files:
+                continue
+            files_diff.append(filename)
+            bash_command = f'cp {self.draft_path_nostrict}{filename} {self.draft_path_diff}'
+            temp_result = os.popen(bash_command).read()
+            if self.debug_level > 0:
+                print(
+                    f'DEBUG: copy the IETF draft containing a YANG model in draft-with-YANG-diff: error {temp_result}'
+                )
+        if self.debug_level > 0:
+            print(
+                'DEBUG: print the diff between files and files_no_strict lists, '
+                f'so the files with xym extraction issues: {files_diff}'
+            )
+
+    def _list_of_files_in_dir(self, srcdir: str, extension: str) -> list[str]:
+        """
+        Returns the list of file in a directory
+
+        :param srcdir:  (str) directory to search for files
+        :param extension:  (str) file extension to search for
+        :return: list of files
+        """
+        files = [filename for filename in os.listdir(srcdir) if os.path.isfile(os.path.join(srcdir, filename))]
+        yang_files = []
+        for filename in files:
+            if filename.endswith(extension):
+                yang_files.append(filename)
+                if self.debug_level > 0:
+                    print(f'DEBUG: {filename}  in list_of_files_in_dir: ends with {extension}')
+            else:
+                if self.debug_level > 0:
+                    print(f'DEBUG: {filename} in list_of_files_in_dir: does not end with {extension}')
+        return yang_files
+
+    def _list_of_files_in_dir_created_after_date(self, files: list[str], srcdir: str, days: int) -> list[str]:
+        """
+        Selects the files created wihin the number of days selected
+
+        :param files:  (list[str]) list of files
+        :param srcdir:  (str) directory to search for files
+        :param days:  (int) number of days
+        :return: list of files
+        """
+        new_files = []
+        dt = datetime.datetime.utcnow()  # datetime now (all in UTC)
+        if self.debug_level > 0:
+            print(dt)
+        delta = datetime.timedelta(days)  # x days interval
+        dtdays = dt - delta  # datetime x days earlier than now
+        dtdays = dtdays.date()
+        if self.debug_level > 0:
+            print(dtdays)
+        for filename in files:
+            if self.debug_level > 0:
+                print(f'{srcdir}/{filename}')
+            t_date = re.findall(r'\d+[_-]\d+[_-]\d+', filename)[0]
+            t_date = re.findall(r'\d+', t_date)
+            dt = datetime.date(int(t_date[0]), int(t_date[1]), int(t_date[2]))  # time of last modification in seconds
+            if dt >= dtdays:
+                if self.debug_level > 0:
+                    print(f'Keep {filename}')
+                new_files.append(filename)
+            else:
+                if self.debug_level > 0:
+                    print(f'Dont keep {filename}')
+        return new_files
+
+    def _file_names_containing_keyword(self, files: list[str], keyword: str) -> list[str]:
+        """
+        Returns the list of files whose names contain a specific keyword
+
+        :param files:  (list[str]) list of files to check
+        :param keyword:  (str) keyword for which to search
+        :return: list of drafts containing the keyword
+        """
+        keyword = keyword.lower()
+        files_with_keyword = []
+        for filename in files:
+            if keyword not in filename.lower():
+                continue
+            if self.debug_level > 0:
+                print(f'DEBUG: {filename} in file_name_containing_keyword: contains {keyword}')
+            files_with_keyword.append(filename)
+        if self.debug_level > 0:
+            print(f'DEBUG: in file_name_containing_keyword: drafts_with_keyword contains {files_with_keyword}')
+        files_with_keyword.sort()
+        return files_with_keyword
+
+    def _list_of_ietf_draft_containing_keyword(self, drafts: list[str], keyword: str, draftpath: str) -> list[str]:
+        """
+        Returns the IETF drafts that contain a specific keyword
+
+        :param drafts:  (list[str]) List of ietf drafts to search for the keyword
+        :param keyword:  (str) Keyword to search for
+        :param draftpath:  (str) Path to drafts folder
+        :return: List of ietf drafts containing the keyword
+        """
+        keyword = keyword.lower()
+        list_of_ietf_draft_with_keyword = []
+        for draft_filename in drafts:
+            for line in open(os.path.join(draftpath, draft_filename), 'r', encoding='utf-8'):
+                if keyword not in line.lower():
+                    continue
+                list_of_ietf_draft_with_keyword.append(draft_filename)
+                if self.debug_level > 0:
+                    print(f'DEBUG: {draft_filename} in list_of_ietf_draft_containing_keyword: contains {keyword}')
+                break
+        if self.debug_level > 0:
+            print(
+                'DEBUG: in list_of_ietf_draft_containing_keyword: '
+                f'list_of_ietf_draft_with_keyword contains {list_of_ietf_draft_with_keyword}'
+            )
+        return list_of_ietf_draft_with_keyword
+
+    def _write_dictionary_file_in_json(self, in_dict: dict, path: str, file_name: str):
+        """
+        Dumps data from in_dict to the json file.
+
+        :param in_dict: The dictionary to write
+        :param path: The directory where the json file with be created
+        :param file_name: The file name to be created
+        :return: None
+        """
+        with open(os.path.join(path, file_name), 'w', encoding='utf-8') as outfile:
+            json.dump(in_dict, outfile, indent=2, sort_keys=True, separators=(',', ': '), ensure_ascii=True)
+        os.chmod(os.path.join(path, file_name), 0o664)
+
+
+if __name__ == '__main__':
+    config = create_config()
+    parser = argparse.ArgumentParser(description='YANG Stats Extractor')
+    parser.add_argument(
+        '--days',
+        help='Numbers of days to get back in history. Default is -1 = unlimited',
+        type=int,
+        default=-1
+    )
+    parser.add_argument(
+        '--debug',
+        help='Debug level - default is 0',
+        type=int,
+        default=0
+    )
+    args = parser.parse_args()
+    GetStats(args, config).start_process()
