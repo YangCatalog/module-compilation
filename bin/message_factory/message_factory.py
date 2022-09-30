@@ -18,11 +18,13 @@ __license__ = 'Apache License, Version 2.0'
 __email__ = 'slavomir.mazur@pantheon.tech'
 
 import os
+import re
 import smtplib
 import typing as t
 from email.mime.text import MIMEText
 
 from create_config import create_config
+from redis_connections.redis_user_notifications_connection import RedisUserNotificationsConnection
 
 GREETINGS = 'Hello from yang-catalog'
 
@@ -34,6 +36,7 @@ class MessageFactory:
             self,
             config_path=os.environ['YANGCATALOG_CONFIG_PATH'],
             close_connection_after_message_sending: bool = True,
+            redis_user_notifications_connection: t.Optional[RedisUserNotificationsConnection] = None,
     ):
         config = create_config(config_path)
         self._email_from = config.get('Message-Section', 'email-from')
@@ -41,33 +44,17 @@ class MessageFactory:
         self._email_to = config.get('Message-Section', 'email-to').split()
         self._developers_email = config.get('Message-Section', 'developers-email').split()
         self._temp_dir = config.get('Directory-Section', 'temp')
-        self._me = config.get('Web-Section', 'domain-prefix').split('/')[-1]
+        self._domain_prefix = config.get('Web-Section', 'domain-prefix')
+        self._me = self._domain_prefix.split('/')[-1]
+
         self._smtp = smtplib.SMTP('localhost')
         self._close_connection_after_message_sending = close_connection_after_message_sending
+        self._redis_user_notifications_connection = (
+                redis_user_notifications_connection or RedisUserNotificationsConnection(config=config)
+        )
 
     def __del__(self):
         if not self._close_connection_after_message_sending:
-            self._smtp.quit()
-
-    def _post_to_email(self, message: str, email_to: t.Optional[list] = None, subject: t.Optional[str] = None):
-        """Send message to the list of e-mails.
-
-            Arguments:
-                :param message      (str) message to send
-                :param email_to     (list) list of emails to send the message to
-        """
-        send_to = email_to or self._email_to
-        msg = MIMEText(f'{message}\n\nMessage sent from {self._me}')
-        msg['Subject'] = subject or 'Automatic generated message - RFC IETF'
-        msg['From'] = self._email_from
-        msg['To'] = ', '.join(send_to)
-
-        if not self._is_production:
-            print(f'You are in local env. Skip sending message to emails. The message was {msg}')
-            self._smtp.quit()
-            return
-        self._smtp.sendmail(self._email_from, send_to, msg.as_string())
-        if self._close_connection_after_message_sending:
             self._smtp.quit()
 
     def send_missing_modules(self, modules_list: list, incorrect_revision_modules: list):
@@ -86,7 +73,63 @@ class MessageFactory:
 
         self._post_to_email(message, self._developers_email)
 
-    def send_problematic_draft(self, email_to: list[str], draft_filename: str, errors: str):
+    def send_problematic_draft(
+            self,
+            email_to: list[str],
+            draft_filename: str,
+            errors: str,
+            draft_name_without_revision: t.Optional[str] = None
+    ):
         subject = f'{GREETINGS}, "{draft_filename}" had errors during an extraction'
-        message = f'During a daily check of IETF drafts, some errors were found in "{draft_filename}":\n{errors}'
-        self._post_to_email(message, email_to=email_to, subject=subject)
+        errors = errors.replace('\n', '<br>')
+        message = f'During a daily check of IETF drafts, some errors were found in "{draft_filename}":<br><br>{errors}'
+        draft_filename_without_format = draft_filename.split('.')[0]
+        draft_name_without_revision = (
+            draft_name_without_revision if draft_name_without_revision else
+            re.sub(r'-\d+', '', draft_filename_without_format)
+        )
+        unsubscribed_emails = self._redis_user_notifications_connection.get_unsubscribed_emails(
+            draft_name_without_revision
+        )
+        email_to = [email for email in email_to if email not in unsubscribed_emails]
+        message_subtype = 'html'
+        for email in email_to:
+            link_to_view_the_draft = (
+                f'<a href="{self._domain_prefix}/yangvalidator?draft={draft_filename_without_format}">'
+                'View it on YANG Catalog</a>'
+            )
+            unsubscribing_link = (
+                f'<a href="{self._domain_prefix}/api/notifications/unsubscribe_from_emails/'
+                f'{draft_name_without_revision}/{email}">unsubscribe</a>'
+            )
+            message = f'{message}<br><br>{link_to_view_the_draft} or {unsubscribing_link}'
+            self._post_to_email(message, email_to=[email], subject=subject, subtype=message_subtype)
+
+    def _post_to_email(
+            self,
+            message: str,
+            email_to: t.Optional[list] = None,
+            subject: t.Optional[str] = None,
+            subtype: str = 'plain',
+    ):
+        """Send message to the list of e-mails.
+
+            Arguments:
+                :param message      (str) message to send
+                :param email_to     (list) list of emails to send the message to
+        """
+        send_to = email_to or self._email_to
+        newline_character = '<br>' if subtype == 'html' else '\n'
+        msg = MIMEText(f'{message}{newline_character}{newline_character}Message sent from {self._me}', _subtype=subtype)
+        msg['Subject'] = subject or 'Automatic generated message - RFC IETF'
+        msg['From'] = self._email_from
+        msg['To'] = ', '.join(send_to)
+
+        if not self._is_production:
+            print(f'You are in local env. Skip sending message to emails. The message was {msg}')
+            self._smtp.quit()
+            return
+
+        self._smtp.sendmail(self._email_from, send_to, msg.as_string())
+        if self._close_connection_after_message_sending:
+            self._smtp.quit()

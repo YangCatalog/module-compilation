@@ -47,6 +47,9 @@ def main():
     rfc_path = config.get('Directory-Section', 'ietf-rfcs')
     cache_directory = config.get('Directory-Section', 'cache')
     public_directory = config.get('Web-Section', 'public-directory')
+    send_emails_about_problematic_drafts = config.get(
+        'General-Section', 'send_emails_about_problematic_drafts', fallback='False'
+    ) == 'True'
 
     parser = argparse.ArgumentParser(description='YANG RFC/Draft Processor')
     parser.add_argument('--archived',
@@ -160,7 +163,9 @@ def main():
     # Extract YANG models from IETF draft files
     draft_extractor = DraftExtractor(draft_extractor_paths, debug_level)
     draft_extractor.extract()
-    draft_extractor.dump_incorrect_drafts(public_directory)
+    draft_extractor.dump_incorrect_drafts(
+        public_directory, send_emails_about_problematic_drafts=send_emails_about_problematic_drafts
+    )
     custom_print('All IETF Drafts pre-processed')
 
     # Dump dicts for later use by compile_modules.py

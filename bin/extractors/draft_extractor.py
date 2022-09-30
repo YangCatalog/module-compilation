@@ -19,11 +19,11 @@ __email__ = 'slavomir.mazur@pantheon.tech'
 
 import json
 import os
+import re
 import shutil
 import sys
 import typing as t
 from io import StringIO
-from json import JSONDecodeError
 
 from xym import xym
 
@@ -223,6 +223,10 @@ class DraftExtractor:
         for draft_filename, errors_string in self.drafts_missing_code_section.items():
             if draft_filename in old_incorrect_drafts:
                 continue
-            author_email = f'{draft_filename.split(".")[0].split("-")[0]}@ietf.org'
-            self.message_factory.send_problematic_draft([author_email], draft_filename, errors_string)
+            draft_name_without_revision = re.sub(r'-\d+', '', draft_filename.split('.')[0])
+            author_email = f'{draft_name_without_revision}@ietf.org'
+            self.message_factory.send_problematic_draft(
+                [author_email], draft_filename, errors_string,
+                draft_name_without_revision=draft_name_without_revision
+            )
 

@@ -2,6 +2,14 @@
 
 * ##### vm.m.p - 2022-MM-DD
 
+* ##### v5.6.0 - 2022-09-30
+
+  * Unsubscribe functionality added for emails of problematic drafts [#203](https://github.com/YangCatalog/sdo_analysis/issues/203)
+  * Overview section added to README.md file [deployment #156](https://github.com/YangCatalog/deployment/issues/156)
+  * Fetching .xml files with draft information using rsync [#195](https://github.com/YangCatalog/sdo_analysis/issues/195)
+  * Sending email notification to the authors of problematic drafts [#194](https://github.com/YangCatalog/sdo_analysis/issues/194)
+  * Storing compilation result of modules from archived drafts [#193](https://github.com/YangCatalog/sdo_analysis/issues/193)
+
 * ##### v5.5.0 - 2022-08-16
 
   * yang_exclude_bad_drafts.py script removed [#186](https://github.com/YangCatalog/sdo_analysis/issues/186)
