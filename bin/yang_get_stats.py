@@ -122,25 +122,26 @@ class GetStats:
             if (datetime.date.today() - extracted_date).days > 30:
                 self.remove_old_html_files.append(self.backup_directory + filename)
             i = 0
-            for line in open(self.backup_directory + filename):
-                if i == 1:
-                    generated_at = line.split('on')[-1].split('by')[0].strip()
-                elif i == 5:
-                    passed = int(line.split(':')[-1].split('/')[0])
-                elif i == 6:
-                    passed_with_warnings = int(line.split(':')[-1].split('/')[0])
-                elif i == 7:
-                    failed = int(line.split(':')[-1].split('/')[0])
-                elif i == 8:
-                    i = 0
-                    yang_page_compilation_stats[date2num(extracted_date)] = {
-                        'name': {
-                            'generated-at': generated_at,
-                            'passed': passed,
-                            'warnings': passed_with_warnings,
-                            'failed': failed
+            with open(self.backup_directory + filename) as f:
+                for line in f:
+                    if i == 1:
+                        generated_at = line.split('on')[-1].split('by')[0].strip()
+                    elif i == 5:
+                        passed = int(line.split(':')[-1].split('/')[0])
+                    elif i == 6:
+                        passed_with_warnings = int(line.split(':')[-1].split('/')[0])
+                    elif i == 7:
+                        failed = int(line.split(':')[-1].split('/')[0])
+                    elif i == 8:
+                        i = 0
+                        yang_page_compilation_stats[date2num(extracted_date)] = {
+                            'name': {
+                                'generated-at': generated_at,
+                                'passed': passed,
+                                'warnings': passed_with_warnings,
+                                'failed': failed
+                            }
                         }
-                    }
         if int(args.days) == -1:
             with open(json_history_file, 'w') as filename:
                 json.dump(yang_page_compilation_stats, filename)
@@ -155,21 +156,23 @@ class GetStats:
             passed = 0
             badly_formated = 0
             examples = 0
-            for line in open(self.backup_directory + filename):
-                if 'correctly extracted YANG models' in line and (total_extracted := line.split(':')[-1]).isnumeric():
-                    total = int(total_extracted)
-                elif 'without warnings' in line and (
-                        total_without_warnings := line.split(':')[-1].split('/')[0]
-                ).isnumeric():
-                    passed = int(total_without_warnings)
-                elif 'with warnings' in line and (total_with_warnings := line.split(':')[-1].split('/')[0]).isnumeric():
-                    passed_with_warnings = int(total_with_warnings)
-                elif '(example, badly formatted, etc. )' in line and (
-                        total_badly_formated := line.split(':')[-1]
-                ).isnumeric():
-                    badly_formated = int(total_badly_formated)
-                elif 'correctly extracted example YANG' in line and (total_examples := line.split(':')[-1]).isnumeric():
-                    examples = int(total_examples)
+            with open(self.backup_directory + filename, 'r') as f:
+                for line in f:
+                    if 'correctly extracted YANG models' in line:
+                        amount = line.split(':')[-1]
+                        total = int(amount) if amount.isnumeric() else total
+                    elif 'without warnings' in line:
+                        amount = line.split(':')[-1].split('/')[0]
+                        passed = int(amount) if amount.isnumeric() else passed
+                    elif 'with warnings' in line:
+                        amount = line.split(':')[-1].split('/')[0]
+                        passed_with_warnings = int(amount) if amount.isnumeric() else passed_with_warnings
+                    elif '(example, badly formatted, etc. )' in line:
+                        amount = line.split(':')[-1]
+                        badly_formated = int(amount) if amount.isnumeric() else badly_formated
+                    elif 'correctly extracted example YANG' in line:
+                        amount = line.split(':')[-1]
+                        examples = int(amount) if amount.isnumeric() else examples
             extracted_date = self._extract_date_from_filename(filename)
             if (datetime.date.today() - extracted_date).days > 30:
                 self.remove_old_html_files.append(self.backup_directory + filename)
@@ -192,23 +195,22 @@ class GetStats:
             print(f'\nLooking at the files starting with: {prefix}')
             print('FILENAME: NUMBER OF DAYS SINCE EPOCH, TOTAL YANG MODULES, PASSED, PASSEDWITHWARNINGS, FAILED')
             json_history_file = os.path.join(self.backup_directory, f'{prefix}history.json')
-            yang_page_compilation_stats = {}
-            if os.path.isfile(json_history_file):
-                yang_page_compilation_stats = self._load_compilation_stats_from_history_file(json_history_file)
+            yang_page_compilation_stats = self._load_compilation_stats_from_history_file(json_history_file)
             for filename in self._file_names_containing_keyword(self.files, prefix):
                 failed_result = 0
                 passed_result = 0
                 passed_with_warning_result = 0
                 total_result = 0
-                for line in open(self.backup_directory + filename, 'r'):
-                    if 'FAILED' in line:
-                        failed_result += 1
-                    elif 'PASSED WITH WARNINGS' in line:
-                        passed_with_warning_result += 1
-                    elif 'PASSED' in line:
-                        passed_result += 1
-                    elif '.txt' in line:
-                        total_result += 1
+                with open(self.backup_directory + filename, 'r') as f:
+                    for line in f:
+                        if 'FAILED' in line:
+                            failed_result += 1
+                        elif 'PASSED WITH WARNINGS' in line:
+                            passed_with_warning_result += 1
+                        elif 'PASSED' in line:
+                            passed_result += 1
+                        elif '.txt' in line:
+                            total_result += 1
                 if 'ODLPageCompilation_' in prefix:
                     total_result = str(int(failed_result) + int(passed_with_warning_result) + int(passed_result))
                 extracted_date = self._extract_date_from_filename(filename)
@@ -237,9 +239,10 @@ class GetStats:
         yang_page_compilation_stats = self._load_compilation_stats_from_history_file(json_history_file)
         for filename in self._file_names_containing_keyword(self.files, self.IETF_YANG_OUT_OF_RFC_PREFIX):
             rfc_result = 0
-            for line in open(self.backup_directory + filename):
-                if '.yang' in line:
-                    rfc_result += 1
+            with open(self.backup_directory + filename, 'r') as f:
+                for line in f:
+                    if '.yang' in line:
+                        rfc_result += 1
             extracted_date = self._extract_date_from_filename(filename)
             if (datetime.date.today() - extracted_date).days > 30:
                 self.remove_old_html_files.append(self.backup_directory + filename)
@@ -404,13 +407,13 @@ class GetStats:
         keyword = keyword.lower()
         list_of_ietf_draft_with_keyword = []
         for draft_filename in drafts:
-            for line in open(os.path.join(draftpath, draft_filename), 'r', encoding='utf-8'):
-                if keyword not in line.lower():
-                    continue
-                list_of_ietf_draft_with_keyword.append(draft_filename)
-                if self.debug_level > 0:
-                    print(f'DEBUG: {draft_filename} in list_of_ietf_draft_containing_keyword: contains {keyword}')
-                break
+            with open(os.path.join(draftpath, draft_filename), 'r', encoding='utf-8') as draft_file:
+                draft_file_content = draft_file.read().lower()
+            if draft_file_content.find(keyword) == -1:
+                continue
+            list_of_ietf_draft_with_keyword.append(draft_filename)
+            if self.debug_level > 0:
+                print(f'DEBUG: {draft_filename} in list_of_ietf_draft_containing_keyword: contains {keyword}')
         if self.debug_level > 0:
             print(
                 'DEBUG: in list_of_ietf_draft_containing_keyword: '
