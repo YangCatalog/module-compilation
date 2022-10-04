@@ -80,7 +80,7 @@ class GetStats:
         self.args = args
         self.debug_level = args.debug
         self.web_private = config.get('Web-Section', 'private-directory')
-        self.backup_directory = config.get('Directory-Section', 'backup') + '/'
+        self.backup_directory = config.get('Directory-Section', 'backup')
         self.ietf_directory = config.get('Directory-Section', 'ietf-directory')
 
         self.draft_path_strict = os.path.join(self.ietf_directory, 'draft-with-YANG-strict')
@@ -114,15 +114,16 @@ class GetStats:
         json_history_file = os.path.join(self.backup_directory, f'{self.YANG_PAGE_MAIN_PREFIX}history.json')
         yang_page_compilation_stats = self._load_compilation_stats_from_history_file(json_history_file)
         for filename in self._file_names_containing_keyword(self.files, self.YANG_PAGE_MAIN_PREFIX):
+            path_to_file = os.path.join(self.backup_directory, filename)
             generated_at = 0
             passed = 0
             passed_with_warnings = 0
             failed = 0
             extracted_date = self._extract_date_from_filename(filename)
             if (datetime.date.today() - extracted_date).days > 30:
-                self.remove_old_html_files.append(self.backup_directory + filename)
+                self.remove_old_html_files.append(path_to_file)
             i = 0
-            with open(self.backup_directory + filename) as f:
+            with open(path_to_file) as f:
                 for line in f:
                     if i == 1:
                         generated_at = line.split('on')[-1].split('by')[0].strip()
@@ -151,12 +152,13 @@ class GetStats:
         json_history_file = os.path.join(self.backup_directory, f'{self.IETF_YANG_PAGE_MAIN_PREFIX}history.json')
         yang_page_compilation_stats = self._load_compilation_stats_from_history_file(json_history_file)
         for filename in self._file_names_containing_keyword(self.files, self.IETF_YANG_PAGE_MAIN_PREFIX):
+            path_to_file = os.path.join(self.backup_directory, filename)
             total = 0
             passed_with_warnings = 0
             passed = 0
             badly_formated = 0
             examples = 0
-            with open(self.backup_directory + filename, 'r') as f:
+            with open(path_to_file, 'r') as f:
                 for line in f:
                     if 'correctly extracted YANG models' in line:
                         amount = line.split(':')[-1]
@@ -175,7 +177,7 @@ class GetStats:
                         examples = int(amount) if amount.isnumeric() else examples
             extracted_date = self._extract_date_from_filename(filename)
             if (datetime.date.today() - extracted_date).days > 30:
-                self.remove_old_html_files.append(self.backup_directory + filename)
+                self.remove_old_html_files.append(path_to_file)
             yang_page_compilation_stats[date2num(extracted_date)] = {
                 'total': total,
                 'warnings': passed_with_warnings,
@@ -197,11 +199,12 @@ class GetStats:
             json_history_file = os.path.join(self.backup_directory, f'{prefix}history.json')
             yang_page_compilation_stats = self._load_compilation_stats_from_history_file(json_history_file)
             for filename in self._file_names_containing_keyword(self.files, prefix):
+                path_to_file = os.path.join(self.backup_directory, filename)
                 failed_result = 0
                 passed_result = 0
                 passed_with_warning_result = 0
                 total_result = 0
-                with open(self.backup_directory + filename, 'r') as f:
+                with open(path_to_file, 'r') as f:
                     for line in f:
                         if 'FAILED' in line:
                             failed_result += 1
@@ -215,7 +218,7 @@ class GetStats:
                     total_result = str(int(failed_result) + int(passed_with_warning_result) + int(passed_result))
                 extracted_date = self._extract_date_from_filename(filename)
                 if (datetime.date.today() - extracted_date).days > 30:
-                    self.remove_old_html_files.append(self.backup_directory + filename)
+                    self.remove_old_html_files.append(path_to_file)
                 yang_page_compilation_stats[date2num(extracted_date)] = {
                     'total': total_result,
                     'warning': passed_with_warning_result,
@@ -238,14 +241,15 @@ class GetStats:
         json_history_file = os.path.join(self.backup_directory, f'{self.IETF_YANG_OUT_OF_RFC_PREFIX}history.json')
         yang_page_compilation_stats = self._load_compilation_stats_from_history_file(json_history_file)
         for filename in self._file_names_containing_keyword(self.files, self.IETF_YANG_OUT_OF_RFC_PREFIX):
+            path_to_file = os.path.join(self.backup_directory, filename)
             rfc_result = 0
-            with open(self.backup_directory + filename, 'r') as f:
+            with open(path_to_file, 'r') as f:
                 for line in f:
                     if '.yang' in line:
                         rfc_result += 1
             extracted_date = self._extract_date_from_filename(filename)
             if (datetime.date.today() - extracted_date).days > 30:
-                self.remove_old_html_files.append(self.backup_directory + filename)
+                self.remove_old_html_files.append(path_to_file)
                 yang_page_compilation_stats[date2num(extracted_date)] = {'total': rfc_result}
             ietf_yang_out_of_rfc[date2num(extracted_date)] = {'total': rfc_result}
         if int(args.days) == -1:
@@ -293,12 +297,12 @@ class GetStats:
         def print_attribution(name: str, domain: str):
             if not name and not domain:
                 print()
-            else:
-                strict = len(self._list_of_ietf_draft_containing_keyword(files, domain, self.draft_path_strict))
-                non_strict = len(
-                    self._list_of_ietf_draft_containing_keyword(files_no_strict, domain, self.draft_path_nostrict)
-                )
-                print(f'{name}: {strict} - non strict rules: {non_strict}')
+                return
+            strict = len(self._list_of_ietf_draft_containing_keyword(files, domain, self.draft_path_strict))
+            non_strict = len(
+                self._list_of_ietf_draft_containing_keyword(files_no_strict, domain, self.draft_path_nostrict)
+            )
+            print(f'{name}: {strict} - non strict rules: {non_strict}')
 
         for company in self.COMPANIES:
             print_attribution(*company)
@@ -309,11 +313,11 @@ class GetStats:
             if filename in files:
                 continue
             files_diff.append(filename)
-            bash_command = f'cp {self.draft_path_nostrict}{filename} {self.draft_path_diff}'
+            bash_command = f'cp {os.path.join(self.draft_path_nostrict, filename)} {self.draft_path_diff}'
             temp_result = os.popen(bash_command).read()
             if self.debug_level > 0:
                 print(
-                    f'DEBUG: copy the IETF draft containing a YANG model in draft-with-YANG-diff: error {temp_result}'
+                    f'DEBUG: copy the IETF draft containing a YANG model in {self.draft_path_diff}: error {temp_result}'
                 )
         if self.debug_level > 0:
             print(
