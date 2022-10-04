@@ -129,11 +129,14 @@ class GetStats:
                     if i == 1:
                         generated_at = line.split('on')[-1].split('by')[0].strip()
                     elif i == 5:
-                        passed = int(result) if (result := line.split(':')[-1].split('/')[0]) else 0
+                        result = line.split(':')[-1].split('/')[0]
+                        passed = int(result) if result.isnumeric() else 0
                     elif i == 6:
-                        passed_with_warnings = int(result) if (result := line.split(':')[-1].split('/')[0]) else 0
+                        result = line.split(':')[-1].split('/')[0]
+                        passed_with_warnings = int(result) if result.isnumeric() else 0
                     elif i == 7:
-                        failed = int(result) if (result := line.split(':')[-1].split('/')[0]) else 0
+                        result = line.split(':')[-1].split('/')[0]
+                        failed = int(result) if result.isnumeric() else 0
                     elif i == 8:
                         i = 0
                         yang_page_compilation_stats[date2num(extracted_date)] = {
@@ -272,9 +275,7 @@ class GetStats:
 
     def _extract_date_from_filename(self, filename: str) -> datetime.date:
         filename_without_extension = filename.split('.')[0]
-        year = filename_without_extension.split('_')[1]
-        month = filename_without_extension.split('_')[2]
-        day = filename_without_extension.split('_')[3]
+        _, year, month, day = filename_without_extension.split('_')
         return datetime.date(int(year), int(month), int(day))
 
     def print_files_information(self):
