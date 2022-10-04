@@ -126,18 +126,18 @@ class GetStats:
             with open(path_to_file) as f:
                 for line in f:
                     i += 1
-                    if i == 1:
+                    if i == 2:
                         generated_at = line.split('on')[-1].split('by')[0].strip()
-                    elif i == 5:
-                        result = line.split(':')[-1].split('/')[0]
-                        passed = int(result) if result.isnumeric() else 0
                     elif i == 6:
                         result = line.split(':')[-1].split('/')[0]
-                        passed_with_warnings = int(result) if result.isnumeric() else 0
+                        passed = int(result) if result.isnumeric() else 0
                     elif i == 7:
                         result = line.split(':')[-1].split('/')[0]
-                        failed = int(result) if result.isnumeric() else 0
+                        passed_with_warnings = int(result) if result.isnumeric() else 0
                     elif i == 8:
+                        result = line.split(':')[-1].split('/')[0]
+                        failed = int(result) if result.isnumeric() else 0
+                    elif i == 9:
                         i = 0
                         yang_page_compilation_stats[date2num(extracted_date)] = {
                             'name': {
