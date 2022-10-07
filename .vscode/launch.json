@@ -80,6 +80,19 @@
       "console": "integratedTerminal",
       "cwd": "${workspaceFolder}",
       "justMyCode": false
+    },
+    {
+      "name": "yang_get_stats",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/bin/yang_get_stats.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": false,
+      "args": [
+        "--days",
+        "-1"
+      ]
     }
   ]
 }

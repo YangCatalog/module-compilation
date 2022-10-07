@@ -5,6 +5,7 @@ ARG CRON_MAIL_TO
 ARG YANGCATALOG_CONFIG_PATH
 ARG CONFD_VERSION
 ARG YANGLINT_VERSION
+ARG XYM_VERSION
 
 ENV YANG_ID "$YANG_ID"
 ENV YANG_GID "$YANG_GID"
@@ -12,6 +13,7 @@ ENV CRON_MAIL_TO "$CRON_MAIL_TO"
 ENV YANGCATALOG_CONFIG_PATH "$YANGCATALOG_CONFIG_PATH"
 ENV CONFD_VERSION "$CONFD_VERSION"
 ENV YANGLINT_VERSION "$YANGLINT_VERSION"
+ENV XYM_VERSION "$XYM_VERSION"
 ENV LANG=C.UTF-8 LC_ALL=C.UTF-8 PYTHONUNBUFFERED=1
 
 RUN echo "export PATH=$VIRTUAL_ENV/bin:$PATH" >/etc/environment
@@ -75,6 +77,7 @@ RUN rm -rf /var/lib/apt/lists/*
 RUN pip3 install --upgrade pip
 COPY ./sdo_analysis/requirements.txt .
 RUN pip3 install -r requirements.txt
+RUN pip3 install xym==${XYM_VERSION} -U
 RUN pypy3 -mpip install pyang==2.5.3
 
 RUN mkdir /opt/confd
