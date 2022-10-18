@@ -17,6 +17,7 @@ import datetime
 import json
 import os
 import re
+from configparser import ConfigParser
 
 import requests
 from filelock import FileLock
@@ -26,17 +27,14 @@ from create_config import create_config
 from file_hasher import FileHasher
 from files_generator import FilesGenerator
 from metadata_generators.base_metadata_generator import BaseMetadataGenerator
-from metadata_generators.draft_metadata_generator import (
-    ArchivedMetadataGenerator, DraftMetadataGenerator)
-from metadata_generators.example_metadata_generator import \
-    ExampleMetadataGenerator
+from metadata_generators.draft_metadata_generator import ArchivedMetadataGenerator, DraftMetadataGenerator
+from metadata_generators.example_metadata_generator import ExampleMetadataGenerator
 from metadata_generators.rfc_metadata_generator import RfcMetadataGenerator
 from parsers.confdc_parser import ConfdcParser
 from parsers.pyang_parser import PyangParser
 from parsers.yangdump_pro_parser import YangdumpProParser
 from parsers.yanglint_parser import YanglintParser
-from utility.utility import (check_yangcatalog_data, IETF, module_or_submodule,
-                             number_that_passed_compilation)
+from utility.utility import check_yangcatalog_data, IETF, module_or_submodule, number_that_passed_compilation
 
 __author__ = 'Benoit Claise'
 __copyright__ = 'Copyright(c) 2015-2018, Cisco Systems, Inc.,  Copyright The IETF Trust 2022, All Rights Reserved'
@@ -49,14 +47,14 @@ __email__ = 'bclaise@cisco.com'
 # ----------------------------------------------------------------------
 
 
-def list_of_yang_modules_in_subdir(srcdir: str, debug_level: int):
+def list_of_yang_modules_in_subdir(srcdir: str, debug_level: int) -> list:
     """
     Returns the list of YANG Modules (.yang) in all sub-directories
 
     Arguments:
         :param srcdir           (str) root directory to search for yang files
         :param debug_level      (int) If > 0 print some debug statements to the console
-        :return: list of YANG files found in all sub-directories of root directory
+        :return: list of YANG files found in all subdirectories of root directory
     """
     ll = []
     for root, _, files in os.walk(srcdir):
@@ -74,8 +72,8 @@ def get_mod_rev(yang_file) -> str:
 
     with open(yang_file, 'r', encoding='utf-8', errors='ignore') as module:
         for line in module:
-            if name != '' and revision != '':
-                return name + '@' + revision
+            if name and revision:
+                return f'{name}@{revision}'
 
             if name == '':
                 match = re.search(r'^\s*(sub)?module\s+([\w\-\d]+)', line)
@@ -83,21 +81,18 @@ def get_mod_rev(yang_file) -> str:
                     name = match.group(2).strip()
                     continue
 
-            if revision == '':
+            if not revision:
                 match = re.search(r'^\s*revision\s+"?([\d\-]+)"?', line)
                 if match:
                     revision = match.group(1).strip()
                     continue
 
-    if revision == '':
-        return name
-    else:
-        return name + '@' + revision
+    return f'{name}@{revision}' if revision else name
 
 
 def custom_print(message: str):
-    timestamp = '{} ({}):'.format(datetime.datetime.now().time(), os.getpid())
-    print('{} {}'.format(timestamp, message), flush=True)
+    timestamp = f'{datetime.datetime.now().time()} ({os.getpid()}):'
+    print(f'{timestamp} {message}', flush=True)
 
 
 def get_name_with_revision(yang_file: str) -> str:
@@ -107,31 +102,37 @@ def get_name_with_revision(yang_file: str) -> str:
     if out.rstrip():
         # Add the @revision to the yang_file if not present
         if '@' in yang_file and '.yang' in yang_file:
-            new_yang_file_base_with_revision = out.rstrip() + '.yang'
+            new_yang_file_base_with_revision = f'{out.rstrip()}.yang'
             if new_yang_file_base_with_revision.split('@')[0] != yang_file_base.split('@')[0]:
                 print(
-                    'Name of the YANG file ' + yang_file_base + ' is wrong changing to correct one into ' + new_yang_file_base_with_revision,
-                    flush=True)
+                    f'Name of the YANG file {yang_file_base} is wrong changing to correct one into '
+                    f'{new_yang_file_base_with_revision}',
+                    flush=True
+                )
                 yang_file_base = new_yang_file_base_with_revision
-            if new_yang_file_base_with_revision.split('@')[1].split('.')[0] != \
-                    yang_file_base.split('@')[1].split('.')[0]:
+            if (
+                    new_yang_file_base_with_revision.split('@')[1].split('.')[0] !=
+                    yang_file_base.split('@')[1].split('.')[0]
+            ):
                 print(
-                    'Revision of the YANG file ' + yang_file_base + ' is wrong changing to correct as ' + new_yang_file_base_with_revision,
-                    flush=True)
+                    f'Revision of the YANG file {yang_file_base} is wrong changing to correct as '
+                    f'{new_yang_file_base_with_revision}',
+                    flush=True
+                )
                 yang_file_base = new_yang_file_base_with_revision
 
             return yang_file_base
         else:
-            new_yang_file_base_with_revision = out.rstrip() + '.yang'
+            new_yang_file_base_with_revision = f'{out.rstrip()}.yang'
             if debug_level > 0:
                 print(
-                    "DEBUG: Adding the revision to YANG module because xym can't get revision(missing from the YANG module): " + yang_file)
-                print('DEBUG:  out: ' + new_yang_file_base_with_revision)
+                    f'DEBUG: Adding the revision to YANG module because xym can\'t get revision '
+                    f'(missing from the YANG module): {yang_file}'
+                )
+                print(f'DEBUG:  out: {new_yang_file_base_with_revision}')
 
             return new_yang_file_base_with_revision
-    else:
-        print('Unable to get name@revision out of ' + yang_file + ' - no output', flush=True)
-
+    print(f'Unable to get name@revision out of {yang_file} - no output', flush=True)
     return ''
 
 
@@ -143,7 +144,7 @@ def get_modules(temp_dir: str, prefix: str) -> dict:
     except (FileNotFoundError, json.decoder.JSONDecodeError):
         modules = {}
     if modules == {}:
-        modules = requests.get('{}/search/modules'.format(prefix)).json()
+        modules = requests.get(f'{prefix}/search/modules').json()
         custom_print('All the modules data loaded from API')
     return modules
 
@@ -176,25 +177,27 @@ def parse_example_module(parsers: dict, yang_file: str, root_directory: str, lin
     return compilation_status, module_compilation_results
 
 
-def validate(prefix: str, modules: dict, yang_list: list, parser_args: dict, document_dict: dict) -> dict:
+def validate(
+        prefix: str, modules: dict, yang_list: list, parser_args: dict, document_dict: dict, config: ConfigParser,
+) -> dict:
     agregate_results = {'all': {}, 'no_submodules': {}}
     parsers = {
-        'pyang': PyangParser(debug_level),
+        'pyang': PyangParser(debug_level, config=config),
         'confdc': ConfdcParser(debug_level),
         'yangdumppro': YangdumpProParser(debug_level),
         'yanglint': YanglintParser(debug_level)
     }
     all_yang_catalog_metadata = {}
     for module in modules['module']:
-        key = '{}@{}'.format(module['name'], module['revision'])
+        key = f'{module["name"]}@{module["revision"]}'
         all_yang_catalog_metadata[key] = module
 
-    # Load compilation results from .json file, if any exists
+    #  Load compilation results from .json file, if any exists
     try:
         if ietf == IETF.DRAFT:
             path = os.path.join(web_private, 'IETFCiscoAuthors.json')
         else:
-            path = os.path.join(web_private, '{}.json'.format(prefix))
+            path = os.path.join(web_private, f'{prefix}.json')
         with open(path, 'r') as f:
             cached_compilation_results = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
@@ -211,13 +214,15 @@ def validate(prefix: str, modules: dict, yang_list: list, parser_args: dict, doc
             else:
                 compilation_status, module_compilation_results = parse_module(parsers, yang_file, **parser_args)
 
-            metadata_generator = metadata_generator_cls(module_compilation_results, compilation_status,
-                                                        yang_file, document_dict)
+            metadata_generator = metadata_generator_cls(
+                module_compilation_results, compilation_status, yang_file, document_dict,
+            )
             confd_metadata = metadata_generator.get_confd_metadata()
             yang_file_compilation = metadata_generator.get_file_compilation()
 
-            check_yangcatalog_data(config, yang_file, confd_metadata, module_compilation_results,
-                                   all_yang_catalog_metadata, ietf)
+            check_yangcatalog_data(
+                config, yang_file, confd_metadata, module_compilation_results, all_yang_catalog_metadata, ietf,
+            )
 
             # Revert to previous hash if compilation status is 'UNKNOWN' -> try to parse model again next time
             if compilation_status != 'UNKNOWN':
@@ -257,9 +262,6 @@ def write_page_main(prefix: str, compilation_stats: dict) -> dict:  # pyright: i
                     break
 
 
-# ----------------------------------------------------------------------
-# Main
-# ----------------------------------------------------------------------
 def main():
     global config, debug_level, fileHasher, ietf, metadata_generator_cls, web_private
     config = create_config()
@@ -272,62 +274,80 @@ def main():
 
     parser = argparse.ArgumentParser(
         description='YANG Document Processor: generate tables with compilation errors/warnings')
-    parser.add_argument('--rootdir',
-                        help='Root directory where to find the source YANG models. '
-                             'Default is "."',
-                        type=str,
-                        default='.',)
-    parser.add_argument('--metadata',
-                        help='Metadata text (such as SDOs, Github location, etc.) '
-                             'to be displayed on the generated HTML page. '
-                             'Default is ""',
-                        type=str,
-                        default='')
-    parser.add_argument('--lint',
-                        help='Optional flag that determines pyang syntax enforcement; '
-                             'If set, pyang --lint is run. '
-                             'Otherwise, pyang --ietf is run. '
-                             'Default is False',
-                        action='store_true',
-                        default=False)
-    parser.add_argument('--allinclusive',
-                        help='Optional flag that determines whether the rootdir directory '
-                             'contains all imported YANG modules; '
-                             'If set, the YANG validators will only look in the rootdir directory. '
-                             'Otherwise, the YANG validators look in {}. '
-                             'Default is False'.format(modules_directory),
-                        action='store_true',
-                        default=False)
-    parser.add_argument('--prefix',
-                        help='Prefix for generating HTML file names. Example: MEF, IEEEStandard, IEEEExperimental. '
-                             'Default is ""',
-                        default='')
-    parser.add_argument('--debug',
-                        help='Debug level - default is 0',
-                        type=int,
-                        default=0)
-    parser.add_argument('--forcecompilation',
-                        help='Optional flag that determines wheter compilation should be run '
-                             'for all files even if they have not been changed '
-                             'or even if the validators versions have not been changed.',
-                        action='store_true',
-                        default=False)
+    parser.add_argument(
+        '--rootdir',
+        help='Root directory where to find the source YANG models. Default is "."',
+        type=str,
+        default='.',
+    )
+    parser.add_argument(
+        '--metadata',
+        help='Metadata text (such as SDOs, Github location, etc.) to be displayed on the generated HTML page. '
+             'Default is ""',
+        type=str,
+        default=''
+    )
+    parser.add_argument(
+        '--lint',
+        help='Optional flag that determines pyang syntax enforcement; '
+             'If set, pyang --lint is run. '
+             'Otherwise, pyang --ietf is run. '
+             'Default is False',
+        action='store_true',
+        default=False
+    )
+    parser.add_argument(
+        '--allinclusive',
+        help='Optional flag that determines whether the rootdir directory '
+             'contains all imported YANG modules; '
+             'If set, the YANG validators will only look in the rootdir directory. '
+             f'Otherwise, the YANG validators look in {modules_directory}. '
+             'Default is False',
+        action='store_true',
+        default=False
+    )
+    parser.add_argument(
+        '--prefix',
+        help='Prefix for generating HTML file names. Example: MEF, IEEEStandard, IEEEExperimental. Default is ""',
+        default=''
+    )
+    parser.add_argument(
+        '--debug',
+        help='Debug level - default is 0',
+        type=int,
+        default=0
+    )
+    parser.add_argument(
+        '--forcecompilation',
+        help='Optional flag that determines wheter compilation should be run '
+             'for all files even if they have not been changed '
+             'or even if the validators versions have not been changed.',
+        action='store_true',
+        default=False
+    )
     group = parser.add_mutually_exclusive_group()
-    group.add_argument('--rfc',
-                       help='Set specific options for compiling RFCs.',
-                       action='store_true')
-    group.add_argument('--draft',
-                       help='Include extra metadata in the compilation results when compiling drafts.'
-                            ' Does not include archived drafts.',
-                       action='store_true')
-    group.add_argument('--draft-archive',
-                       help='Include extra metadata in the compilation results when compiling drafts.'
-                            ' Includes archived drafts.',
-                       action='store_true')
-    group.add_argument('--example',
-                       help='Include extra metadata in the compilation results when compiling examples,'
-                            ' only compile examples with pyang.',
-                       action='store_true')
+    group.add_argument(
+        '--rfc',
+        help='Set specific options for compiling RFCs.',
+        action='store_true'
+    )
+    group.add_argument(
+        '--draft',
+        help='Include extra metadata in the compilation results when compiling drafts. '
+             'Does not include archived drafts.',
+        action='store_true'
+    )
+    group.add_argument(
+        '--draft-archive',
+        help='Include extra metadata in the compilation results when compiling drafts. Includes archived drafts.',
+        action='store_true'
+    )
+    group.add_argument(
+        '--example',
+        help='Include extra metadata in the compilation results when compiling examples,'
+             ' only compile examples with pyang.',
+        action='store_true'
+    )
     args = parser.parse_args()
 
     # Set options depending on the type of documents we're compiling
@@ -364,7 +384,7 @@ def main():
     else:
         assert False, 'This is unreachable'
 
-    custom_print('Start of job in {}'.format(args.rootdir))
+    custom_print(f'Start of job in {args.rootdir}')
 
     debug_level = args.debug
 
@@ -382,9 +402,9 @@ def main():
     }
 
     if debug_level > 0:
-        print('yang_list content:\n{}'.format(yang_list))
-    custom_print('relevant files list built, {} modules found in {}'.format(len(yang_list), args.rootdir))
-    agregate_results = validate(args.prefix, modules, yang_list, parser_args, document_dict)
+        print(f'yang_list content:\n{yang_list}')
+    custom_print(f'relevant files list built, {len(yang_list)} modules found in {args.rootdir}')
+    agregate_results = validate(args.prefix, modules, yang_list, parser_args, document_dict, config)
     custom_print('all modules compiled/validated')
 
     # Generate HTML and JSON files
@@ -403,7 +423,7 @@ def main():
         except FileNotFoundError:
             old_draft_archive_results = {}
         draft_archive_results = old_draft_archive_results | agregate_results['all']
-        filesGenerator.write_dictionary(draft_archive_results, 'IETFDraftArchive')      
+        filesGenerator.write_dictionary(draft_archive_results, 'IETFDraftArchive')
 
         # Strip cisco authors out
         agregate_results['all'] = {k: v[:2] + v[3:] for k, v in agregate_results['all'].items()}
@@ -424,7 +444,7 @@ def main():
             draft_keys = set()
         draft_results = {key: agregate_results['all'] for key in draft_keys}
         filesGenerator.write_dictionary(draft_results, 'IETFCiscoAuthors')
-        
+
     elif ietf == IETF.EXAMPLE:
         filesGenerator.write_dictionary(agregate_results['all'], args.prefix)
         headers = filesGenerator.getIETFDraftExampleYANGPageCompilationHeaders()
@@ -435,8 +455,8 @@ def main():
             module_to_rfc_anchor = {}
             for yang_module, document_name in document_dict.items():
                 rfc_name = document_name.split('.')[0]
-                datatracker_url = 'https://datatracker.ietf.org/doc/html/{}'.format((rfc_name))
-                rfc_url_anchor = '<a href="{}">{}</a>'.format(datatracker_url, rfc_name)
+                datatracker_url = f'https://datatracker.ietf.org/doc/html/{rfc_name}'
+                rfc_url_anchor = f'<a href="{datatracker_url}">{rfc_name}</a>'
                 module_to_rfc_anchor[yang_module] = rfc_url_anchor
 
             filesGenerator.write_dictionary(module_to_rfc_anchor, 'IETFYANGRFC')
@@ -445,7 +465,9 @@ def main():
 
         filesGenerator.write_dictionary(agregate_results['all'], args.prefix)
         headers = filesGenerator.getYANGPageCompilationHeaders(args.lint)
-        filesGenerator.generateYANGPageCompilationHTML(agregate_results['no_submodules'], headers, args.prefix, args.metadata)
+        filesGenerator.generateYANGPageCompilationHTML(
+            agregate_results['no_submodules'], headers, args.prefix, args.metadata,
+        )
 
     # Generate modules compilation results statistics HTML page
     passed = number_that_passed_compilation(agregate_results['all'], 0, 'PASSED')
@@ -459,7 +481,8 @@ def main():
             'total-drafts': len(document_dict.keys()),
             'draft-passed': number_that_passed_compilation(agregate_results['all'], 3, 'PASSED'),
             'draft-warnings': number_that_passed_compilation(agregate_results['all'], 3, 'PASSED WITH WARNINGS'),
-            'all-ietf-drafts': len([f for f in os.listdir(all_yang_path) if os.path.isfile(os.path.join(all_yang_path, f))])
+            'all-ietf-drafts': len(
+                [f for f in os.listdir(all_yang_path) if os.path.isfile(os.path.join(all_yang_path, f))])
         }
         merged_stats = write_page_main('ietf-yang', compilation_stats)
         filesGenerator.generateIETFYANGPageMainHTML(merged_stats)
@@ -482,27 +505,41 @@ def main():
     # Print the summary of the compilation results
     print('--------------------------')
     if ietf in (IETF.DRAFT, IETF.DRAFT_ARCHIVE):
-        print('Number of correctly extracted YANG models from IETF drafts: {}'
-              .format(compilation_stats['total-drafts']))
-        print('Number of YANG models in IETF drafts that passed compilation: {}/{}'
-              .format(compilation_stats['draft-passed'], compilation_stats.get('total-drafts')))
-        print('Number of YANG models in IETF drafts that passed compilation with warnings: {}/{}'
-              .format(compilation_stats['draft-warnings'], compilation_stats.get('total-drafts'))),
-        print('Number of all YANG models in IETF drafts (examples, badly formatted, etc. ): {}'
-              .format(compilation_stats['all-ietf-drafts']))
+        print(f'Number of correctly extracted YANG models from IETF drafts: {compilation_stats["total-drafts"]}')
+        print(
+            'Number of YANG models in IETF drafts that passed compilation: '
+            f'{compilation_stats["draft-passed"]}/{compilation_stats.get("total-drafts")}'
+        )
+        print(
+            'Number of YANG models in IETF drafts that passed compilation with warnings: '
+            f'{compilation_stats["draft-warnings"]}/{compilation_stats.get("total-drafts")}'
+        ),
+        print(
+            'Number of all YANG models in IETF drafts (examples, badly formatted, etc. ): '
+            f'{compilation_stats["all-ietf-drafts"]}'
+        )
     elif ietf == IETF.EXAMPLE:
-        print('Number of correctly extracted example YANG models from IETF drafts: {}'
-              .format(compilation_stats['example-drafts']), flush=True)
+        print(
+            'Number of correctly extracted example YANG models from IETF drafts: '
+            f'{compilation_stats["example-drafts"]}',
+            flush=True
+        )
     else:
-        print('Number of YANG data models from {}: {}'.format(args.prefix, compilation_stats['total']))
-        print('Number of YANG data models from {} that passed compilation: {}/{}'
-              .format(args.prefix, compilation_stats['passed'], compilation_stats['total']))
-        print('Number of YANG data models from {} that passed compilation with warnings: {}/{}'
-              .format(args.prefix, compilation_stats['warnings'], compilation_stats['total']))
-        print('Number of YANG data models from {} that failed compilation: {}/{}'
-              .format(args.prefix, compilation_stats['failed'], compilation_stats['total']))
+        print(f'Number of YANG data models from {args.prefix}: {compilation_stats["total"]}')
+        print(
+            f'Number of YANG data models from {args.prefix} that passed compilation: '
+            f'{compilation_stats["passed"]}/{compilation_stats["total"]}'
+        )
+        print(
+            f'Number of YANG data models from {args.prefix} that passed compilation with warnings: '
+            f'{compilation_stats["warnings"]}/{compilation_stats["total"]}'
+        )
+        print(
+            f'Number of YANG data models from {args.prefix} that failed compilation: '
+            f'{compilation_stats["failed"]}/{compilation_stats["total"]}'
+        )
 
-    custom_print('end of {} job for {}'.format(os.path.basename(__file__), args.prefix))
+    custom_print(f'end of {os.path.basename(__file__)} job for {args.prefix}')
 
     # Update files content hashes and dump into .json file
     fileHasher.dump_hashed_files_list()

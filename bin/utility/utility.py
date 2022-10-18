@@ -19,17 +19,20 @@ __email__ = 'slavomir.mazur@pantheon.tech'
 
 import configparser
 import glob
-import json
 import os
 import time
 import typing as t
+from datetime import date
 from enum import auto, Enum
 
+import dateutil.parser
 import jinja2
+from pyang.statements import Statement
+from utility.static_variables import IETF_RFC_MAP, NAMESPACE_MAP, ORGANIZATIONS
+
+from parsers import yang_parser
 from redis_connections.redis_connection import RedisConnection
 from versions import ValidatorsVersions
-
-from utility.static_variables import IETF_RFC_MAP, NAMESPACE_MAP, ORGANIZATIONS
 
 module_db = None
 incomplete_db = None
@@ -42,42 +45,7 @@ class IETF(Enum):
     EXAMPLE = auto()
 
 
-def json_parse_organization(module: dict) -> t.Optional[str]:
-    if 'organization' in module:
-        parsed_organization = module['organization'].lower()
-        for known_org in ORGANIZATIONS:
-            if known_org in parsed_organization:
-                return known_org
-
-
-def json_parse_namespace(module: dict, save_file_dir: str, pyang_exec: str) -> t.Optional[str]:
-    if 'belongs-to' in module:
-        belongs_to = module['belongs-to']
-        try:
-            filename = max(glob.glob(os.path.join(save_file_dir, '{}@*.yang'.format(belongs_to))))
-            json_module_command = 'pypy3 {} -fbasic-info --path="$MODULES" {} 2> /dev/null'.format(pyang_exec, filename)
-            parent_module = json.loads(os.popen(json_module_command).read())
-            return json_parse_namespace(parent_module, save_file_dir, pyang_exec)
-        except ValueError:
-            return None
-    else:
-        return module.get('namespace')
-
-
-def namespace_to_organization(namespace: str) -> str:
-    for ns, org in NAMESPACE_MAP:
-        if ns in namespace:
-            return org
-    if 'cisco' in namespace:
-        return 'cisco'
-    elif 'ietf' in namespace:
-        return 'ietf'
-    elif 'urn:' in namespace:
-        return namespace.split('urn:')[1].split(':')[0]
-    return 'independent'
-
-
-def module_or_submodule(yang_file_path: str):
+def module_or_submodule(yang_file_path: str) -> t.Optional[str]:
     """
     Try to find out if the given model is a submodule or a module.
 
@@ -105,29 +73,25 @@ def module_or_submodule(yang_file_path: str):
                 return 'submodule'
             if module_position >= 0 and (module_position < cpos or cpos == -1) and not commented_out:
                 return 'module'
-        print('File {} is not yang file or not well formated'.format(yang_file_path))
+        print(f'File {yang_file_path} is not yang file or not well formated')
         return 'wrong file'
-    else:
-        return None
+    return None
 
 
-def dict_to_list(in_dict: dict, is_rfc: bool = False):
+def dict_to_list(in_dict: dict, is_rfc: bool = False) -> list[list]:
     """ Create a list out of compilation results from 'in_dict' dictionary variable.
     First element of each list is name of the module, second one is compilation-status 
     which is followed by compilation-results.
 
     Argument:
         :param in_dict      (dict) Dictionary of modules with compilation results
-        :param is_rfc       (bool) Whether we are tranforming dictionary containing RFC modules 
+        :param is_rfc       (bool) Whether we are transforming dictionary containing RFC modules
                                     - it has slightly different structure
-        :return: List of lists of compilation results
+    :return: List of lists of compilation results
     """
     if is_rfc:
-        dict_list = [[key, value] for key, value in in_dict.items() if value is not None]
-    else:
-        dict_list = [[key, *value] for key, value in in_dict.items() if value is not None]
-
-    return dict_list
+        return [[key, value] for key, value in in_dict.items() if value is not None]
+    return [[key, *value] for key, value in in_dict.items() if value is not None]
 
 
 def list_br_html_addition(modules_list: list):
@@ -139,9 +103,167 @@ def list_br_html_addition(modules_list: list):
     """
     for i, sublist in enumerate(modules_list):
         modules_list[i] = [element.replace('\n', '<br>') for element in sublist if isinstance(element, str)]
-
     return modules_list
 
+
+def number_that_passed_compilation(in_dict: dict, position: int, compilation_condition: str):
+    """
+    Return the number of the modules that have compilation status equal to the 'compilation_condition'.
+
+    Arguments:
+        :param in_dict                  (dict) Dictionary of key=yang-model, value=list of compilation results
+        :param position                 (int) Position in the list where the 'compilation_condidtion' is
+        :param compilation_condition    (str) Compilation result we are looking for -
+                                              PASSED, PASSED WITH WARNINGS, FAILED
+    :return: the number of YANG models which meet the 'compilation_condition'
+    """
+    total = 0
+    for results in in_dict.values():
+        if results[position] == compilation_condition:
+            total += 1
+    return total
+
+
+def namespace_to_organization(namespace: str) -> str:
+    for ns, org in NAMESPACE_MAP:
+        if ns in namespace:
+            return org
+    if 'cisco' in namespace:
+        return 'cisco'
+    elif 'ietf' in namespace:
+        return 'ietf'
+    elif 'urn:' in namespace:
+        return namespace.split('urn:')[1].split(':')[0]
+    return 'independent'
+
+
+def check_yangcatalog_data(
+        config: configparser.ConfigParser,
+        yang_file_pseudo_path: str,
+        new_module_data: dict,
+        compilation_results: dict,
+        all_modules: t.Dict[str, dict],
+        ietf_type: t.Optional[IETF] = None
+):
+    result_html_dir = config.get('Web-Section', 'result-html-dir')
+    domain_prefix = config.get('Web-Section', 'domain-prefix')
+    save_file_dir = config.get('Directory-Section', 'save-file-dir')
+    versions = ValidatorsVersions().get_versions()
+
+    global module_db, incomplete_db
+    if not (module_db and incomplete_db):
+        module_db = RedisConnection()
+        incomplete_db = RedisConnection(modules_db=5)
+
+    yang_file_path = _path_in_dir(yang_file_pseudo_path)
+    is_rfc = ietf_type == IETF.RFC
+    try:
+        parsed_yang = yang_parser.parse(yang_file_path)
+    except yang_parser.ParseException:
+        print(f'Problem with parsing of: {yang_file_path}')
+        return
+    name = parsed_yang.arg
+    if not name:
+        return
+    revision = _resolve_revision(parsed_yang)
+    name_revision = f'{name}@{revision}'
+    if name_revision in all_modules:
+        module_data = all_modules[name_revision].copy()
+        incomplete = False
+        update = False
+    else:
+        print(f'WARN: {name_revision} not in Redis yet')
+        organization = _resolve_organization(parsed_yang, save_file_dir)
+        module_data: t.Dict[str, t.Any] = {
+            'name': name,
+            'revision': revision,
+            'organization': organization
+        }
+        incomplete = True
+        update = True
+    for field in ('document-name', 'reference', 'author-email'):
+        if new_module_data.get(field) and module_data.get(field) != new_module_data[field]:
+            update = True
+            module_data[field] = new_module_data[field]
+
+    compilation_status = new_module_data.get('compilation-status')
+    if (
+            compilation_status and
+            module_data.get('compilation-status') != (comp_status := compilation_status.lower().replace(' ', '-'))
+    ):
+        # Module parsed with --ietf flag (= RFC) has higher priority
+        if is_rfc and ietf_type is None:
+            pass
+        else:
+            update = True
+            module_data['compilation-status'] = comp_status
+
+    if compilation_status is not None:
+        file_url = _generate_compilation_result_file(
+            module_data, compilation_results, result_html_dir, is_rfc, versions, ietf_type,
+        )
+        if module_data.get('compilation-status') == 'unknown':
+            comp_result = ''
+        else:
+            comp_result = f'{domain_prefix}/results/{file_url}'
+        if module_data.get('compilation-result') != comp_result:
+            update = True
+            module_data['compilation-result'] = comp_result
+
+    if ietf_type is not None and 'document-name' in new_module_data:
+        wg = _resolve_working_group(name_revision, ietf_type, new_module_data['document-name'])
+        if (module_data.get('ietf') is None or module_data['ietf']['ietf-wg'] != wg) and wg is not None:
+            update = True
+            module_data['ietf'] = {}
+            module_data['ietf']['ietf-wg'] = wg
+
+    mat_level = _resolve_maturity_level(ietf_type, new_module_data.get('document-name'))
+    if module_data.get('maturity-level') != mat_level:
+        if mat_level == 'not-applicable' and module_data.get('maturity-level'):
+            pass
+        else:
+            update = True
+            module_data['maturity-level'] = mat_level
+
+    if update:
+        if incomplete:
+            incomplete_db.populate_module(module_data)
+        else:
+            module_db.populate_module(module_data)
+        print(f'DEBUG: updated_modules: {name_revision}')
+
+
+def _resolve_revision(parsed_yang: Statement) -> str:
+    try:
+        revision = parsed_yang.search('revision')[0].arg
+        if '02-29' in revision:
+            revision = revision.replace('02-29', '02-28')
+        dateutil.parser.parse(revision)
+        year, month, day = map(int, revision.split('-'))
+        revision = date(year, month, day).isoformat()
+        return revision
+    except (IndexError, dateutil.parser.ParserError, ValueError):
+        return '1970-01-01'
+
+
+def _resolve_organization(parsed_yang: Statement, save_file_dir: str) -> str:
+    parsed_organization = parsed_yang.search('organization')[0].arg.lower()
+    for possible_organization in ORGANIZATIONS:
+        if possible_organization in parsed_organization:
+            return possible_organization
+    if parsed_yang.keyword == 'submodule':
+        belongs_to = belongs_to[0].arg if (belongs_to := parsed_yang.search('belongs-to')) else None
+        if not belongs_to:
+            return 'independent'
+        filename = max(glob.glob(os.path.join(save_file_dir, f'{belongs_to}@*.yang')))
+        if not filename:
+            return 'independent'
+        try:
+            parsed_yang = yang_parser.parse(os.path.abspath(filename))
+        except yang_parser.ParseException:
+            return 'independent'
+    namespace = namespace[0].arg if (namespace := parsed_yang.search('namespace')) else None
+    return namespace_to_organization(namespace) if namespace else 'independent'
 
 def _resolve_maturity_level(ietf_type: t.Optional[IETF], document_name: t.Optional[str]) -> t.Optional[str]:
     if not document_name or not ietf_type:
@@ -156,9 +278,8 @@ def _resolve_maturity_level(ietf_type: t.Optional[IETF], document_name: t.Option
 
 def _resolve_working_group(name_revision: str, ietf_type: IETF, document_name: str):
     if ietf_type == IETF.RFC:
-        return IETF_RFC_MAP.get('{}.yang'.format(name_revision))
-    else:
-        return document_name.split('-')[2]
+        return IETF_RFC_MAP.get(f'{name_revision}.yang')
+    return document_name.split('-')[2]
 
 
 def _render(tpl_path: str, context: dict) -> str:
@@ -185,7 +306,7 @@ def _path_in_dir(yang_file_path: str) -> str:
             if ff == yang_file:
                 return os.path.join(root, ff)
     else:
-        print('Error: file {} not found in dir or subdir of {}'.format(yang_file, yang_path))
+        print(f'Error: file {yang_file} not found in dir or subdir of {yang_path}')
     return yang_file_path
 
 
@@ -194,31 +315,40 @@ def _generate_ths(versions: dict, ietf_type: t.Optional[IETF]) -> t.List[str]:
     option = '--lint'
     if ietf_type is not None:
         option = '--ietf'
-    ths.append('Compilation Results (pyang {}). {}'.format(option, versions.get('pyang_version')))
-    ths.append('Compilation Results (pyang). Note: also generates errors for imported files. {}'.format(
-        versions.get('pyang_version')))
-    ths.append('Compilation Results (confdc). Note: also generates errors for imported files. {}'.format(
-        versions.get('confd_version')))
-    ths.append('Compilation Results (yangdump-pro). Note: also generates errors for imported files. {}'.format(
-        versions.get('yangdump_version')))
+    pyang_version = versions.get('pyang_version')
+    ths.append(f'Compilation Results (pyang {option}). {pyang_version}')
+    ths.append(f'Compilation Results (pyang). Note: also generates errors for imported files. {pyang_version}')
     ths.append(
-        'Compilation Results (yanglint -i). Note: also generates errors for imported files. {}'.format(
-            versions.get('yanglint_version')))
+        f'Compilation Results (confdc). Note: also generates errors for imported files. {versions.get("confd_version")}'
+    )
+    ths.append(
+        'Compilation Results (yangdump-pro). Note: '
+        f'also generates errors for imported files. {versions.get("yangdump_version")}'
+    )
+    ths.append(
+        'Compilation Results (yanglint -i). Note: '
+        f'also generates errors for imported files. {versions.get("yanglint_version")}'
+    )
     return ths
 
 
-def _generate_compilation_result_file(module_data: dict, compilation_results: dict, result_html_dir: str,
-                                      is_rfc: bool, versions: dict, ietf_type: t.Optional[IETF]) -> str:
+def _generate_compilation_result_file(
+        module_data: dict,
+        compilation_results: dict,
+        result_html_dir: str,
+        is_rfc: bool,
+        versions: dict,
+        ietf_type: t.Optional[IETF]
+) -> str:
     name = module_data['name']
     rev = module_data['revision']
     org = module_data['organization']
-    file_url = '{}@{}_{}.html'.format(name, rev, org)
+    file_url = f'{name}@{rev}_{org}.html'
     compilation_results['name'] = name
     compilation_results['revision'] = rev
     compilation_results['generated'] = time.strftime('%d/%m/%Y')
 
-    context = {'result': compilation_results,
-               'ths': _generate_ths(versions, ietf_type)}
+    context = {'result': compilation_results, 'ths': _generate_ths(versions, ietf_type)}
     template = os.path.dirname(os.path.realpath(__file__)) + '/../resources/compilationStatusTemplate.html'
     rendered_html = _render(template, context)
     result_html_file = os.path.join(result_html_dir, file_url)
@@ -238,122 +368,3 @@ def _generate_compilation_result_file(module_data: dict, compilation_results: di
         os.chmod(result_html_file, 0o664)
 
     return file_url
-
-
-def check_yangcatalog_data(config: configparser.ConfigParser, yang_file_pseudo_path: str, new_module_data: dict,
-                           compilation_results: dict, all_modules: t.Dict[str, dict], ietf_type: t.Optional[IETF] = None):
-    pyang_exec = config.get('Tool-Section', 'pyang-exec')
-    result_html_dir = config.get('Web-Section', 'result-html-dir')
-    domain_prefix = config.get('Web-Section', 'domain-prefix')
-    save_file_dir = config.get('Directory-Section', 'save-file-dir')
-    versions = ValidatorsVersions().get_versions()
-
-    global module_db, incomplete_db
-    if not (module_db and incomplete_db):
-        module_db = RedisConnection()
-        incomplete_db = RedisConnection(modules_db=5)
-
-    yang_file_path = _path_in_dir(yang_file_pseudo_path)
-    is_rfc = ietf_type == IETF.RFC
-
-    json_module_command = 'pypy3 {} -fbasic-info --path="$MODULES" {} 2> /dev/null'.format(pyang_exec, yang_file_path)
-    module_basic_info = {}
-    try:
-        with os.popen(json_module_command) as pipe:
-            module_basic_info = json.load(pipe)
-    except json.decoder.JSONDecodeError:
-        print('Problem with pyang command:\n{}'.format(json_module_command))
-    name = module_basic_info.get('name')
-    revision = module_basic_info.get('revision')
-    if not name:
-        return
-    if not revision:
-        revision = '1970-01-01'
-    name_revision = '{}@{}'.format(name, revision)
-
-    if name_revision in all_modules:
-        module_data = all_modules[name_revision].copy()
-        incomplete = False
-        update = False
-    else:
-        print('WARN: {} not in Redis yet'.format(name_revision))
-        organization = json_parse_organization(module_basic_info)
-        if organization is None:
-            namespace = json_parse_namespace(module_basic_info, save_file_dir, pyang_exec)
-            if namespace is None:
-                organization = 'independent'
-            else:
-                organization = namespace_to_organization(namespace)
-
-        name, revision = name_revision.split('@')
-        module_data: t.Dict[str, t.Any] = {
-            'name': name,
-            'revision': revision,
-            'organization': organization
-        }
-
-        incomplete = True
-        update = True
-    for field in ['document-name', 'reference', 'author-email']:
-        if new_module_data.get(field) and module_data.get(field) != new_module_data[field]:
-            update = True
-            module_data[field] = new_module_data[field]
-
-    if new_module_data.get('compilation-status') \
-            and module_data.get('compilation-status') != new_module_data['compilation-status'].lower().replace(' ', '-'):
-        # Module parsed with --ietf flag (= RFC) has higher priority
-        if is_rfc and ietf_type is None:
-            pass
-        else:
-            update = True
-            module_data['compilation-status'] = new_module_data['compilation-status'].lower().replace(' ', '-')
-
-    if new_module_data.get('compilation-status') is not None:
-        file_url = _generate_compilation_result_file(module_data, compilation_results,
-                                                     result_html_dir, is_rfc, versions, ietf_type)
-        if module_data.get('compilation-status') == 'unknown':
-            comp_result = ''
-        else:
-            comp_result = '{}/results/{}'.format(domain_prefix, file_url)
-        if module_data.get('compilation-result') != comp_result:
-            update = True
-            module_data['compilation-result'] = comp_result
-
-    if ietf_type is not None and 'document-name' in new_module_data:
-        wg = _resolve_working_group(name_revision, ietf_type, new_module_data['document-name'])
-        if (module_data.get('ietf') is None or module_data['ietf']['ietf-wg'] != wg) and wg is not None:
-            update = True
-            module_data['ietf'] = {}
-            module_data['ietf']['ietf-wg'] = wg
-
-    mat_level = _resolve_maturity_level(ietf_type, new_module_data.get('document-name'))
-    if module_data.get('maturity-level') != mat_level:
-        if mat_level == 'not-applicable' and module_data.get('maturity-level'):
-            pass
-        else:
-            update = True
-            module_data['maturity-level'] = mat_level
-
-    if update:
-        if incomplete:
-            incomplete_db.populate_module(module_data)
-        else:
-            module_db.populate_module(module_data)
-        print('DEBUG: updated_modules: {}'.format(name_revision))
-
-
-def number_that_passed_compilation(in_dict: dict, position: int, compilation_condition: str):
-    """
-    Return the number of the modules that have compilation status equal to the 'compilation_condition'.
-
-    Arguments:
-        :param in_dict                  (dict) Dictionary of key:yang-model, value:list of compilation results
-        :param position                 (int) Position in the list where the 'compilation_condidtion' is
-        :param compilation_condition    (str) Compilation result we are looking for - PASSED, PASSED WITH WARNINGS, FAILED
-    :return: the number of YANG models which meet the 'compilation_condition'
-    """
-    total = 0
-    for results in in_dict.values():
-        if results[position] == compilation_condition:
-            total += 1
-    return total

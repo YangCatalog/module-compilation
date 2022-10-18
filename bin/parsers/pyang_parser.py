@@ -18,20 +18,24 @@ __license__ = 'Apache License, Version 2.0'
 __email__ = 'slavomir.mazur@pantheon.tech'
 
 import os
+from configparser import ConfigParser
 
 from create_config import create_config
 
 
 class PyangParser:
-    def __init__(self, debug_level: int = 0):
-        self._config = create_config()
-        self._pyang_exec = self._config.get('Tool-Section', 'pyang-exec')
-        self._modules_directory = self._config.get('Directory-Section', 'modules-directory')
+    def __init__(self, debug_level: int = 0, config: ConfigParser = create_config()):
+        self._pyang_exec = config.get('Tool-Section', 'pyang-exec')
+        self._modules_directory = config.get('Directory-Section', 'modules-directory')
 
         self._debug_level = debug_level
-        self._modules_directories = [os.path.join(self._modules_directory, sym) for sym in os.listdir(self._modules_directory)]
+        self._modules_directories = [
+            os.path.join(self._modules_directory, sym) for sym in os.listdir(self._modules_directory)
+        ]
 
-    def run_pyang(self, rootdir: str, yang_file_path: str, lint: bool, allinclusive: bool, use_pyang_params: bool = True):
+    def run_pyang(
+            self, rootdir: str, yang_file_path: str, lint: bool, allinclusive: bool, use_pyang_params: bool = True
+    ) -> str:
         """
         Run PYANG parser on the YANG model, with or without the --lint flag.
 
@@ -54,28 +58,25 @@ class PyangParser:
         directory, filename = os.path.split(yang_file_path)
         os.chdir(directory)
 
-        if allinclusive:
-            path_command = '--path="{}"'.format(rootdir)
-        else:
-            path_command = '--path="{}"'.format(self._modules_directory)
+        path = rootdir if allinclusive else self._modules_directory
+        path_command = f'--path="{path}"'
 
-        bash_command = ['pypy3', self._pyang_exec, path_command, filename]
-
+        bash_command = ['python3', self._pyang_exec, path_command, filename]
         if use_pyang_params:
             pyang_param = '--lint' if lint else '--ietf'
             bash_command.append(pyang_param)
-
         bash_command.append('2>&1')
 
         if self._debug_level > 0:
-            print('DEBUG: running command {}'.format(' '.join(bash_command)))
+            print(f'DEBUG: running command {" ".join(bash_command)}')
 
-        result_pyang = os.popen(' '.join(bash_command)).read()
+        with os.popen(' '.join(bash_command)) as pipe:
+            result_pyang = pipe.read()
         result_pyang = result_pyang.strip()
         result_pyang = result_pyang.replace('\n\n', '\n').replace('\n', '\n\n')
         # Remove absolute path from output
-        result_pyang = result_pyang.replace('{}/'.format(directory), '')
+        result_pyang = result_pyang.replace(f'{directory}/', '')
         for mod_dir in self._modules_directories:
-            result_pyang = result_pyang.replace('{}/'.format(mod_dir), '')
+            result_pyang = result_pyang.replace(f'{mod_dir}/', '')
 
         return result_pyang
