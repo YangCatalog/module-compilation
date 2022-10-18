@@ -358,6 +358,7 @@ def _generate_compilation_result_file(
         if existing_output != rendered_html:
             if is_rfc and ietf_type is None:
                 pass
+            
             else:
                 with open(result_html_file, 'w', encoding='utf-8') as f:
                     f.write(rendered_html)
