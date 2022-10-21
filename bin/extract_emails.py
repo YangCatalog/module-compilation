@@ -28,7 +28,8 @@ from create_config import create_config
 # Functions
 # ----------------------------------------------------------------------
 def list_of_ietf_drafts(directory: str):
-    """ Returns a list of all the drafts in a directory.
+    """
+    Returns a list of all the drafts in a directory.
 
     Arguments:
         :param directory        (str) Directory to search for drafts
@@ -42,8 +43,8 @@ def list_of_ietf_drafts(directory: str):
 
 
 def extract_email_string(draft_path: str, email_domain: str, debug_level: int = 0):
-    """ Returns a string, comma separated, of all the email addresses for the company email domain,
-    within an IETF draft.
+    """
+    Returns a string, comma separated, of all the email addresses for the company email domain within an IETF draft.
 
     Arguments:
         :param draft_path       (str) Full path to the draft
@@ -88,10 +89,7 @@ if __name__ == '__main__':
     draft_path = config.get('Directory-Section', 'ietf-drafts')
 
     parser = argparse.ArgumentParser(description='Extract comma-separated list of email addresses')
-    parser.add_argument('--debug',
-                        help='Debug level - default is 0',
-                        type=int,
-                        default=0)
+    parser.add_argument('--debug', help='Debug level - default is 0', type=int, default=0)
     args = parser.parse_args()
 
     debug_level = args.debug

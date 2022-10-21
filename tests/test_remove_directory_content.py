@@ -27,7 +27,6 @@ import remove_directory_content as rdc
 
 
 class TestRemoveDirectoryContent(unittest.TestCase):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.resource_path = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/remove_directory_content')
@@ -50,7 +49,7 @@ class TestRemoveDirectoryContent(unittest.TestCase):
         shutil.rmtree(self.resource_path, ignore_errors=True)
 
     def test_remove_directory_content(self):
-        """ Try to delete the content of a directory - it should be empty after script run. """
+        """Try to delete the content of a directory - it should be empty after script run."""
         self.assertNotEqual(os.listdir(self.resource_path), [])
 
         rdc.remove_directory_content(self.resource_path, 1)
@@ -59,7 +58,7 @@ class TestRemoveDirectoryContent(unittest.TestCase):
         self.assertEqual(os.listdir(self.resource_path), [])
 
     def test_rename_file_backup_from_console(self) -> None:
-        """ Run the script from the console by passing the arguments. """
+        """Run the script from the console by passing the arguments."""
         bash_command = 'python {} --dir {} --debug 1'.format(self.script_path, self.resource_path)
         subprocess.run(bash_command, shell=True, capture_output=True, check=False).stdout.decode()
 
@@ -68,7 +67,6 @@ class TestRemoveDirectoryContent(unittest.TestCase):
 
 
 class TestRemoveDirectoryContentEmpty(unittest.TestCase):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.resource_path = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/remove_directory_content')
@@ -84,21 +82,21 @@ class TestRemoveDirectoryContentEmpty(unittest.TestCase):
         shutil.rmtree(self.non_existing_path, ignore_errors=True)
 
     def test_remove_directory_content_empty(self):
-        """ Try to delete the content of an empty directory. """
+        """Try to delete the content of an empty directory."""
         rdc.remove_directory_content(self.resource_path)
 
         self.assertTrue(os.path.isdir(self.resource_path))
         self.assertEqual(os.listdir(self.resource_path), [])
 
     def test_remove_directory_content_non_existing_dir(self):
-        """ Try to delete the content of a directory that does not exist. """
+        """Try to delete the content of a directory that does not exist."""
         rdc.remove_directory_content(self.non_existing_path)
 
         self.assertTrue(os.path.isdir(self.non_existing_path))
         self.assertEqual(os.listdir(self.non_existing_path), [])
 
     def test_remove_directory_content_default(self):
-        """ Try to delete the content of a directory - using default value. """
+        """Try to delete the content of a directory - using default value."""
         result = rdc.remove_directory_content('')
 
         self.assertEqual(result, None)

@@ -22,7 +22,6 @@ import os
 import typing as t
 
 import jinja2
-
 from create_config import create_config
 
 
@@ -30,10 +29,12 @@ def alnum(s: str):
     return ''.join(c for c in s if c.isalnum())
 
 
-def get_vendor_context(directory: str,
-                       get_alphaNumeric: t.Callable[[str, str], str],
-                       get_allCharacters: t.Callable[[str, str], str],
-                       separate: bool = False):
+def get_vendor_context(
+    directory: str,
+    get_alpha_numeric: t.Callable[[str, str], str],
+    get_all_characters: t.Callable[[str, str], str],
+    separate: bool = False,
+):
     operating_systems = [name for name in os.listdir(directory) if os.path.isdir(os.path.join(directory, name))]
     separate_contexts = {}
     vendor_context = []
@@ -41,12 +42,16 @@ def get_vendor_context(directory: str,
         os_dir = os.path.join(directory, operating_system)
         os_specific_dirs = [name for name in os.listdir(os_dir) if os.path.isdir(os.path.join(os_dir, name))]
         for os_specific_dir in os_specific_dirs:
-            vendor_context.append({'alphaNumeric': get_alphaNumeric(operating_system, os_specific_dir),
-                                    'allCharacters': get_allCharacters(operating_system, os_specific_dir)})
+            vendor_context.append(
+                {
+                    'alphaNumeric': get_alpha_numeric(operating_system, os_specific_dir),
+                    'allCharacters': get_all_characters(operating_system, os_specific_dir),
+                },
+            )
         if separate:
             separate_contexts[operating_system.upper()] = sorted(vendor_context, key=lambda i: i['alphaNumeric'])
             vendor_context.clear()
-        
+
     if separate:
         return separate_contexts
     return sorted(vendor_context, key=lambda i: i['alphaNumeric'])
@@ -57,14 +62,18 @@ def get_etsi_context(etsi_dir):
     etsi_context = []
     for etsi_version in etsi_all_versions:
         etsi_context.append(
-            {'alphaNumeric': alnum(etsi_version.strip('NFV-SOL006-v')),
-            'allCharacters': etsi_version.strip('NFV-SOL006-v')})
+            {
+                'alphaNumeric': alnum(etsi_version.strip('NFV-SOL006-v')),
+                'allCharacters': etsi_version.strip('NFV-SOL006-v'),
+            },
+        )
     return sorted(etsi_context, key=lambda i: i['alphaNumeric'])
 
 
 def get_openroadm_context(openroadm_files):
-    return [{'alphaNumeric': specific_version, 'allCharacters': specific_version}
-            for specific_version in openroadm_files]
+    return [
+        {'alphaNumeric': specific_version, 'allCharacters': specific_version} for specific_version in openroadm_files
+    ]
 
 
 def render(tpl_path: str, context: dict):
@@ -77,18 +86,12 @@ def render(tpl_path: str, context: dict):
     """
 
     path, filename = os.path.split(tpl_path)
-    return jinja2.Environment(
-        loader=jinja2.FileSystemLoader(path or './')
-    ).get_template(filename).render(context)
+    return jinja2.Environment(loader=jinja2.FileSystemLoader(path or './')).get_template(filename).render(context)
 
 
 def main():
     parser = argparse.ArgumentParser(description='Generate yangcatalog main private page.')
-    parser.add_argument('--openRoadM',
-                        help='List of openRoadM files',
-                        type=str,
-                        nargs='*',
-                        default=[])
+    parser.add_argument('--openRoadM', help='List of openRoadM files', type=str, nargs='*', default=[])
     args = parser.parse_args()
 
     config = create_config()
@@ -108,32 +111,32 @@ def main():
         cisco_dir,
         lambda _, os_specific_dir: alnum(os_specific_dir),
         lambda _, os_specific_dir: os_specific_dir,
-        separate=True
+        separate=True,
     )
     context.update(cisco_contexts)
 
     context['juniper'] = get_vendor_context(
         juniper_dir,
         lambda _, os_specific_dir: alnum(os_specific_dir),
-        lambda _, os_specific_dir: os_specific_dir
+        lambda _, os_specific_dir: os_specific_dir,
     )
 
     context['huawei'] = get_vendor_context(
         huawei_dir,
         lambda os_name, os_specific_dir: alnum('{}{}'.format(os_name, os_specific_dir)),
-        lambda os_name, os_specific_dir: '{} {}'.format(os_name, os_specific_dir)
+        lambda os_name, os_specific_dir: '{} {}'.format(os_name, os_specific_dir),
     )
 
     context['fujitsu'] = get_vendor_context(
         fujitsu_dir,
         lambda os_name, os_specific_dir: alnum('{}{}'.format(os_name, os_specific_dir)),
-        lambda os_name, os_specific_dir: '{}{}'.format(os_name, os_specific_dir)
+        lambda os_name, os_specific_dir: '{}{}'.format(os_name, os_specific_dir),
     )
 
     context['nokia'] = get_vendor_context(
         nokia_dir,
         lambda _, os_specific_dir: alnum(os_specific_dir.strip('latest_sros_')),
-        lambda _, os_specific_dir: os_specific_dir.strip('latest_sros_')
+        lambda _, os_specific_dir: os_specific_dir.strip('latest_sros_'),
     )
 
     context['etsi'] = get_etsi_context(etsi_dir)
@@ -146,17 +149,35 @@ def main():
         with open(os.path.join(private_dir, 'index.html'), 'w') as writer:
             writer.write(result)
     with open(os.path.join(private_dir, 'private.json'), 'w') as writer:
-        context['graphs-cisco-authors'] = ['IETFCiscoAuthorsYANGPageCompilation.json',
-                                           'figures/IETFCiscoAuthorsYANGPageCompilation.png',
-                                           'figures/IETFYANGOutOfRFC.png',
-                                           'figures/IETFYANGPageCompilation.png']
-        context['sdo-stats'] = ['IETFDraft.json', 'IETFDraftExample.json', 'IETFYANGRFC.json', 'RFCStandard.json',
-                                'BBF.json', 'MEFStandard.json', 'MEFExperimental.json', 'IEEEStandard.json',
-                                'IEEEStandardDraft.json', 'IANAStandard.json', 'SysrepoInternal.json',
-                                'SysrepoApplication.json', 'ONFOpenTransport.json', 'Openconfig.json']
-        context['dependency-graph'] = ['figures/modules-ietf.png', 'figures/modules-all.png',
-                                       'figures/ietf-interfaces.png', 'figures/ietf-interfaces-all.png',
-                                       'figures/ietf-routing.png']
+        context['graphs-cisco-authors'] = [
+            'IETFCiscoAuthorsYANGPageCompilation.json',
+            'figures/IETFCiscoAuthorsYANGPageCompilation.png',
+            'figures/IETFYANGOutOfRFC.png',
+            'figures/IETFYANGPageCompilation.png',
+        ]
+        context['sdo-stats'] = [
+            'IETFDraft.json',
+            'IETFDraftExample.json',
+            'IETFYANGRFC.json',
+            'RFCStandard.json',
+            'BBF.json',
+            'MEFStandard.json',
+            'MEFExperimental.json',
+            'IEEEStandard.json',
+            'IEEEStandardDraft.json',
+            'IANAStandard.json',
+            'SysrepoInternal.json',
+            'SysrepoApplication.json',
+            'ONFOpenTransport.json',
+            'Openconfig.json',
+        ]
+        context['dependency-graph'] = [
+            'figures/modules-ietf.png',
+            'figures/modules-all.png',
+            'figures/ietf-interfaces.png',
+            'figures/ietf-interfaces-all.png',
+            'figures/ietf-routing.png',
+        ]
         json.dump(context, writer)
 
 

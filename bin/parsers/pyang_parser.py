@@ -34,7 +34,12 @@ class PyangParser:
         ]
 
     def run_pyang(
-            self, rootdir: str, yang_file_path: str, lint: bool, allinclusive: bool, use_pyang_params: bool = True
+        self,
+        rootdir: str,
+        yang_file_path: str,
+        lint: bool,
+        allinclusive: bool,
+        use_pyang_params: bool = True,
     ) -> str:
         """
         Run PYANG parser on the YANG model, with or without the --lint flag.

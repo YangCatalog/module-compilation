@@ -50,14 +50,8 @@ def remove_directory_content(directory: str, debug_level: int = 0) -> None:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Remove directory content')
-    parser.add_argument('--dir',
-                        help='Directory the content of which to remove',
-                        type=str,
-                        default='')
-    parser.add_argument('--debug',
-                        help='Debug level - default is 0',
-                        type=int,
-                        default=0)
+    parser.add_argument('--dir', help='Directory the content of which to remove', type=str, default='')
+    parser.add_argument('--debug', help='Debug level - default is 0', type=int, default=0)
     args = parser.parse_args()
 
     if args.debug > 0:

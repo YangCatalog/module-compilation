@@ -31,7 +31,9 @@ class ConfdcParser:
 
         self._debug_level = debug_level
         self._symlink_paths = self.get_symlink_paths()
-        self._tail_warning = '-w TAILF_MUST_NEED_DEPENDENCY'  # Treat ErrorCode as a warning, even if --fail-onwarnings is given
+        self._tail_warning = (
+            '-w TAILF_MUST_NEED_DEPENDENCY'  # Treat ErrorCode as a warning, even if --fail-onwarnings is given
+        )
 
     def run_confdc(self, yang_file_path: str, rootdir: str, allinclusive: bool = False):
         """

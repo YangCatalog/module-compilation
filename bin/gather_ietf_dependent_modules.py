@@ -22,14 +22,13 @@ import shutil
 from typing import Set
 
 import requests
-
 from create_config import create_config
 
 ORGANIZATIONS = ['ieee', 'ietf']
 
 
 def copy_modules(api_prefix: str, src_dir: str, dst_dir: str) -> Set[str]:
-    """ Get the list of ietf modules from API
+    """Get the list of ietf modules from API
     and copy them from 'src_dir' to 'dst_dir' directory.
 
     Arguments:

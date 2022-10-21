@@ -1,9 +1,8 @@
 import typing as t
 from configparser import ConfigParser
 
-from redis import Redis
-
 from create_config import create_config
+from redis import Redis
 
 
 class RedisUserNotificationsConnection:

@@ -24,7 +24,7 @@ from create_config import create_config
 
 
 def _remove_duplicate_messages(result: str) -> str:
-    """ Same result messages are often found in the compilation result multiple times.
+    """Same result messages are often found in the compilation result multiple times.
     This method filter out duplicate messages.
     """
     splitted_result = result.split('\n\n')

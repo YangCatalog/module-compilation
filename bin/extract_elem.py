@@ -14,55 +14,61 @@
 # either express or implied.
 
 __author__ = 'Eric Vyncke'
-__copyright__ = "Copyright(c) 2019, Cisco Systems, Inc.,  Copyright The IETF Trust 2019, All Rights Reserved"
-__email__ = "evyncke@cisco.com"
+__copyright__ = 'Copyright(c) 2019, Cisco Systems, Inc.,  Copyright The IETF Trust 2019, All Rights Reserved'
+__email__ = 'evyncke@cisco.com'
 
 import re
 
+
 def extract_elem(module_fname, extract_dir, elem_type):
-    # Let's parse the module, we will create files when seeing the keywords such as 'identity-networking-instance-type.txt'
+    # Let's parse the module, we will create files when seeing the keywords such as
+    # 'identity-networking-instance-type.txt'
     open_bracket_count = 0
     in_comment = False
     found_keyword = False
     file_out = None
     with open(module_fname, 'r', encoding='utf-8', errors='ignore') as ym:
         for line in ym:
-            if not found_keyword: # Still looking for keyword
+            if not found_keyword:  # Still looking for keyword
                 comment_start = line.find('//')
                 if comment_start >= 0:
-                    line = line[:comment_start]    # Get rid of the one-line comment
+                    line = line[:comment_start]  # Get rid of the one-line comment
                 comment_start = line.find('/*')
                 comment_end = line.find('*/')
-                if comment_start >=0 and comment_start < comment_end: # Another one-line comment
-#                    print("Before cut off line:", comment_start, comment_end, line)
-                    line = line[:comment_start] + line[comment_end+2:]
-#                    print("After cut off line:", comment_start, comment_end, line)
+                if comment_start >= 0 and comment_start < comment_end:  # Another one-line comment
+                    #                    print("Before cut off line:", comment_start, comment_end, line)
+                    line = line[:comment_start] + line[comment_end + 2 :]
+                #                    print("After cut off line:", comment_start, comment_end, line)
                 else:
-                    if comment_start >=0:
+                    if comment_start >= 0:
                         in_comment = True
-#                        print("Before cut off line:", comment_start, comment_end, line)
+                        #                        print("Before cut off line:", comment_start, comment_end, line)
                         line = line[:comment_start]
-#                        print("After cut off line:", comment_start, comment_end, line)
+                    #                        print("After cut off line:", comment_start, comment_end, line)
                     else:
-                        if comment_end >=0:
+                        if comment_end >= 0:
                             in_comment = False
-#                            print("Before cut off line:", comment_start, comment_end, line)
-                            line = line[comment_end+2:]
-#                            print("After cut off line:", comment_start, comment_end, line)
+                            #                            print("Before cut off line:", comment_start, comment_end, line)
+                            line = line[comment_end + 2 :]
+                #                            print("After cut off line:", comment_start, comment_end, line)
                 # If we are in a multiple-line comment, let's skip this line
                 if in_comment:
                     continue
                 # Search after the keyword which MUST be the first word in the line (no " for example before)
-                #keyword_start = line.lstrip().find(elem_type)
+                # keyword_start = line.lstrip().find(elem_type)
                 match = re.match(r'^\s*' + elem_type + r'\s+([-_\.\w]+)' + r'\s*{', line)
                 if match:
                     found_keyword = True
                     identifier = match.group(1)
                     # Let's open the output file if not yet done
-                    if file_out == None:
-                        file_out = open(extract_dir + '/' + elem_type + '-' + identifier + '.txt', 'w', encoding = 'utf-8')
-#                        print("Creating file: " + extract_dir + '/' + elem_type + '-' + identifier + '.txt')
-            if found_keyword and file_out: # Processing the keyword
+                    if file_out is None:
+                        file_out = open(
+                            extract_dir + '/' + elem_type + '-' + identifier + '.txt',
+                            'w',
+                            encoding='utf-8',
+                        )
+            # print("Creating file: " + extract_dir + '/' + elem_type + '-' + identifier + '.txt')
+            if found_keyword and file_out:  # Processing the keyword
                 file_out.write(line)
                 if line.find('{') >= 0:
                     open_bracket_count = open_bracket_count + 1
@@ -75,7 +81,8 @@ def extract_elem(module_fname, extract_dir, elem_type):
                     found_keyword = False
                     file_out = None
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     file = '/var/www/html/YANG-modules/ietf-gen-rpc.yang'
     extract_elem(file, '/tmp/extract', 'grouping')
     extract_elem(file, '/tmp/extract', 'typedef')

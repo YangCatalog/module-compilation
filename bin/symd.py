@@ -8,30 +8,34 @@
 # and is available at http://www.eclipse.org/legal/epl-v10.html
 ##############################################################################
 from __future__ import print_function  # Must be at the beginning of the file
-import matplotlib as mpl
-mpl.use('Agg') # To prevent using a X-Windows server
-import matplotlib.pyplot as plt
-import math
-import networkx as nx
+
 import argparse
 import glob
-import sys
 import os
 import re
+import sys
 
-__author__ = "Jan Medved, Eric Vyncke"
-__copyright__ = "Copyright(c) 2015, Cisco Systems, Inc.,  Copyright The IETF Trust 2019, All Rights Reserved"
-__license__ = "Eclipse Public License v1.0"
-__email__ = "jmedved@cisco.com, evyncke@cisco.com"
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import networkx as nx
+
+mpl.use('Agg')  # To prevent using a X-Windows server
+
+__author__ = 'Jan Medved, Eric Vyncke'
+__copyright__ = 'Copyright(c) 2015, Cisco Systems, Inc.,  Copyright The IETF Trust 2019, All Rights Reserved'
+__license__ = 'Eclipse Public License v1.0'
+__email__ = 'jmedved@cisco.com, evyncke@cisco.com'
 
 G = nx.DiGraph()
 
 # Regular expressions for parsing yang files; we are only interested in
 # the 'module', 'import' and 'revision' statements
-MODULE_STATEMENT = re.compile(r'''^[ \t]*(sub)?module +(["'])?([-A-Za-z0-9]*(@[0-9-]*)?)(["'])?.*$''')
-IMPORT_STATEMENT = re.compile(r'''^[ \t]*import[\s]*([-A-Za-z0-9]*)?[\s]*\{([\s]*prefix[\s]*[\S]*;[\s]*})?.*$''')
-INCLUDE_STATEMENT = re.compile(r'''^[ \t]*include[\s]*([-A-Za-z0-9]*)?[\s]*\{.*$''')
-REVISION_STATEMENT = re.compile(r'''^[ \t]*revision[\s]*(['"])?([-0-9]*)?(['"])?[\s]*\{.*$''')
+MODULE_STATEMENT = re.compile(r'''^[ \t]*(sub)?module +(["'])?([-A-Za-z0-9]*(@[0-9-]*)?)(["'])?.*$''')  # noqa: Q001
+IMPORT_STATEMENT = re.compile(
+    r'''^[ \t]*import[\s]*([-A-Za-z0-9]*)?[\s]*\{([\s]*prefix[\s]*[\S]*;[\s]*})?.*$''',  # noqa: Q001
+)
+INCLUDE_STATEMENT = re.compile(r'''^[ \t]*include[\s]*([-A-Za-z0-9]*)?[\s]*\{.*$''')  # noqa: Q001
+REVISION_STATEMENT = re.compile(r'''^[ \t]*revision[\s]*(['"])?([-0-9]*)?(['"])?[\s]*\{.*$''')  # noqa: Q001
 
 # Node Attribute Types
 # All those attributes do not fare well in network 2.*
@@ -52,7 +56,7 @@ def warning(s):
     :param s: The warning string to print
     :return: None
     """
-    print("WARNING: %s" % s, file=sys.stderr)
+    print('WARNING: %s' % s, file=sys.stderr)
 
 
 def error(s):
@@ -61,7 +65,7 @@ def error(s):
     :param s: The error string to print
     :return: None
     """
-    print("ERROR: %s" % s, file=sys.stderr)
+    print('ERROR: %s' % s, file=sys.stderr)
 
 
 def get_local_yang_files(local_repos, recurse=False):
@@ -173,7 +177,7 @@ def prune_graph_nodes(graph, tag):
     for node_name in graph.nodes():
         try:
             if graph.nodes[node_name]['tag'] == tag:
-#            if graph.nodes[node_name]['attr_dict'][TAG_ATTR] == tag:
+                #            if graph.nodes[node_name]['attr_dict'][TAG_ATTR] == tag:
                 node_list.append(node_name)
         except KeyError:
             pass
@@ -221,7 +225,7 @@ def print_impacting_modules(single_node=None):
     """
     print('\n===Impacting Modules===')
     for node_name in G.nodes():
-        if single_node and (node_name!=single_node):
+        if single_node and (node_name != single_node):
             continue
         descendants = nx.descendants(G, node_name)
         print(augment_format_string(node_name, '\n%s:') % node_name)
@@ -239,7 +243,7 @@ def augment_format_string(node_name, fmts):
     :return: Augmented format string
     """
     module_tag = G.nodes[node_name]['tag']
-#    module_tag = G.nodes[node_name]['attr_dict'][TAG_ATTR]
+    #    module_tag = G.nodes[node_name]['attr_dict'][TAG_ATTR]
     if module_tag == RFC_TAG:
         return fmts + ' *'
     if module_tag == UNKNOWN_TAG:
@@ -257,7 +261,7 @@ def print_impacted_modules(single_node=None):
     """
     print('\n===Impacted Modules===')
     for node_name in G.nodes():
-        if single_node and (node_name!=single_node):
+        if single_node and (node_name != single_node):
             continue
         ancestors = nx.ancestors(G, node_name)
         if len(ancestors) > 0:
@@ -322,7 +326,7 @@ def print_dependency_tree():
     print('\n=== Module Dependency Trees ===')
     for node_name in G.nodes():
         if G.nodes[node_name]['tag'] != UNKNOWN_TAG:
-#        if G.nodes[node_name]['attr_dict'][TAG_ATTR] != UNKNOWN_TAG:
+            #        if G.nodes[node_name]['attr_dict'][TAG_ATTR] != UNKNOWN_TAG:
             dg = nx.dfs_successors(G, node_name)
             plist = []
             print(augment_format_string(node_name, '\n%s:') % node_name)
@@ -365,20 +369,18 @@ def init(rfc_repos, draft_repos, recurse=False):
     :return: None
     """
     rfc_yang_files = get_local_yang_files(rfc_repos, recurse)
-    print("\n*** Scanning %d RFC yang module files for 'import' and 'revision' statements..."
-          % len(rfc_yang_files))
+    print("\n*** Scanning %d RFC yang module files for 'import' and 'revision' statements..." % len(rfc_yang_files))
     get_yang_modules(rfc_yang_files, RFC_TAG)
     num_rfc_modules = len(G.nodes())
     print('\n*** Found %d RFC yang modules.' % num_rfc_modules)
 
     draft_yang_files = get_local_yang_files(draft_repos, recurse)
-    print("\n*** Scanning %d draft yang module files for 'import' and 'revision' statements..." %
-          len(draft_yang_files))
+    print("\n*** Scanning %d draft yang module files for 'import' and 'revision' statements..." % len(draft_yang_files))
     get_yang_modules(draft_yang_files, DRAFT_TAG)
     num_draft_modules = len(G.nodes()) - num_rfc_modules
     print('\n*** Found %d draft yang modules.' % num_draft_modules)
 
-    print("\n*** Analyzing imports...")
+    print('\n*** Analyzing imports...')
     get_unknown_modules()
     num_unknown_modules = len(G.nodes()) - (num_rfc_modules + num_draft_modules)
     print('\n*** Found %d imported/included yang modules that were scanned.' % num_unknown_modules)
@@ -389,7 +391,7 @@ def init(rfc_repos, draft_repos, recurse=False):
 
 
 def plot_module_dependency_graph(graph):
-#def plot_module_dependency_graph(graph, node):
+    # def plot_module_dependency_graph(graph, node):
     """
     Plot a graph of specified yang modules. this function is used to plot
     both the full dependency graph of all yang modules in the DB, or a
@@ -397,21 +399,48 @@ def plot_module_dependency_graph(graph):
     :param graph: Graph to be plotted
     :return: None
     """
-#    fixed_positions = {node: [0.5, 0.5] }
-#    print(fixed_positions)
+    #    fixed_positions = {node: [0.5, 0.5] }
+    #    print(fixed_positions)
     pos = nx.spring_layout(graph, iterations=50, center=[0.5, 0.5], weight=2, k=0.6)
-#EVY    pos = nx.spring_layout(graph, iterations=2000, threshold=1e-5, fixed=fixed_positions, k=k, center=[0.5, 0.5])
-#    pos = nx.spring_layout(graph, iterations=2000, threshold=1e-6)
+    # EVY  pos = nx.spring_layout(graph, iterations=2000, threshold=1e-5, fixed=fixed_positions, k=k, center=[0.5, 0.5])
+    #    pos = nx.spring_layout(graph, iterations=2000, threshold=1e-6)
     print(pos)
     # Draw RFC nodes (yang modules) in red
-    nx.draw_networkx_nodes(graph, pos=pos, nodelist=prune_graph_nodes(graph, RFC_TAG), node_size=200,
-                           node_shape='s', node_color='red', alpha=0.5, linewidths=0.25 ,label='RFC')
+    nx.draw_networkx_nodes(
+        graph,
+        pos=pos,
+        nodelist=prune_graph_nodes(graph, RFC_TAG),
+        node_size=200,
+        node_shape='s',
+        node_color='red',
+        alpha=0.5,
+        linewidths=0.25,
+        label='RFC',
+    )
     # Draw draft nodes (yang modules) in green
-    nx.draw_networkx_nodes(graph, pos=pos, nodelist=prune_graph_nodes(graph, DRAFT_TAG), node_size=150,
-                           node_shape='o', node_color='green', alpha=0.5, linewidths=0.25, label='Draft')
+    nx.draw_networkx_nodes(
+        graph,
+        pos=pos,
+        nodelist=prune_graph_nodes(graph, DRAFT_TAG),
+        node_size=150,
+        node_shape='o',
+        node_color='green',
+        alpha=0.5,
+        linewidths=0.25,
+        label='Draft',
+    )
     # Draw unknown nodes (yang modules) in green
-    nx.draw_networkx_nodes(graph, pos=pos, nodelist=prune_graph_nodes(graph, UNKNOWN_TAG), node_size=200,
-                           node_shape='^', node_color='orange', alpha=1.0, linewidths=0.25, label='Unknown')
+    nx.draw_networkx_nodes(
+        graph,
+        pos=pos,
+        nodelist=prune_graph_nodes(graph, UNKNOWN_TAG),
+        node_size=200,
+        node_shape='^',
+        node_color='orange',
+        alpha=1.0,
+        linewidths=0.25,
+        label='Unknown',
+    )
     # Draw edges in light gray (fairly transparent)
     nx.draw_networkx_edges(graph, pos=pos, alpha=0.25, arrows=False)
     # Draw labels on nodes (modules)
@@ -430,46 +459,60 @@ if __name__ == '__main__':
     plt.interactive(False)
 
     parser = argparse.ArgumentParser(description='Show the dependency graph for a set of yang models.')
-    parser.add_argument('--draft-repos',
-                        help='List of local directories where models defined in IETF drafts are located.',
-                        type=str,
-                        nargs='+',
-                        default=['./'])
-    parser.add_argument('--rfc-repos',
-                        help='List of local directories where models defined in IETF RFC are located.',
-                        type=str,
-                        nargs='+',
-                        default=['./'])
-    parser.add_argument('-r', '--recurse',
-                        help='Recurse into directories specified to find yang models',
-                        action='store_true',
-                        default=False)
+    parser.add_argument(
+        '--draft-repos',
+        help='List of local directories where models defined in IETF drafts are located.',
+        type=str,
+        nargs='+',
+        default=['./'],
+    )
+    parser.add_argument(
+        '--rfc-repos',
+        help='List of local directories where models defined in IETF RFC are located.',
+        type=str,
+        nargs='+',
+        default=['./'],
+    )
+    parser.add_argument(
+        '-r',
+        '--recurse',
+        help='Recurse into directories specified to find yang models',
+        action='store_true',
+        default=False,
+    )
     g = parser.add_mutually_exclusive_group()
-    g.add_argument('--graph',
-                   help='Plot the overall dependency graph.',
-                   action='store_true',
-                   default=False)
-    g.add_argument('--sub-graphs',
-                   help='Plot the dependency graphs for the specified modules.',
-                   type=str,
-                   nargs='+',
-                   default=[])
-    g.add_argument('--impact-analysis',
-                   help='For each scanned yang module, print the impacting and impacted modules.',
-                   action='store_true',
-                   default=False)
-    g.add_argument('--single-impact-analysis',
-                   help='For a single yang module, print the impacting and impacted modules',
-                   type=str)
-    g.add_argument('--dependency-tree',
-                   help='For each scanned yang module, print its dependency tree to stdout '
-                        '(i.e. show all the modules that it depends on).',
-                   action='store_true',
-                   default=False)
-    g.add_argument('--single-dependency-tree',
-                   help='For a single yang module, print its dependency tree to stdout '
-                        '(i.e. show all the modules that it depends on).',
-                   type=str)
+    g.add_argument('--graph', help='Plot the overall dependency graph.', action='store_true', default=False)
+    g.add_argument(
+        '--sub-graphs',
+        help='Plot the dependency graphs for the specified modules.',
+        type=str,
+        nargs='+',
+        default=[],
+    )
+    g.add_argument(
+        '--impact-analysis',
+        help='For each scanned yang module, print the impacting and impacted modules.',
+        action='store_true',
+        default=False,
+    )
+    g.add_argument(
+        '--single-impact-analysis',
+        help='For a single yang module, print the impacting and impacted modules',
+        type=str,
+    )
+    g.add_argument(
+        '--dependency-tree',
+        help='For each scanned yang module, print its dependency tree to stdout '
+        '(i.e. show all the modules that it depends on).',
+        action='store_true',
+        default=False,
+    )
+    g.add_argument(
+        '--single-dependency-tree',
+        help='For a single yang module, print its dependency tree to stdout '
+        '(i.e. show all the modules that it depends on).',
+        type=str,
+    )
     args = parser.parse_args()
 
     init(args.rfc_repos, args.draft_repos, recurse=args.recurse)
@@ -498,23 +541,23 @@ if __name__ == '__main__':
         plot_num += 1
         print('Plotting the overall dependency graph...')
         plot_module_dependency_graph(ng)
-        plt.savefig("modules.png")
+        plt.savefig('modules.png')
         print('    Done.')
 
     for node in args.sub_graphs:
         # Set matplotlib into non-interactive mode
         plt.interactive(False)
         plt.figure(plot_num, figsize=(20, 20))
-#        plt.figure(plot_num, figsize=(40, 40))
+        #        plt.figure(plot_num, figsize=(40, 40))
         plot_num += 1
-        print("Plotting graph for module '%s'..." % node)
+        print(f'Plotting graph for module \'{node}\'...')
         try:
             # EVY: do we need this extract argument ???
-#            plot_module_dependency_graph(get_subgraph_for_node(node), node)
+            #            plot_module_dependency_graph(get_subgraph_for_node(node), node)
             plot_module_dependency_graph(get_subgraph_for_node(node))
-            plt.savefig("%s.png" % node)
+            plt.savefig('%s.png' % node)
             print('    Done.')
         except nx.NetworkXError as e:
-            print("    %s" % e)
+            print('    %s' % e)
 
     print('\n')

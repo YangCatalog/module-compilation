@@ -33,10 +33,10 @@ class MessageFactory:
     """This class serves to automatically email a group of admin/developers."""
 
     def __init__(
-            self,
-            config_path=os.environ['YANGCATALOG_CONFIG_PATH'],
-            close_connection_after_message_sending: bool = True,
-            redis_user_notifications_connection: t.Optional[RedisUserNotificationsConnection] = None,
+        self,
+        config_path=os.environ['YANGCATALOG_CONFIG_PATH'],
+        close_connection_after_message_sending: bool = True,
+        redis_user_notifications_connection: t.Optional[RedisUserNotificationsConnection] = None,
     ):
         config = create_config(config_path)
         self._email_from = config.get('Message-Section', 'email-from')
@@ -50,7 +50,7 @@ class MessageFactory:
         self._smtp = smtplib.SMTP('localhost')
         self._close_connection_after_message_sending = close_connection_after_message_sending
         self._redis_user_notifications_connection = (
-                redis_user_notifications_connection or RedisUserNotificationsConnection(config=config)
+            redis_user_notifications_connection or RedisUserNotificationsConnection(config=config)
         )
 
     def __del__(self):
@@ -60,7 +60,8 @@ class MessageFactory:
     def send_missing_modules(self, modules_list: list, incorrect_revision_modules: list):
         message = 'Following modules extracted from drafts are missing in YANG Catalog:\n'
         path = os.path.join(
-            self._temp_dir, 'drafts-missing-modules/yangmodels/yang/experimental/ietf-extracted-YANG-modules',
+            self._temp_dir,
+            'drafts-missing-modules/yangmodels/yang/experimental/ietf-extracted-YANG-modules',
         )
         for module in modules_list:
             message += f'{module}\n'
@@ -74,22 +75,23 @@ class MessageFactory:
         self._post_to_email(message, self._developers_email)
 
     def send_problematic_draft(
-            self,
-            email_to: list[str],
-            draft_filename: str,
-            errors: str,
-            draft_name_without_revision: t.Optional[str] = None
+        self,
+        email_to: list[str],
+        draft_filename: str,
+        errors: str,
+        draft_name_without_revision: t.Optional[str] = None,
     ):
         subject = f'{GREETINGS}, "{draft_filename}" had errors during an extraction'
         errors = errors.replace('\n', '<br>')
         message = f'During a daily check of IETF drafts, some errors were found in "{draft_filename}":<br><br>{errors}'
         draft_filename_without_format = draft_filename.split('.')[0]
         draft_name_without_revision = (
-            draft_name_without_revision if draft_name_without_revision else
-            re.sub(r'-\d+', '', draft_filename_without_format)
+            draft_name_without_revision
+            if draft_name_without_revision
+            else re.sub(r'-\d+', '', draft_filename_without_format)
         )
         unsubscribed_emails = self._redis_user_notifications_connection.get_unsubscribed_emails(
-            draft_name_without_revision
+            draft_name_without_revision,
         )
         email_to = [email for email in email_to if email not in unsubscribed_emails]
         message_subtype = 'html'
@@ -106,17 +108,17 @@ class MessageFactory:
             self._post_to_email(message, email_to=[email], subject=subject, subtype=message_subtype)
 
     def _post_to_email(
-            self,
-            message: str,
-            email_to: t.Optional[list] = None,
-            subject: t.Optional[str] = None,
-            subtype: str = 'plain',
+        self,
+        message: str,
+        email_to: t.Optional[list] = None,
+        subject: t.Optional[str] = None,
+        subtype: str = 'plain',
     ):
         """Send message to the list of e-mails.
 
-            Arguments:
-                :param message      (str) message to send
-                :param email_to     (list) list of emails to send the message to
+        Arguments:
+            :param message      (str) message to send
+            :param email_to     (list) list of emails to send the message to
         """
         send_to = email_to or self._email_to
         newline_character = '<br>' if subtype == 'html' else '\n'

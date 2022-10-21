@@ -26,7 +26,6 @@ import shutil
 import time
 
 import requests
-
 from create_config import create_config
 from extractors.draft_extractor import DraftExtractor
 from job_log import job_log
@@ -51,10 +50,7 @@ def main():
     yang_path = os.path.join(ietf_directory, 'archived-drafts-modules')
 
     parser = argparse.ArgumentParser(description='Check if modules from all the Drafts are populated in YANG Catalog')
-    parser.add_argument('--debug',
-                        help='Debug level - default is 0',
-                        type=int,
-                        default=0)
+    parser.add_argument('--debug', help='Debug level - default is 0', type=int, default=0)
     args = parser.parse_args()
 
     custom_print('Starting {} script'.format(os.path.basename(__file__)))
@@ -66,7 +62,7 @@ def main():
         'draft_path': archived_draft_path,
         'yang_path': yang_path,
         'all_yang_draft_path_strict': all_yang_drafts_strict,
-        'all_yang_path': all_yang_path
+        'all_yang_path': all_yang_path,
     }
 
     try:
@@ -75,9 +71,14 @@ def main():
         remove_directory_content(all_yang_drafts_strict, args.debug)
 
         custom_print('Extracting modules from drafts stored in {}'.format(archived_draft_path))
-        draftExtractor = DraftExtractor(draft_extractor_paths, args.debug,
-                                        extract_elements=False, extract_examples=False, copy_drafts=False)
-        draftExtractor.extract()
+        draft_extractor = DraftExtractor(
+            draft_extractor_paths,
+            args.debug,
+            extract_elements=False,
+            extract_examples=False,
+            copy_drafts=False,
+        )
+        draft_extractor.extract()
     except Exception as err:
         custom_print('Error occured while extracting modules')
         end = int(time.time())
@@ -110,7 +111,7 @@ def main():
 
     missing_modules = []
     incorrect_revision_modules = []
-    for yang_file in draftExtractor.inverted_draft_yang_dict:
+    for yang_file in draft_extractor.inverted_draft_yang_dict:
         name_revision = yang_file.split('.yang')[0]
         if any(yang_file in module for module in (old_modules, unparsable_modules)) or yang_file.startswith('example'):
             continue

@@ -84,7 +84,10 @@ def yanglint_compilation_status(compilation_result: str) -> str:
         ret = 'UNKNOWN'
     # 'err : Input data contains submodule which cannot be parsed directly without its main module.' error message
     # => still print the message, but doesn't report it as FAILED
-    if 'err : Input data contains submodule which cannot be parsed directly without its main module.' in compilation_result:
+    if (
+        'err : Input data contains submodule which cannot be parsed directly without its main module.'
+        in compilation_result
+    ):
         ret = 'PASSED'
     return ret
 

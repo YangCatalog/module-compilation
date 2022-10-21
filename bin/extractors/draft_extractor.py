@@ -25,22 +25,21 @@ import sys
 import typing as t
 from io import StringIO
 
-from xym import xym
-
 from extract_elem import extract_elem
 from extractors.helper import check_after_xym_extraction, invert_yang_modules_dict, remove_invalid_files
 from message_factory.message_factory import MessageFactory
+from xym import xym
 
 
 class DraftExtractor:
     def __init__(
-            self,
-            draft_extractor_paths: dict,
-            debug_level: int,
-            extract_elements: bool = True,
-            extract_examples: bool = True,
-            copy_drafts: bool = True,
-            message_factory: t.Optional[MessageFactory] = None,
+        self,
+        draft_extractor_paths: dict,
+        debug_level: int,
+        extract_elements: bool = True,
+        extract_examples: bool = True,
+        copy_drafts: bool = True,
+        message_factory: t.Optional[MessageFactory] = None,
     ):
         self.draft_path = draft_extractor_paths.get('draft_path', '')
         self.yang_path = draft_extractor_paths.get('yang_path', '')
@@ -87,7 +86,7 @@ class DraftExtractor:
                             if '<CODE BEGINS>' in line:
                                 self.ietf_drafts.append(filename)
                                 break
-                except:
+                except Exception:
                     continue
         self.ietf_drafts.sort()
         print('Drafts list created')
@@ -102,7 +101,12 @@ class DraftExtractor:
             draft_file_path = os.path.join(self.draft_path, draft_file)
 
             # Extract the correctly formatted YANG Models into yang_path
-            extracted_yang_models = self.extract_from_draft_file(draft_file, self.draft_path, self.yang_path, strict=True)
+            extracted_yang_models = self.extract_from_draft_file(
+                draft_file,
+                self.draft_path,
+                self.yang_path,
+                strict=True,
+            )
 
             if extracted_yang_models:
                 correct = check_after_xym_extraction(draft_file, extracted_yang_models)
@@ -124,8 +128,13 @@ class DraftExtractor:
 
             # Extract the correctly formatted example YANG Models into all_yang_example_path
             if self.extract_examples:
-                extracted_yang_models = self.extract_from_draft_file(draft_file, self.draft_path, self.all_yang_example_path,
-                                                                     strict=True, strict_examples=True)
+                extracted_yang_models = self.extract_from_draft_file(
+                    draft_file,
+                    self.draft_path,
+                    self.all_yang_example_path,
+                    strict=True,
+                    strict_examples=True,
+                )
                 if extracted_yang_models:
                     correct = check_after_xym_extraction(draft_file, extracted_yang_models)
                     if not correct:
@@ -158,7 +167,12 @@ class DraftExtractor:
                     shutil.copy2(draft_file_path, self.draft_path_no_strict)
 
     def extract_from_draft_file(
-            self, draft_file: str, srcdir: str, dstdir: str, strict: bool = False, strict_examples: bool = False,
+        self,
+        draft_file: str,
+        srcdir: str,
+        dstdir: str,
+        strict: bool = False,
+        strict_examples: bool = False,
     ):
 
         extracted = []
@@ -167,9 +181,17 @@ class DraftExtractor:
             old_stderr = sys.stderr
             result = StringIO()
             sys.stderr = result
-            extracted = xym.xym(draft_file, srcdir, dstdir, strict=strict, strict_examples=strict_examples,
-                                debug_level=self.debug_level, add_line_refs=False, force_revision_pyang=False,
-                                force_revision_regexp=True)
+            extracted = xym.xym(
+                draft_file,
+                srcdir,
+                dstdir,
+                strict=strict,
+                strict_examples=strict_examples,
+                debug_level=self.debug_level,
+                add_line_refs=False,
+                force_revision_pyang=False,
+                force_revision_regexp=True,
+            )
             result_string = result.getvalue()
         finally:
             sys.stderr = old_stderr
@@ -191,7 +213,7 @@ class DraftExtractor:
         remove_invalid_files(self.all_yang_path, self.inverted_draft_yang_all_dict)
 
     def extract_all_elements(self, extracted_yang_models: list):
-        """ Extract typedefs, groupings and identities from data models into .txt files.
+        """Extract typedefs, groupings and identities from data models into .txt files.
         These elements are not extracted from example models.
         """
         for extracted_model in extracted_yang_models:
@@ -226,7 +248,8 @@ class DraftExtractor:
             draft_name_without_revision = re.sub(r'-\d+', '', draft_filename.split('.')[0])
             author_email = f'{draft_name_without_revision}@ietf.org'
             self.message_factory.send_problematic_draft(
-                [author_email], draft_filename, errors_string,
-                draft_name_without_revision=draft_name_without_revision
+                [author_email],
+                draft_filename,
+                errors_string,
+                draft_name_without_revision=draft_name_without_revision,
             )
-

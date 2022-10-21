@@ -22,8 +22,15 @@ import json
 from create_config import create_config
 
 
-def job_log(start_time: int, end_time: int, temp_dir: str, filename: str,
-            messages: list = [], error: str = '', status: str = ''):
+def job_log(
+    start_time: int,
+    end_time: int,
+    temp_dir: str,
+    filename: str,
+    messages: list = [],
+    error: str = '',
+    status: str = '',
+):
     result = {}
     result['start'] = start_time
     result['end'] = end_time
@@ -46,7 +53,7 @@ def job_log(start_time: int, end_time: int, temp_dir: str, filename: str,
         try:
             previous_state = file_content[filename]
             last_successfull = previous_state.get('last_successfull')
-        except:
+        except KeyError:
             last_successfull = None
 
     result['last_successfull'] = last_successfull
@@ -60,26 +67,10 @@ if __name__ == '__main__':
     config = create_config()
     temp_dir = config.get('Directory-Section', 'temp')
     parser = argparse.ArgumentParser()
-    parser.add_argument('--start',
-                        help='Cronjob start time',
-                        type=int,
-                        default=0,
-                        required=True)
-    parser.add_argument('--end',
-                        help='Cronjob end time',
-                        type=int,
-                        default=0,
-                        required=True)
-    parser.add_argument('--status',
-                        help='Result of cronjob run',
-                        type=str,
-                        default='Fail',
-                        required=True)
-    parser.add_argument('--filename',
-                        help='Name of job',
-                        type=str,
-                        default='',
-                        required=True)
+    parser.add_argument('--start', help='Cronjob start time', type=int, default=0, required=True)
+    parser.add_argument('--end', help='Cronjob end time', type=int, default=0, required=True)
+    parser.add_argument('--status', help='Result of cronjob run', type=str, default='Fail', required=True)
+    parser.add_argument('--filename', help='Name of job', type=str, default='', required=True)
     args = parser.parse_args()
 
     job_log(int(args.start), int(args.end), temp_dir, args.filename, status=args.status)

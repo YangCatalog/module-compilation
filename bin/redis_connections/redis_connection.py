@@ -25,7 +25,6 @@ from redis import Redis
 
 
 class RedisConnection:
-
     def __init__(self, modules_db: int = 1):
         config = create_config()
         self._redis_host = config.get('DB-Section', 'redis-host')

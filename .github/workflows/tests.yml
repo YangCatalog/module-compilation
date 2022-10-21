@@ -23,8 +23,18 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install -r lint_requirements.txt
           cd bin/resources/HTML
           python setup.py install
+
+      - name: Check isort
+        uses: jamescurtin/isort-action@master
+
+      - name: Check flake8
+        run: flake8 .
+
+      - name: Check black
+        uses: psf/black@stable
 
       - name: Test with pytest
         run: |

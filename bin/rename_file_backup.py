@@ -27,7 +27,7 @@ from create_config import create_config
 
 
 def rename_file_backup(src_dir: str, backup_dir: str, debug_level: int = 0) -> None:
-    """ Backup each of the files by renaming them with the current timestamp appended to the file name.
+    """Backup each of the files by renaming them with the current timestamp appended to the file name.
 
     Arguments:
         :param src_dir      (str) Directory where the files to backup are stored
@@ -44,11 +44,18 @@ def rename_file_backup(src_dir: str, backup_dir: str, debug_level: int = 0) -> N
             print('Unable to create directory: {}'.format(backup_dir))
             return
 
-    files_to_backup = ['IETFYANGPageMain.html', 'IETFCiscoAuthorsYANGPageCompilation.html',
-                       'IETFYANGOutOfRFC.html', 'IETFDraftYANGPageCompilation.html',
-                       'IEEEStandardYANGPageCompilation.html', 'IEEEStandardDraftYANGPageCompilation.html',
-                       'IANAStandardYANGPageCompilation.html', 'IEEEExperimentalYANGPageCompilation.html',
-                       'YANGPageMain.html', 'IETFYANGRFC.html']
+    files_to_backup = [
+        'IETFYANGPageMain.html',
+        'IETFCiscoAuthorsYANGPageCompilation.html',
+        'IETFYANGOutOfRFC.html',
+        'IETFDraftYANGPageCompilation.html',
+        'IEEEStandardYANGPageCompilation.html',
+        'IEEEStandardDraftYANGPageCompilation.html',
+        'IANAStandardYANGPageCompilation.html',
+        'IEEEExperimentalYANGPageCompilation.html',
+        'YANGPageMain.html',
+        'IETFYANGRFC.html',
+    ]
     for filename in files_to_backup:
         name, extension = filename.split('.')
         full_path_file = os.path.join(src_dir, filename)
@@ -56,7 +63,7 @@ def rename_file_backup(src_dir: str, backup_dir: str, debug_level: int = 0) -> N
             print('*** file {} not present!'.format(full_path_file))
             continue
         modified_time = os.path.getmtime(full_path_file)
-        timestamp = (datetime.fromtimestamp(modified_time).strftime("%Y_%m_%d"))
+        timestamp = datetime.fromtimestamp(modified_time).strftime('%Y_%m_%d')
         if name == 'IETFYANGRFC':
             name = 'IETFYANGOutOfRFC'
         new_filename = '{}_{}.{}'.format(name, timestamp, extension)
@@ -73,18 +80,14 @@ if __name__ == '__main__':
     web_private = config.get('Web-Section', 'private-directory')
     backup_directory = config.get('Directory-Section', 'backup')
     parser = argparse.ArgumentParser(description='Append creation timestamps to filenames')
-    parser.add_argument('--srcdir',
-                        help='Directory the content of which to remove',
-                        type=str,
-                        default=web_private)
-    parser.add_argument('--backupdir',
-                        help='Directory the content of which to remove',
-                        type=str,
-                        default=backup_directory)
-    parser.add_argument('--debug',
-                        help='Debug level - default is 0',
-                        type=int,
-                        default=0)
+    parser.add_argument('--srcdir', help='Directory the content of which to remove', type=str, default=web_private)
+    parser.add_argument(
+        '--backupdir',
+        help='Directory the content of which to remove',
+        type=str,
+        default=backup_directory,
+    )
+    parser.add_argument('--debug', help='Debug level - default is 0', type=int, default=0)
     args = parser.parse_args()
 
     rename_file_backup(args.srcdir, args.backupdir, args.debug)

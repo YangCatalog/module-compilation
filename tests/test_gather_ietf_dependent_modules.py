@@ -29,7 +29,6 @@ from gather_ietf_dependent_modules import copy_modules
 
 
 class TestGatherIetfDependentModules(unittest.TestCase):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         config = create_config()
@@ -43,7 +42,7 @@ class TestGatherIetfDependentModules(unittest.TestCase):
 
     @mock.patch('requests.post')
     def test_copy_modules(self, mock_post: mock.MagicMock) -> None:
-        """ Test whether the yang files have been copied to the destination directory. """
+        """Test whether the yang files have been copied to the destination directory."""
         with open(self.payloads_file, 'r', encoding='utf-8') as reader:
             content = json.load(reader)
         mock_post.return_value.json.return_value = content['search-filter-ietf']
@@ -58,7 +57,7 @@ class TestGatherIetfDependentModules(unittest.TestCase):
 
     @mock.patch('requests.post')
     def test_copy_modules_no_src_dir(self, mock_post: mock.MagicMock) -> None:
-        """ Destination directory should be empty if the source directory does not exist. """
+        """Destination directory should be empty if the source directory does not exist."""
         with open(self.payloads_file, 'r', encoding='utf-8') as reader:
             content = json.load(reader)
         mock_post.return_value.json.return_value = content['search-filter-ietf']
@@ -71,7 +70,7 @@ class TestGatherIetfDependentModules(unittest.TestCase):
 
     @mock.patch('requests.post')
     def test_copy_modules_400_response(self, mock_post: mock.MagicMock) -> None:
-        """ Destination directory should be empty if server responded with 400/404 error message. """
+        """Destination directory should be empty if server responded with 400/404 error message."""
         with open(self.payloads_file, 'r', encoding='utf-8') as reader:
             content = json.load(reader)
         mock_post.return_value.json.return_value = content['search-filter-ietf-400-response']

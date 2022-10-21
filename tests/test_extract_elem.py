@@ -19,13 +19,13 @@ __license__ = 'Apache License, Version 2.0'
 __email__ = 'richard.zilincik@pantheon.tech'
 
 import filecmp
-import unittest
 import os
+import unittest
 
 import extract_elem as ee
 
-class TestExtractElem(unittest.TestCase):
 
+class TestExtractElem(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.resource_path = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/extract_elem')
@@ -39,58 +39,51 @@ class TestExtractElem(unittest.TestCase):
             'grouping-shared-module-leafs.txt',
             'grouping-yang-lib-common-leafs.txt',
             'grouping-yang-lib-implementation-leafs.txt',
-            'grouping-yang-lib-schema-leaf.txt'
+            'grouping-yang-lib-schema-leaf.txt',
         ]
 
         ee.extract_elem(
             os.path.join(self.resource_path, 'yang-catalog@2018-04-03.yang'),
             os.path.join(self.resource_path, 'extracted'),
-            'grouping'
-            )
+            'grouping',
+        )
         match, mismatch, errors = filecmp.cmpfiles(
             os.path.join(self.resource_path, 'extracted'),
             os.path.join(self.resource_path, 'expected'),
-            groupings
+            groupings,
         )
         self.assertFalse(mismatch or errors)
 
     def test_extract_elem_identity(self):
-        identities = [
-            'identity-netconf.txt',
-            'identity-protocol.txt',
-            'identity-restconf.txt'
-        ]
+        identities = ['identity-netconf.txt', 'identity-protocol.txt', 'identity-restconf.txt']
 
         ee.extract_elem(
             os.path.join(self.resource_path, 'yang-catalog@2018-04-03.yang'),
             os.path.join(self.resource_path, 'extracted'),
-            'identity'
-            )
+            'identity',
+        )
         match, mismatch, errors = filecmp.cmpfiles(
             os.path.join(self.resource_path, 'extracted'),
             os.path.join(self.resource_path, 'expected'),
-            identities
+            identities,
         )
         self.assertFalse(mismatch or errors)
 
     def test_extract_elem_typedef(self):
-        typedefs = [
-            'typedef-email-address.txt',
-            'typedef-path.txt',
-            'typedef-semver.txt'
-        ]
+        typedefs = ['typedef-email-address.txt', 'typedef-path.txt', 'typedef-semver.txt']
 
         ee.extract_elem(
             os.path.join(self.resource_path, 'yang-catalog@2018-04-03.yang'),
             os.path.join(self.resource_path, 'extracted'),
-            'typedef'
-            )
+            'typedef',
+        )
         match, mismatch, errors = filecmp.cmpfiles(
             os.path.join(self.resource_path, 'extracted'),
             os.path.join(self.resource_path, 'expected'),
-            typedefs
+            typedefs,
         )
         self.assertFalse(mismatch or errors)
+
 
 if __name__ == '__main__':
     unittest.main()

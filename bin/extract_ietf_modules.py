@@ -47,76 +47,89 @@ def main():
     rfc_path = config.get('Directory-Section', 'ietf-rfcs')
     cache_directory = config.get('Directory-Section', 'cache')
     public_directory = config.get('Web-Section', 'public-directory')
-    send_emails_about_problematic_drafts = config.get(
-        'General-Section', 'send_emails_about_problematic_drafts', fallback='False'
-    ) == 'True'
+    send_emails_about_problematic_drafts = (
+        config.get('General-Section', 'send_emails_about_problematic_drafts', fallback='False') == 'True'
+    )
 
     parser = argparse.ArgumentParser(description='YANG RFC/Draft Processor')
-    parser.add_argument('--archived',
-                        help='Extract expired drafts as well',
-                        action='store_true',
-                        default=False)
-    parser.add_argument('--yangpath',
-                        help='Path to the directory where to extract models (only correct). '
-                             f'Default is "{ietf_directory}/YANG/"',
-                        type=str,
-                        default=f'{ietf_directory}/YANG/')
-    parser.add_argument('--allyangpath',
-                        help='Path to the directory where to extract models (including bad ones). '
-                             f'Default is "{ietf_directory}/YANG-all/"',
-                        type=str,
-                        default=f'{ietf_directory}/YANG-all/')
-    parser.add_argument('--allyangexamplepath',
-                        help='Path to the directory where to extract example models '
-                        '(starting with example- and not with CODE BEGINS/END). '
-                        f'Default is "{ietf_directory}/YANG-example/"',
-                        type=str,
-                        default=f'{ietf_directory}/YANG-example/')
-    parser.add_argument('--yangexampleoldrfcpath',
-                        help='Path to the directory where to extract '
-                             'the hardcoded YANG module example models from old RFCs (not starting with example-). '
-                             f'Default is "{ietf_directory}/YANG-example-old-rfc/"',
-                        type=str,
-                        default=f'{ietf_directory}/YANG-example-old-rfc/')
-    parser.add_argument('--draftpathstrict',
-                        help='Path to the directory where to extract the drafts containing the YANG model(s) - '
-                        'with xym flag strict=True. '
-                        f'Default is "{ietf_directory}/draft-with-YANG-strict/"',
-                        type=str,
-                        default=f'{ietf_directory}/draft-with-YANG-strict/')
-    parser.add_argument('--draftpathnostrict',
-                        help='Path to the directory where to extract the drafts containing the YANG model(s) - '
-                        'with xym flag strict=False. '
-                        f'Default is "{ietf_directory}/draft-with-YANG-no-strict/"',
-                        type=str,
-                        default=f'{ietf_directory}/draft-with-YANG-no-strict/')
-    parser.add_argument('--draftpathonlyexample',
-                        help='Path to the directory where to extract the drafts containing examples -'
-                        'with xym flags strict=False and strict_examples=True. '
-                        f'Default is "{ietf_directory}/draft-with-YANG-example/"',
-                        type=str,
-                        default=f'{ietf_directory}/draft-with-YANG-example/')
-    parser.add_argument('--rfcyangpath',
-                        help='Path to the directory where to extract the data models extracted from RFCs. '
-                             f'Default is "{ietf_directory}/YANG-rfc/"',
-                        type=str,
-                        default=f'{ietf_directory}/YANG-rfc/')
-    parser.add_argument('--rfcextractionyangpath',
-                        help='Path to the directory where to extract '
-                             'the typedef, grouping, identity from data models extracted from RFCs. '
-                             f'Default is "{ietf_directory}/YANG-rfc-extraction/"',
-                        type=str,
-                        default=f'{ietf_directory}/YANG-rfc-extraction/')
-    parser.add_argument('--draftelementspath',
-                        help='Path to the directory where to extract '
-                             'the typedef, grouping, identity from data models correctely extracted from drafts. '
-                             f'Default is "{ietf_directory}/draft-elements/"',
-                        type=str,
-                        default=f'{ietf_directory}/draft-elements/')
-    parser.add_argument('--debug',
-                        help='Debug level - default is 0',
-                        type=int,
-                        default=0)
+    parser.add_argument('--archived', help='Extract expired drafts as well', action='store_true', default=False)
+    parser.add_argument(
+        '--yangpath',
+        help='Path to the directory where to extract models (only correct). ' f'Default is "{ietf_directory}/YANG/"',
+        type=str,
+        default=f'{ietf_directory}/YANG/',
+    )
+    parser.add_argument(
+        '--allyangpath',
+        help='Path to the directory where to extract models (including bad ones). '
+        f'Default is "{ietf_directory}/YANG-all/"',
+        type=str,
+        default=f'{ietf_directory}/YANG-all/',
+    )
+    parser.add_argument(
+        '--allyangexamplepath',
+        help='Path to the directory where to extract example models '
+        '(starting with example- and not with CODE BEGINS/END). '
+        f'Default is "{ietf_directory}/YANG-example/"',
+        type=str,
+        default=f'{ietf_directory}/YANG-example/',
+    )
+    parser.add_argument(
+        '--yangexampleoldrfcpath',
+        help='Path to the directory where to extract '
+        'the hardcoded YANG module example models from old RFCs (not starting with example-). '
+        f'Default is "{ietf_directory}/YANG-example-old-rfc/"',
+        type=str,
+        default=f'{ietf_directory}/YANG-example-old-rfc/',
+    )
+    parser.add_argument(
+        '--draftpathstrict',
+        help='Path to the directory where to extract the drafts containing the YANG model(s) - '
+        'with xym flag strict=True. '
+        f'Default is "{ietf_directory}/draft-with-YANG-strict/"',
+        type=str,
+        default=f'{ietf_directory}/draft-with-YANG-strict/',
+    )
+    parser.add_argument(
+        '--draftpathnostrict',
+        help='Path to the directory where to extract the drafts containing the YANG model(s) - '
+        'with xym flag strict=False. '
+        f'Default is "{ietf_directory}/draft-with-YANG-no-strict/"',
+        type=str,
+        default=f'{ietf_directory}/draft-with-YANG-no-strict/',
+    )
+    parser.add_argument(
+        '--draftpathonlyexample',
+        help='Path to the directory where to extract the drafts containing examples -'
+        'with xym flags strict=False and strict_examples=True. '
+        f'Default is "{ietf_directory}/draft-with-YANG-example/"',
+        type=str,
+        default=f'{ietf_directory}/draft-with-YANG-example/',
+    )
+    parser.add_argument(
+        '--rfcyangpath',
+        help='Path to the directory where to extract the data models extracted from RFCs. '
+        f'Default is "{ietf_directory}/YANG-rfc/"',
+        type=str,
+        default=f'{ietf_directory}/YANG-rfc/',
+    )
+    parser.add_argument(
+        '--rfcextractionyangpath',
+        help='Path to the directory where to extract '
+        'the typedef, grouping, identity from data models extracted from RFCs. '
+        f'Default is "{ietf_directory}/YANG-rfc-extraction/"',
+        type=str,
+        default=f'{ietf_directory}/YANG-rfc-extraction/',
+    )
+    parser.add_argument(
+        '--draftelementspath',
+        help='Path to the directory where to extract '
+        'the typedef, grouping, identity from data models correctely extracted from drafts. '
+        f'Default is "{ietf_directory}/draft-elements/"',
+        type=str,
+        default=f'{ietf_directory}/draft-elements/',
+    )
+    parser.add_argument('--debug', help='Debug level - default is 0', type=int, default=0)
 
     args = parser.parse_args()
     if args.archived:
@@ -132,7 +145,7 @@ def main():
         'all_yang_example_path': args.allyangexamplepath,
         'draft_path_only_example': args.draftpathonlyexample,
         'all_yang_path': args.allyangpath,
-        'draft_path_no_strict': args.draftpathnostrict
+        'draft_path_no_strict': args.draftpathnostrict,
     }
 
     # ----------------------------------------------------------------------
@@ -149,14 +162,14 @@ def main():
         args.draftpathnostrict,
         args.draftpathonlyexample,
         args.rfcextractionyangpath,
-        args.draftelementspath
+        args.draftelementspath,
     ]:
         remove_directory_content(dir, debug_level)
 
     # Extract YANG models from IETF RFCs files
     rfc_extractor = RFCExtractor(rfc_path, args.rfcyangpath, args.rfcextractionyangpath, debug_level)
     rfc_extractor.extract()
-    rfc_extractor.clean_old_RFC_YANG_modules(args.rfcyangpath, args.yangexampleoldrfcpath)
+    rfc_extractor.clean_old_rfc_yang_modules(args.rfcyangpath, args.yangexampleoldrfcpath)
     custom_print('Old examples YANG modules moved')
     custom_print('All IETF RFCs pre-processed')
 
@@ -164,7 +177,8 @@ def main():
     draft_extractor = DraftExtractor(draft_extractor_paths, debug_level)
     draft_extractor.extract()
     draft_extractor.dump_incorrect_drafts(
-        public_directory, send_emails_about_problematic_drafts=send_emails_about_problematic_drafts
+        public_directory,
+        send_emails_about_problematic_drafts=send_emails_about_problematic_drafts,
     )
     custom_print('All IETF Drafts pre-processed')
 

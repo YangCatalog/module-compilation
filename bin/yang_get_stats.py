@@ -25,9 +25,8 @@ import re
 from configparser import ConfigParser
 
 import matplotlib as mpl
-from matplotlib.dates import date2num
-
 from create_config import create_config
+from matplotlib.dates import date2num
 
 mpl.use('Agg')
 
@@ -35,9 +34,14 @@ mpl.use('Agg')
 class GetStats:
     CATEGORIES_LIST = ['FAILED', 'PASSED WITH WARNINGS', 'PASSED', 'Email All Authors']
     BACKUPS_PREFIXES = [
-        'HydrogenODLPageCompilation_', 'HeliumODLPageCompilation_', 'LithiumODLPageCompilation_',
-        'IETFCiscoAuthorsYANGPageCompilation_', 'IETFDraftYANGPageCompilation_', 'IANAStandardYANGPageCompilation_',
-        'IEEEStandardYANGPageCompilation_', 'IEEEStandardDraftYANGPageCompilation_',
+        'HydrogenODLPageCompilation_',
+        'HeliumODLPageCompilation_',
+        'LithiumODLPageCompilation_',
+        'IETFCiscoAuthorsYANGPageCompilation_',
+        'IETFDraftYANGPageCompilation_',
+        'IANAStandardYANGPageCompilation_',
+        'IEEEStandardYANGPageCompilation_',
+        'IEEEStandardDraftYANGPageCompilation_',
         'IEEEExperimentalYANGPageCompilation_',
     ]
     COMPANIES = (
@@ -70,7 +74,7 @@ class GetStats:
         ('DT', 'telekom.de'),
         ('Softbank', 'softbank.co.jp'),
         ('Packet Design', 'packetdesign.com'),
-        ('Qosmos', 'qosmos.com')
+        ('Qosmos', 'qosmos.com'),
     )
     YANG_PAGE_MAIN_PREFIX = 'YANGPageMain_'
     IETF_YANG_PAGE_MAIN_PREFIX = 'IETFYANGPageMain_'
@@ -144,8 +148,8 @@ class GetStats:
                                 'generated-at': generated_at,
                                 'passed': passed,
                                 'warnings': passed_with_warnings,
-                                'failed': failed
-                            }
+                                'failed': failed,
+                            },
                         }
         if int(args.days) == -1:
             with open(json_history_file, 'w') as filename:
@@ -187,13 +191,15 @@ class GetStats:
                 'warnings': passed_with_warnings,
                 'passed': passed,
                 'badly formated': badly_formated,
-                'examples': examples
+                'examples': examples,
             }
         if int(args.days) == -1:
             with open(json_history_file, 'w') as filename:
                 json.dump(yang_page_compilation_stats, filename)
             self._write_dictionary_file_in_json(
-                yang_page_compilation_stats, self.stats_path, 'IETFYANGPageMainStats.json'
+                yang_page_compilation_stats,
+                self.stats_path,
+                'IETFYANGPageMainStats.json',
             )
 
     def gather_backups_compilation_stats(self):
@@ -226,13 +232,13 @@ class GetStats:
                 yang_page_compilation_stats[date2num(extracted_date)] = {
                     'total': total_result,
                     'warning': passed_with_warning_result,
-                    'success': passed_result
+                    'success': passed_result,
                 }
             if int(args.days) == -1:
                 filename = (
-                    'IETFYANGPageCompilationStats.json' if
-                    prefix == 'IETFDraftYANGPageCompilation_' else
-                    f'{prefix[:-1]}Stats.json'
+                    'IETFYANGPageCompilationStats.json'
+                    if prefix == 'IETFDraftYANGPageCompilation_'
+                    else f'{prefix[:-1]}Stats.json'
                 )
                 with open(json_history_file, 'w') as f:
                     json.dump(yang_page_compilation_stats, f)
@@ -260,7 +266,9 @@ class GetStats:
             with open(json_history_file, 'w') as f:
                 json.dump(yang_page_compilation_stats, f)
             self._write_dictionary_file_in_json(
-                yang_page_compilation_stats, self.stats_path, 'IETFYANGOutOfRFCStats.json'
+                yang_page_compilation_stats,
+                self.stats_path,
+                'IETFYANGOutOfRFCStats.json',
             )
 
     def _load_compilation_stats_from_history_file(self, json_history_file: str) -> dict:
@@ -281,19 +289,21 @@ class GetStats:
     def print_files_information(self):
         # determine the number of company authored drafts
         files = [
-            filename for filename in os.listdir(self.draft_path_strict) if
-            os.path.isfile(os.path.join(self.draft_path_strict, filename))
+            filename
+            for filename in os.listdir(self.draft_path_strict)
+            if os.path.isfile(os.path.join(self.draft_path_strict, filename))
         ]
         files_no_strict = [
-            filename for filename in os.listdir(self.draft_path_nostrict) if
-            os.path.isfile(os.path.join(self.draft_path_nostrict, filename))
+            filename
+            for filename in os.listdir(self.draft_path_nostrict)
+            if os.path.isfile(os.path.join(self.draft_path_nostrict, filename))
         ]
         total_number_drafts = len(files)
         total_number_drafts_no_strict = len(files_no_strict)
         print('\nPrint, per company, the number of IETF drafts containing YANG model(s)')
         print(
             f'Total numbers of drafts with YANG Model(s): {total_number_drafts} - '
-            f'non strict rules: {total_number_drafts_no_strict}\n'
+            f'non strict rules: {total_number_drafts_no_strict}\n',
         )
 
         def print_attribution(name: str, domain: str):
@@ -302,7 +312,7 @@ class GetStats:
                 return
             strict = len(self._list_of_ietf_draft_containing_keyword(files, domain, self.draft_path_strict))
             non_strict = len(
-                self._list_of_ietf_draft_containing_keyword(files_no_strict, domain, self.draft_path_nostrict)
+                self._list_of_ietf_draft_containing_keyword(files_no_strict, domain, self.draft_path_nostrict),
             )
             print(f'{name}: {strict} - non strict rules: {non_strict}')
 
@@ -319,12 +329,13 @@ class GetStats:
             temp_result = os.popen(bash_command).read()
             if self.debug_level > 0:
                 print(
-                    f'DEBUG: copy the IETF draft containing a YANG model in {self.draft_path_diff}: error {temp_result}'
+                    f'DEBUG: copy the IETF draft containing a YANG model in {self.draft_path_diff}: '
+                    f'error {temp_result}',
                 )
         if self.debug_level > 0:
             print(
                 'DEBUG: print the diff between files and files_no_strict lists, '
-                f'so the files with xym extraction issues: {files_diff}'
+                f'so the files with xym extraction issues: {files_diff}',
             )
 
     def _list_of_files_in_dir(self, srcdir: str, extension: str) -> list[str]:
@@ -423,7 +434,7 @@ class GetStats:
         if self.debug_level > 0:
             print(
                 'DEBUG: in list_of_ietf_draft_containing_keyword: '
-                f'list_of_ietf_draft_with_keyword contains {list_of_ietf_draft_with_keyword}'
+                f'list_of_ietf_draft_with_keyword contains {list_of_ietf_draft_with_keyword}',
             )
         return list_of_ietf_draft_with_keyword
 
@@ -448,13 +459,8 @@ if __name__ == '__main__':
         '--days',
         help='Numbers of days to get back in history. Default is -1 = unlimited',
         type=int,
-        default=-1
+        default=-1,
     )
-    parser.add_argument(
-        '--debug',
-        help='Debug level - default is 0',
-        type=int,
-        default=0
-    )
+    parser.add_argument('--debug', help='Debug level - default is 0', type=int, default=0)
     args = parser.parse_args()
     GetStats(args, config).start_process()

@@ -12,18 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__author__ = "Slavomir Mazur"
-__copyright__ = "Copyright The IETF Trust 2021, All Rights Reserved"
-__license__ = "Apache License, Version 2.0"
-__email__ = "slavomir.mazur@pantheon.tech"
-__version__ = "1.1.0"
+__author__ = 'Slavomir Mazur'
+__copyright__ = 'Copyright The IETF Trust 2021, All Rights Reserved'
+__license__ = 'Apache License, Version 2.0'
+__email__ = 'slavomir.mazur@pantheon.tech'
+__version__ = '1.1.0'
 
 from subprocess import CalledProcessError, check_output
 
+from create_config import create_config
 from pyang import __version__ as pyang_version
 from xym import __version__ as xym_version
-
-from create_config import create_config
 
 
 class ValidatorsVersions:
@@ -49,9 +48,14 @@ class ValidatorsVersions:
         except CalledProcessError:
             yanglint_version = 'undefined'
 
-        self.versions = {'validator_version': __version__, 'pyang_version': pyang_version, 'xym_version': xym_version,
-                         'confd_version': confd_version, 'yanglint_version': yanglint_version,
-                         'yangdump_version': yangdump_version}
+        self.versions = {
+            'validator_version': __version__,
+            'pyang_version': pyang_version,
+            'xym_version': xym_version,
+            'confd_version': confd_version,
+            'yanglint_version': yanglint_version,
+            'yangdump_version': yangdump_version,
+        }
 
     def get_versions(self):
         return self.versions

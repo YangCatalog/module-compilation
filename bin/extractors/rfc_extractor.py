@@ -12,20 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__author__ = "Slavomir Mazur"
-__copyright__ = "Copyright The IETF Trust 2021, All Rights Reserved"
-__license__ = "Apache License, Version 2.0"
-__email__ = "slavomir.mazur@pantheon.tech"
+__author__ = 'Slavomir Mazur'
+__copyright__ = 'Copyright The IETF Trust 2021, All Rights Reserved'
+__license__ = 'Apache License, Version 2.0'
+__email__ = 'slavomir.mazur@pantheon.tech'
 
 import json
 import os
 import shutil
 
 from extract_elem import extract_elem
+from extractors.helper import check_after_xym_extraction, invert_yang_modules_dict, remove_invalid_files
 from xym import xym
-
-from extractors.helper import (check_after_xym_extraction,
-                               invert_yang_modules_dict, remove_invalid_files)
 
 
 class RFCExtractor:
@@ -73,9 +71,17 @@ class RFCExtractor:
                 self.rfc_yang_dict[rfc_file] = extracted_yang_models
 
     def extract_from_rfc_file(self, rfc_file: str):
-        return xym.xym(rfc_file, self.rfc_path, self.rfc_yang_path, strict=True, strict_examples=False,
-                       debug_level=self.debug_level, add_line_refs=False, force_revision_pyang=False,
-                       force_revision_regexp=True)
+        return xym.xym(
+            rfc_file,
+            self.rfc_path,
+            self.rfc_yang_path,
+            strict=True,
+            strict_examples=False,
+            debug_level=self.debug_level,
+            add_line_refs=False,
+            force_revision_pyang=False,
+            force_revision_regexp=True,
+        )
 
     def invert_dict(self):
         self.inverted_rfc_yang_dict = invert_yang_modules_dict(self.rfc_yang_dict, self.debug_level)
@@ -83,9 +89,10 @@ class RFCExtractor:
     def remove_invalid_files(self):
         remove_invalid_files(self.rfc_yang_path, self.inverted_rfc_yang_dict)
 
-    def clean_old_RFC_YANG_modules(self, srcdir: str, dstdir: str):
+    def clean_old_rfc_yang_modules(self, srcdir: str, dstdir: str):
         """
-        Move some YANG modules, which are documented at http://www.claise.be/IETFYANGOutOfRFCNonStrictToBeCorrected.html:
+        Move some YANG modules, which are documented at
+        http://www.claise.be/IETFYANGOutOfRFCNonStrictToBeCorrected.html:
         ietf-foo@2010-01-18.yang, hw.yang, hardware-entities.yang, udmcore.yang, and ct-ipfix-psamp-example.yang
         Those YANG modules, from old RFCs, don't follow the example- conventions
 

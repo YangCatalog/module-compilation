@@ -19,16 +19,16 @@ __license__ = 'Apache License, Version 2.0'
 __email__ = 'richard.zilincik@pantheon.tech'
 
 import json
+import os
 import shutil
 import subprocess
 import unittest
-import os
 
 from file_hasher import FileHasher
 from versions import ValidatorsVersions
 
-class TestFileHasher(unittest.TestCase):
 
+class TestFileHasher(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.resource_path = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/file_hasher')
@@ -37,8 +37,8 @@ class TestFileHasher(unittest.TestCase):
             'sdo_files_modification_hashes.json.lock',
             'versions.json',
             'correct.json',
-            'incorrect.json'
-            ]:
+            'incorrect.json',
+        ]:
             try:
                 os.remove(self.resource(file))
             except FileNotFoundError:
@@ -50,15 +50,14 @@ class TestFileHasher(unittest.TestCase):
             json.dump(ValidatorsVersions().get_versions(), f)
         hash_dict = {
             self.resource('file.txt'): self.compute_hash('file.txt'),
-            self.resource('other_file.txt'): self.compute_hash('other_file.txt')
+            self.resource('other_file.txt'): self.compute_hash('other_file.txt'),
         }
         with open(self.resource('correct.json'), 'w') as f:
             json.dump(hash_dict, f)
-        hash_dict[self.resource('file.txt')] = 64*'0'
+        hash_dict[self.resource('file.txt')] = 64 * '0'
         with open(self.resource('incorrect.json'), 'w') as f:
             json.dump(hash_dict, f)
-    
-    
+
     def compute_hash(self, file):
         command = 'cat {} {} | sha256sum'.format(self.resource(file), self.resource('versions.json'))
         return subprocess.run(command, shell=True, capture_output=True).stdout.decode().split()[0]
@@ -97,7 +96,7 @@ class TestFileHasher(unittest.TestCase):
             result = json.load(f)
 
         self.assertDictEqual(result, expected)
-    
+
     def test_should_parse(self):
         shutil.copy(self.resource('incorrect.json'), self.resource('sdo_files_modification_hashes.json'))
 

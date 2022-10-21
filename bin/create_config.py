@@ -1,5 +1,5 @@
-import os
 import configparser
+import os
 
 
 def create_config(config_path=os.environ['YANGCATALOG_CONFIG_PATH']):

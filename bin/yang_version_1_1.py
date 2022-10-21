@@ -72,20 +72,19 @@ if __name__ == '__main__':
     dst = os.path.join(ietf_directory, 'YANG-v11')
 
     parser = argparse.ArgumentParser(description='YANG 1.1 Processing Tool. Copy all YANG 1.1 modules to destpath')
-    parser.add_argument('--srcpath',
-                        help='Directory where find YANG models. '
-                             'Default is "{}"'.format(src),
-                        type=str,
-                        default=src)
-    parser.add_argument('--dstpath',
-                        help='Directory where to store version 1.1 YANG models. '
-                             'Default is "{}"'.format(dst),
-                        type=str,
-                        default=dst)
-    parser.add_argument('--debug',
-                        help='Debug level - default is 0',
-                        type=int,
-                        default=0)
+    parser.add_argument(
+        '--srcpath',
+        help='Directory where find YANG models. ' 'Default is "{}"'.format(src),
+        type=str,
+        default=src,
+    )
+    parser.add_argument(
+        '--dstpath',
+        help='Directory where to store version 1.1 YANG models. ' 'Default is "{}"'.format(dst),
+        type=str,
+        default=dst,
+    )
+    parser.add_argument('--debug', help='Debug level - default is 0', type=int, default=0)
 
     args = parser.parse_args()
 

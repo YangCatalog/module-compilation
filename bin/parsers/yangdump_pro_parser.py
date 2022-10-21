@@ -21,7 +21,7 @@ import os
 
 
 def _remove_duplicate_messages(result: str, module_name: str) -> str:
-    """ Same result messages are often found in the compilation result multiple times.
+    """Same result messages are often found in the compilation result multiple times.
     This method filter out duplicate messages.
     """
     splitted_result = result.split('\n\n')
@@ -29,7 +29,7 @@ def _remove_duplicate_messages(result: str, module_name: str) -> str:
 
     # NOTE - WORKAROUND: remove 'iana-if-type@2021-06-21.yang:128.3: warning(1054): Revision date has already been used'
     # from most compilation results
-    # This can be removed in the future with the release of 'iana-if-type' revision
+    # This can be removed in the future with the release of 'iana-if-type' revision
     # that will PASS the compilation.
     final_result = []
     for result in unique_results_list:
@@ -66,7 +66,7 @@ class YangdumpProParser:
         if self._debug_level > 0:
             print('DEBUG: running command {}'.format(' '.join(bash_command)))
 
-        # Modify command output
+        # Modify command output
         try:
             result_yumadump = os.popen(' '.join(bash_command)).read()
             result_yumadump = result_yumadump.strip()

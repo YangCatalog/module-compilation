@@ -27,7 +27,6 @@ def pyang_plugin_init():
 
 
 class BasicInfoPlugin(plugin.PyangPlugin):
-
     def add_output_format(self, fmts):
         self.multiple_modules = True
         fmts['basic-info'] = self

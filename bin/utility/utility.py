@@ -23,15 +23,14 @@ import os
 import time
 import typing as t
 from datetime import date
-from enum import auto, Enum
+from enum import Enum, auto
 
 import dateutil.parser
 import jinja2
-from pyang.statements import Statement
-from utility.static_variables import IETF_RFC_MAP, NAMESPACE_MAP, ORGANIZATIONS
-
 from parsers import yang_parser
+from pyang.statements import Statement
 from redis_connections.redis_connection import RedisConnection
+from utility.static_variables import IETF_RFC_MAP, NAMESPACE_MAP, ORGANIZATIONS
 from versions import ValidatorsVersions
 
 module_db = None
@@ -79,8 +78,8 @@ def module_or_submodule(yang_file_path: str) -> t.Optional[str]:
 
 
 def dict_to_list(in_dict: dict, is_rfc: bool = False) -> list[list]:
-    """ Create a list out of compilation results from 'in_dict' dictionary variable.
-    First element of each list is name of the module, second one is compilation-status 
+    """Create a list out of compilation results from 'in_dict' dictionary variable.
+    First element of each list is name of the module, second one is compilation-status
     which is followed by compilation-results.
 
     Argument:
@@ -95,7 +94,7 @@ def dict_to_list(in_dict: dict, is_rfc: bool = False) -> list[list]:
 
 
 def list_br_html_addition(modules_list: list):
-    """ Replace the newlines ( \n ) by the <br> HTML tag throughout the list.
+    """Replace the newlines ( \n ) by the <br> HTML tag throughout the list.
 
     Argument:
         :param modules_list     (list) List of lists of compilation results
@@ -138,12 +137,12 @@ def namespace_to_organization(namespace: str) -> str:
 
 
 def check_yangcatalog_data(
-        config: configparser.ConfigParser,
-        yang_file_pseudo_path: str,
-        new_module_data: dict,
-        compilation_results: dict,
-        all_modules: t.Dict[str, dict],
-        ietf_type: t.Optional[IETF] = None
+    config: configparser.ConfigParser,
+    yang_file_pseudo_path: str,
+    new_module_data: dict,
+    compilation_results: dict,
+    all_modules: t.Dict[str, dict],
+    ietf_type: t.Optional[IETF] = None,
 ):
     result_html_dir = config.get('Web-Section', 'result-html-dir')
     domain_prefix = config.get('Web-Section', 'domain-prefix')
@@ -174,11 +173,7 @@ def check_yangcatalog_data(
     else:
         print(f'WARN: {name_revision} not in Redis yet')
         organization = _resolve_organization(parsed_yang, save_file_dir)
-        module_data: t.Dict[str, t.Any] = {
-            'name': name,
-            'revision': revision,
-            'organization': organization
-        }
+        module_data: t.Dict[str, t.Any] = {'name': name, 'revision': revision, 'organization': organization}
         incomplete = True
         update = True
     for field in ('document-name', 'reference', 'author-email'):
@@ -187,9 +182,8 @@ def check_yangcatalog_data(
             module_data[field] = new_module_data[field]
 
     compilation_status = new_module_data.get('compilation-status')
-    if (
-            compilation_status and
-            module_data.get('compilation-status') != (comp_status := compilation_status.lower().replace(' ', '-'))
+    if compilation_status and module_data.get('compilation-status') != (
+        comp_status := compilation_status.lower().replace(' ', '-')
     ):
         # Module parsed with --ietf flag (= RFC) has higher priority
         if is_rfc and ietf_type is None:
@@ -200,7 +194,12 @@ def check_yangcatalog_data(
 
     if compilation_status is not None:
         file_url = _generate_compilation_result_file(
-            module_data, compilation_results, result_html_dir, is_rfc, versions, ietf_type,
+            module_data,
+            compilation_results,
+            result_html_dir,
+            is_rfc,
+            versions,
+            ietf_type,
         )
         if module_data.get('compilation-status') == 'unknown':
             comp_result = ''
@@ -265,6 +264,7 @@ def _resolve_organization(parsed_yang: Statement, save_file_dir: str) -> str:
     namespace = namespace[0].arg if (namespace := parsed_yang.search('namespace')) else None
     return namespace_to_organization(namespace) if namespace else 'independent'
 
+
 def _resolve_maturity_level(ietf_type: t.Optional[IETF], document_name: t.Optional[str]) -> t.Optional[str]:
     if not document_name or not ietf_type:
         return 'not-applicable'
@@ -284,18 +284,16 @@ def _resolve_working_group(name_revision: str, ietf_type: IETF, document_name: s
 
 def _render(tpl_path: str, context: dict) -> str:
     """Render jinja html template
-        Arguments:
-            :param tpl_path: (str) path to a file
-            :param context: (dict) dictionary containing data to render jinja
-                template file
-            :return: string containing rendered html file
+    Arguments:
+        :param tpl_path: (str) path to a file
+        :param context: (dict) dictionary containing data to render jinja
+            template file
+        :return: string containing rendered html file
     """
     for key in context['result']:
         context['result'][key] = context['result'][key].replace('\n', '<br>')
     path, filename = os.path.split(tpl_path)
-    return jinja2.Environment(
-        loader=jinja2.FileSystemLoader(path or './')
-    ).get_template(filename).render(context)
+    return jinja2.Environment(loader=jinja2.FileSystemLoader(path or './')).get_template(filename).render(context)
 
 
 def _path_in_dir(yang_file_path: str) -> str:
@@ -311,7 +309,7 @@ def _path_in_dir(yang_file_path: str) -> str:
 
 
 def _generate_ths(versions: dict, ietf_type: t.Optional[IETF]) -> t.List[str]:
-    ths = list()
+    ths = []
     option = '--lint'
     if ietf_type is not None:
         option = '--ietf'
@@ -319,26 +317,27 @@ def _generate_ths(versions: dict, ietf_type: t.Optional[IETF]) -> t.List[str]:
     ths.append(f'Compilation Results (pyang {option}). {pyang_version}')
     ths.append(f'Compilation Results (pyang). Note: also generates errors for imported files. {pyang_version}')
     ths.append(
-        f'Compilation Results (confdc). Note: also generates errors for imported files. {versions.get("confd_version")}'
+        f'Compilation Results (confdc). Note: '
+        f'also generates errors for imported files. {versions.get("confd_version")}',
     )
     ths.append(
         'Compilation Results (yangdump-pro). Note: '
-        f'also generates errors for imported files. {versions.get("yangdump_version")}'
+        f'also generates errors for imported files. {versions.get("yangdump_version")}',
     )
     ths.append(
         'Compilation Results (yanglint -i). Note: '
-        f'also generates errors for imported files. {versions.get("yanglint_version")}'
+        f'also generates errors for imported files. {versions.get("yanglint_version")}',
     )
     return ths
 
 
 def _generate_compilation_result_file(
-        module_data: dict,
-        compilation_results: dict,
-        result_html_dir: str,
-        is_rfc: bool,
-        versions: dict,
-        ietf_type: t.Optional[IETF]
+    module_data: dict,
+    compilation_results: dict,
+    result_html_dir: str,
+    is_rfc: bool,
+    versions: dict,
+    ietf_type: t.Optional[IETF],
 ) -> str:
     name = module_data['name']
     rev = module_data['revision']

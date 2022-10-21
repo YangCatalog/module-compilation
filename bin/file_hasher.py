@@ -30,7 +30,6 @@ import hashlib
 import json
 
 import filelock
-
 from create_config import create_config
 from versions import ValidatorsVersions
 
@@ -48,7 +47,7 @@ class FileHasher:
         self.updated_hashes = {}
 
     def hash_file(self, path: str):
-        """ Create hash from content of the given file and validators versions.
+        """Create hash from content of the given file and validators versions.
         Each time either the content of the file or the validator version change,
         the resulting hash will be different.
 
@@ -68,7 +67,7 @@ class FileHasher:
         return file_hash.hexdigest()
 
     def _load_hashed_files_list(self, dst_dir: str = ''):
-        """ Load dumped list of files content hashes from .json file.
+        """Load dumped list of files content hashes from .json file.
         Several threads can access this file at once, so locking the file
         while accessing is necessary.
         """
@@ -86,7 +85,7 @@ class FileHasher:
         return hashed_files_list
 
     def dump_hashed_files_list(self, dst_dir: str = ''):
-        """ Dumped updated list of files content hashes into .json file.
+        """Dumped updated list of files content hashes into .json file.
         Several threads can access this file at once, so locking the file
         while accessing is necessary.
         """
@@ -111,14 +110,13 @@ class FileHasher:
             print('Dictionary of {} hashes successfully dumped into .json file'.format(len(hash_cache)))
 
     def _get_versions(self):
-        """ Return encoded validators versions dictionary.
-        """
+        """Return encoded validators versions dictionary."""
         validators_versions = ValidatorsVersions()
         actual_versions = validators_versions.get_versions()
         return json.dumps(actual_versions).encode('utf-8')
 
     def should_parse(self, path: str):
-        """ Decide whether module at the given path should be parsed or not.
+        """Decide whether module at the given path should be parsed or not.
         Check whether file content hash has changed and keep it for the future use.
 
         Argument:
