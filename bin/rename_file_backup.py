@@ -30,7 +30,7 @@ def rename_file_backup(src_dir: str, backup_dir: str, debug_level: int = 0) -> N
     """Backup each of the files by renaming them with the current timestamp appended to the file name.
 
     Arguments:
-        :param src_dir      (str) Directory where the files to backup are stored
+        :param src_dir      (str) Directory where the files to back up are stored
         :param backup_dir   (str) Directory where to save backup files
         :param debug_level  (int) debug level; If > 0 print some debug statements to the console
     """
@@ -41,10 +41,10 @@ def rename_file_backup(src_dir: str, backup_dir: str, debug_level: int = 0) -> N
         try:
             os.makedirs(backup_dir)
         except OSError:
-            print('Unable to create directory: {}'.format(backup_dir))
+            print(f'Unable to create directory: {backup_dir}')
             return
 
-    files_to_backup = [
+    files_to_backup = (
         'IETFYANGPageMain.html',
         'IETFCiscoAuthorsYANGPageCompilation.html',
         'IETFYANGOutOfRFC.html',
@@ -55,23 +55,23 @@ def rename_file_backup(src_dir: str, backup_dir: str, debug_level: int = 0) -> N
         'IEEEExperimentalYANGPageCompilation.html',
         'YANGPageMain.html',
         'IETFYANGRFC.html',
-    ]
+    )
     for filename in files_to_backup:
         name, extension = filename.split('.')
         full_path_file = os.path.join(src_dir, filename)
         if not os.path.isfile(full_path_file):
-            print('*** file {} not present!'.format(full_path_file))
+            print(f'*** file {full_path_file} not present!')
             continue
         modified_time = os.path.getmtime(full_path_file)
         timestamp = datetime.fromtimestamp(modified_time).strftime('%Y_%m_%d')
         if name == 'IETFYANGRFC':
             name = 'IETFYANGOutOfRFC'
-        new_filename = '{}_{}.{}'.format(name, timestamp, extension)
+        new_filename = f'{name}_{timestamp}.{extension}'
         new_full_path_file = os.path.join(backup_dir, new_filename)
         if debug_level > 0:
-            print('DEBUG: file full path: {}'.format(full_path_file))
+            print(f'DEBUG: file full path: {full_path_file}')
             print('DEBUG: last modified: %s' % time.ctime(os.path.getmtime(full_path_file)))
-            print('DEBUG: new file name: {}'.format(new_full_path_file))
+            print(f'DEBUG: new file name: {new_full_path_file}')
         shutil.copy2(full_path_file, new_full_path_file)
 
 

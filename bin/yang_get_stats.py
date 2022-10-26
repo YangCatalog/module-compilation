@@ -91,15 +91,20 @@ class GetStats:
         self.draft_path_nostrict = os.path.join(self.ietf_directory, 'draft-with-YANG-no-strict')
         self.draft_path_diff = os.path.join(self.ietf_directory, 'draft-with-YANG-diff')
         self.stats_path = os.path.join(self.web_private, 'stats')
+        self.files: list[str] = []
+        self.remove_old_html_file_paths: list[str] = []
 
     def start_process(self):
         all_files = self._list_of_files_in_dir(self.backup_directory, 'html')
         # only select the files created within the number of days selected
-        if int(args.days) > 0:
-            self.files = self._list_of_files_in_dir_created_after_date(all_files, self.backup_directory, int(args.days))
+        if int(self.args.days) > 0:
+            self.files = self._list_of_files_in_dir_created_after_date(
+                all_files,
+                self.backup_directory,
+                int(self.args.days),
+            )
         else:
             self.files = all_files
-        self.remove_old_html_files = []
 
         self.gather_yang_page_main_compilation_stats()
         self.gather_ietf_yang_page_main_compilation_stats()
@@ -108,16 +113,14 @@ class GetStats:
 
         self.print_files_information()
 
-        for filename in self.remove_old_html_files:
-            try:
-                os.unlink(filename)
-            except FileNotFoundError:
-                pass
+        for path in self.remove_old_html_file_paths:
+            if os.path.exists(path):
+                os.unlink(path)
 
     def gather_yang_page_main_compilation_stats(self):
         json_history_file = os.path.join(self.backup_directory, f'{self.YANG_PAGE_MAIN_PREFIX}history.json')
         yang_page_compilation_stats = self._load_compilation_stats_from_history_file(json_history_file)
-        for filename in self._file_names_containing_keyword(self.files, self.YANG_PAGE_MAIN_PREFIX):
+        for filename in self._file_names_containing_keyword(self.YANG_PAGE_MAIN_PREFIX):
             path_to_file = os.path.join(self.backup_directory, filename)
             generated_at = 0
             passed = 0
@@ -125,7 +128,7 @@ class GetStats:
             failed = 0
             extracted_date = self._extract_date_from_filename(filename)
             if (datetime.date.today() - extracted_date).days > 30:
-                self.remove_old_html_files.append(path_to_file)
+                self.remove_old_html_file_paths.append(path_to_file)
             i = 0
             with open(path_to_file) as f:
                 for line in f:
@@ -133,13 +136,13 @@ class GetStats:
                     if i == 2:
                         generated_at = line.split('on')[-1].split('by')[0].strip()
                     elif i == 6:
-                        result = line.split(':')[-1].split('/')[0]
+                        result = line.split(':')[-1].split('/')[0].strip()
                         passed = int(result) if result.isnumeric() else 0
                     elif i == 7:
-                        result = line.split(':')[-1].split('/')[0]
+                        result = line.split(':')[-1].split('/')[0].strip()
                         passed_with_warnings = int(result) if result.isnumeric() else 0
                     elif i == 8:
-                        result = line.split(':')[-1].split('/')[0]
+                        result = line.split(':')[-1].split('/')[0].strip()
                         failed = int(result) if result.isnumeric() else 0
                     elif i == 9:
                         i = 0
@@ -151,15 +154,19 @@ class GetStats:
                                 'failed': failed,
                             },
                         }
-        if int(args.days) == -1:
+        if int(self.args.days) == -1:
             with open(json_history_file, 'w') as filename:
                 json.dump(yang_page_compilation_stats, filename)
-            self._write_dictionary_file_in_json(yang_page_compilation_stats, self.stats_path, 'YANGPageMainStats.json')
+            self._write_dictionary_file_in_json(
+                yang_page_compilation_stats,
+                self.stats_path,
+                f'{self.YANG_PAGE_MAIN_PREFIX[:-1]}Stats.json',
+            )
 
     def gather_ietf_yang_page_main_compilation_stats(self):
         json_history_file = os.path.join(self.backup_directory, f'{self.IETF_YANG_PAGE_MAIN_PREFIX}history.json')
         yang_page_compilation_stats = self._load_compilation_stats_from_history_file(json_history_file)
-        for filename in self._file_names_containing_keyword(self.files, self.IETF_YANG_PAGE_MAIN_PREFIX):
+        for filename in self._file_names_containing_keyword(self.IETF_YANG_PAGE_MAIN_PREFIX):
             path_to_file = os.path.join(self.backup_directory, filename)
             total = 0
             passed_with_warnings = 0
@@ -169,23 +176,23 @@ class GetStats:
             with open(path_to_file, 'r') as f:
                 for line in f:
                     if 'correctly extracted YANG models' in line:
-                        amount = line.split(':')[-1]
+                        amount = line.split(':')[-1].strip()
                         total = int(amount) if amount.isnumeric() else total
                     elif 'without warnings' in line:
-                        amount = line.split(':')[-1].split('/')[0]
+                        amount = line.split(':')[-1].split('/')[0].strip()
                         passed = int(amount) if amount.isnumeric() else passed
                     elif 'with warnings' in line:
-                        amount = line.split(':')[-1].split('/')[0]
+                        amount = line.split(':')[-1].split('/')[0].strip()
                         passed_with_warnings = int(amount) if amount.isnumeric() else passed_with_warnings
                     elif '(example, badly formatted, etc. )' in line:
-                        amount = line.split(':')[-1]
+                        amount = line.split(':')[-1].strip()
                         badly_formated = int(amount) if amount.isnumeric() else badly_formated
                     elif 'correctly extracted example YANG' in line:
-                        amount = line.split(':')[-1]
+                        amount = line.split(':')[-1].strip()
                         examples = int(amount) if amount.isnumeric() else examples
             extracted_date = self._extract_date_from_filename(filename)
             if (datetime.date.today() - extracted_date).days > 30:
-                self.remove_old_html_files.append(path_to_file)
+                self.remove_old_html_file_paths.append(path_to_file)
             yang_page_compilation_stats[date2num(extracted_date)] = {
                 'total': total,
                 'warnings': passed_with_warnings,
@@ -193,13 +200,13 @@ class GetStats:
                 'badly formated': badly_formated,
                 'examples': examples,
             }
-        if int(args.days) == -1:
+        if int(self.args.days) == -1:
             with open(json_history_file, 'w') as filename:
                 json.dump(yang_page_compilation_stats, filename)
             self._write_dictionary_file_in_json(
                 yang_page_compilation_stats,
                 self.stats_path,
-                'IETFYANGPageMainStats.json',
+                f'{self.IETF_YANG_PAGE_MAIN_PREFIX[:-1]}Stats.json',
             )
 
     def gather_backups_compilation_stats(self):
@@ -208,7 +215,7 @@ class GetStats:
             print('FILENAME: NUMBER OF DAYS SINCE EPOCH, TOTAL YANG MODULES, PASSED, PASSEDWITHWARNINGS, FAILED')
             json_history_file = os.path.join(self.backup_directory, f'{prefix}history.json')
             yang_page_compilation_stats = self._load_compilation_stats_from_history_file(json_history_file)
-            for filename in self._file_names_containing_keyword(self.files, prefix):
+            for filename in self._file_names_containing_keyword(prefix):
                 path_to_file = os.path.join(self.backup_directory, filename)
                 failed_result = 0
                 passed_result = 0
@@ -228,13 +235,13 @@ class GetStats:
                     total_result = str(int(failed_result) + int(passed_with_warning_result) + int(passed_result))
                 extracted_date = self._extract_date_from_filename(filename)
                 if (datetime.date.today() - extracted_date).days > 30:
-                    self.remove_old_html_files.append(path_to_file)
+                    self.remove_old_html_file_paths.append(path_to_file)
                 yang_page_compilation_stats[date2num(extracted_date)] = {
                     'total': total_result,
                     'warning': passed_with_warning_result,
                     'success': passed_result,
                 }
-            if int(args.days) == -1:
+            if int(self.args.days) == -1:
                 filename = (
                     'IETFYANGPageCompilationStats.json'
                     if prefix == 'IETFDraftYANGPageCompilation_'
@@ -245,12 +252,11 @@ class GetStats:
                 self._write_dictionary_file_in_json(yang_page_compilation_stats, self.stats_path, filename)
 
     def gather_ietf_yang_out_of_rfc_compilation_stats(self):
-        ietf_yang_out_of_rfc = {}
         print(f'\nLooking at the files starting with: {self.IETF_YANG_OUT_OF_RFC_PREFIX}')
         print('FILENAME: NUMBER OF DAYS SINCE EPOCH, NUMBER OF YANG MODELS IN RFCS')
         json_history_file = os.path.join(self.backup_directory, f'{self.IETF_YANG_OUT_OF_RFC_PREFIX}history.json')
         yang_page_compilation_stats = self._load_compilation_stats_from_history_file(json_history_file)
-        for filename in self._file_names_containing_keyword(self.files, self.IETF_YANG_OUT_OF_RFC_PREFIX):
+        for filename in self._file_names_containing_keyword(self.IETF_YANG_OUT_OF_RFC_PREFIX):
             path_to_file = os.path.join(self.backup_directory, filename)
             rfc_result = 0
             with open(path_to_file, 'r') as f:
@@ -259,16 +265,15 @@ class GetStats:
                         rfc_result += 1
             extracted_date = self._extract_date_from_filename(filename)
             if (datetime.date.today() - extracted_date).days > 30:
-                self.remove_old_html_files.append(path_to_file)
-                yang_page_compilation_stats[date2num(extracted_date)] = {'total': rfc_result}
-            ietf_yang_out_of_rfc[date2num(extracted_date)] = {'total': rfc_result}
-        if int(args.days) == -1:
+                self.remove_old_html_file_paths.append(path_to_file)
+            yang_page_compilation_stats[date2num(extracted_date)] = {'total': rfc_result}
+        if int(self.args.days) == -1:
             with open(json_history_file, 'w') as f:
                 json.dump(yang_page_compilation_stats, f)
             self._write_dictionary_file_in_json(
                 yang_page_compilation_stats,
                 self.stats_path,
-                'IETFYANGOutOfRFCStats.json',
+                f'{self.IETF_YANG_OUT_OF_RFC_PREFIX[:-1]}Stats.json',
             )
 
     def _load_compilation_stats_from_history_file(self, json_history_file: str) -> dict:
@@ -342,18 +347,19 @@ class GetStats:
         """
         Returns the list of file in a directory
 
-        :param srcdir:  (str) directory to search for files
-        :param extension:  (str) file extension to search for
+        Arguments:
+            :param srcdir:  (str) directory to search for files
+            :param extension:  (str) file extension to search for
         :return: list of files
         """
-        files = [filename for filename in os.listdir(srcdir) if os.path.isfile(os.path.join(srcdir, filename))]
         yang_files = []
-        for filename in files:
-            if filename.endswith(extension):
+        for filename in os.listdir(srcdir):
+            is_file = os.path.isfile(os.path.join(srcdir, filename))
+            if is_file and filename.endswith(extension):
                 yang_files.append(filename)
                 if self.debug_level > 0:
                     print(f'DEBUG: {filename}  in list_of_files_in_dir: ends with {extension}')
-            else:
+            elif is_file:
                 if self.debug_level > 0:
                     print(f'DEBUG: {filename} in list_of_files_in_dir: does not end with {extension}')
         return yang_files
@@ -362,9 +368,10 @@ class GetStats:
         """
         Selects the files created wihin the number of days selected
 
-        :param files:  (list[str]) list of files
-        :param srcdir:  (str) directory to search for files
-        :param days:  (int) number of days
+        Arguments:
+            :param files:  (list[str]) list of files
+            :param srcdir:  (str) directory to search for files
+            :param days:  (int) number of days
         :return: list of files
         """
         new_files = []
@@ -391,17 +398,17 @@ class GetStats:
                     print(f'Dont keep {filename}')
         return new_files
 
-    def _file_names_containing_keyword(self, files: list[str], keyword: str) -> list[str]:
+    def _file_names_containing_keyword(self, keyword: str) -> list[str]:
         """
         Returns the list of files whose names contain a specific keyword
 
-        :param files:  (list[str]) list of files to check
-        :param keyword:  (str) keyword for which to search
+        Arguments:
+            :param keyword:  (str) keyword for which to search
         :return: list of drafts containing the keyword
         """
         keyword = keyword.lower()
         files_with_keyword = []
-        for filename in files:
+        for filename in self.files:
             if keyword not in filename.lower():
                 continue
             if self.debug_level > 0:
@@ -412,19 +419,20 @@ class GetStats:
         files_with_keyword.sort()
         return files_with_keyword
 
-    def _list_of_ietf_draft_containing_keyword(self, drafts: list[str], keyword: str, draftpath: str) -> list[str]:
+    def _list_of_ietf_draft_containing_keyword(self, drafts: list[str], keyword: str, draft_path: str) -> list[str]:
         """
         Returns the IETF drafts that contain a specific keyword
 
-        :param drafts:  (list[str]) List of ietf drafts to search for the keyword
-        :param keyword:  (str) Keyword to search for
-        :param draftpath:  (str) Path to drafts folder
+        Arguments:
+            :param drafts:  (list[str]) List of ietf drafts to search for the keyword
+            :param keyword:  (str) Keyword to search for
+            :param draft_path:  (str) Path to drafts folder
         :return: List of ietf drafts containing the keyword
         """
         keyword = keyword.lower()
         list_of_ietf_draft_with_keyword = []
         for draft_filename in drafts:
-            with open(os.path.join(draftpath, draft_filename), 'r', encoding='utf-8') as draft_file:
+            with open(os.path.join(draft_path, draft_filename), 'r', encoding='utf-8') as draft_file:
                 draft_file_content = draft_file.read().lower()
             if draft_file_content.find(keyword) == -1:
                 continue
@@ -442,14 +450,16 @@ class GetStats:
         """
         Dumps data from in_dict to the json file.
 
-        :param in_dict: The dictionary to write
-        :param path: The directory where the json file with be created
-        :param file_name: The file name to be created
+        Arguments:
+            :param in_dict: The dictionary to write
+            :param path: The directory where the json file with be created
+            :param file_name: The file name to be created
         :return: None
         """
-        with open(os.path.join(path, file_name), 'w', encoding='utf-8') as outfile:
+        file_path = os.path.join(path, file_name)
+        with open(file_path, 'w', encoding='utf-8') as outfile:
             json.dump(in_dict, outfile, indent=2, sort_keys=True, separators=(',', ': '), ensure_ascii=True)
-        os.chmod(os.path.join(path, file_name), 0o664)
+        os.chmod(file_path, 0o664)
 
 
 if __name__ == '__main__':

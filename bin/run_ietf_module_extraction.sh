@@ -20,7 +20,7 @@ date +"%c: Starting" >$LOG
 # TODO probably to be moved inside the confd caller
 source $CONFD_DIR/confdrc
 
-# rsynch the IETF drafts and RFCs
+# rsync the IETF drafts and RFCs
 mkdir -p $IETFDIR/my-id-mirror
 mkdir -p $IETFDIR/rfc
 
