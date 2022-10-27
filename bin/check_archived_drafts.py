@@ -105,7 +105,7 @@ def main():
         unparsable_modules = []
 
     # Prepare a directory where the missing modules will be copied
-    dst_path = f'{missing_modules_directory}/yangmodels/yang/experimental/ietf-extracted-YANG-modules'
+    dst_path = os.path.join(missing_modules_directory, 'yangmodels/yang/experimental/ietf-extracted-YANG-modules')
     os.makedirs(dst_path, exist_ok=True)
 
     missing_modules = []
