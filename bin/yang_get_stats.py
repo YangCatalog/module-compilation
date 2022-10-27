@@ -27,6 +27,7 @@ from configparser import ConfigParser
 import matplotlib as mpl
 from create_config import create_config
 from matplotlib.dates import date2num
+from utility.utility import list_of_files_of_particular_extensions_in_dir
 
 mpl.use('Agg')
 
@@ -34,9 +35,6 @@ mpl.use('Agg')
 class GetStats:
     CATEGORIES_LIST = ['FAILED', 'PASSED WITH WARNINGS', 'PASSED', 'Email All Authors']
     BACKUPS_PREFIXES = [
-        'HydrogenODLPageCompilation_',
-        'HeliumODLPageCompilation_',
-        'LithiumODLPageCompilation_',
         'IETFCiscoAuthorsYANGPageCompilation_',
         'IETFDraftYANGPageCompilation_',
         'IANAStandardYANGPageCompilation_',
@@ -81,8 +79,8 @@ class GetStats:
     IETF_YANG_OUT_OF_RFC_PREFIX = 'IETFYANGOutOfRFC_'
 
     def __init__(self, args: argparse.Namespace, config: ConfigParser = create_config()):
-        self.args = args
         self.debug_level = args.debug
+        self.days = int(args.days)
         self.web_private = config.get('Web-Section', 'private-directory')
         self.backup_directory = config.get('Directory-Section', 'backup')
         self.ietf_directory = config.get('Directory-Section', 'ietf-directory')
@@ -95,13 +93,17 @@ class GetStats:
         self.remove_old_html_file_paths: list[str] = []
 
     def start_process(self):
-        all_files = self._list_of_files_in_dir(self.backup_directory, 'html')
+        all_files = list_of_files_of_particular_extensions_in_dir(
+            self.backup_directory,
+            ('html',),
+            debug_level=self.debug_level,
+        )
         # only select the files created within the number of days selected
-        if int(self.args.days) > 0:
+        if self.days > 0:
             self.files = self._list_of_files_in_dir_created_after_date(
                 all_files,
                 self.backup_directory,
-                int(self.args.days),
+                self.days,
             )
         else:
             self.files = all_files
@@ -154,7 +156,7 @@ class GetStats:
                                 'failed': failed,
                             },
                         }
-        if int(self.args.days) == -1:
+        if self.days == -1:
             with open(json_history_file, 'w') as filename:
                 json.dump(yang_page_compilation_stats, filename)
             self._write_dictionary_file_in_json(
@@ -200,7 +202,7 @@ class GetStats:
                 'badly formated': badly_formated,
                 'examples': examples,
             }
-        if int(self.args.days) == -1:
+        if self.days == -1:
             with open(json_history_file, 'w') as filename:
                 json.dump(yang_page_compilation_stats, filename)
             self._write_dictionary_file_in_json(
@@ -241,7 +243,7 @@ class GetStats:
                     'warning': passed_with_warning_result,
                     'success': passed_result,
                 }
-            if int(self.args.days) == -1:
+            if self.days == -1:
                 filename = (
                     'IETFYANGPageCompilationStats.json'
                     if prefix == 'IETFDraftYANGPageCompilation_'
@@ -267,7 +269,7 @@ class GetStats:
             if (datetime.date.today() - extracted_date).days > 30:
                 self.remove_old_html_file_paths.append(path_to_file)
             yang_page_compilation_stats[date2num(extracted_date)] = {'total': rfc_result}
-        if int(self.args.days) == -1:
+        if self.days == -1:
             with open(json_history_file, 'w') as f:
                 json.dump(yang_page_compilation_stats, f)
             self._write_dictionary_file_in_json(
@@ -342,27 +344,6 @@ class GetStats:
                 'DEBUG: print the diff between files and files_no_strict lists, '
                 f'so the files with xym extraction issues: {files_diff}',
             )
-
-    def _list_of_files_in_dir(self, srcdir: str, extension: str) -> list[str]:
-        """
-        Returns the list of file in a directory
-
-        Arguments:
-            :param srcdir:  (str) directory to search for files
-            :param extension:  (str) file extension to search for
-        :return: list of files
-        """
-        yang_files = []
-        for filename in os.listdir(srcdir):
-            is_file = os.path.isfile(os.path.join(srcdir, filename))
-            if is_file and filename.endswith(extension):
-                yang_files.append(filename)
-                if self.debug_level > 0:
-                    print(f'DEBUG: {filename}  in list_of_files_in_dir: ends with {extension}')
-            elif is_file:
-                if self.debug_level > 0:
-                    print(f'DEBUG: {filename} in list_of_files_in_dir: does not end with {extension}')
-        return yang_files
 
     def _list_of_files_in_dir_created_after_date(self, files: list[str], srcdir: str, days: int) -> list[str]:
         """

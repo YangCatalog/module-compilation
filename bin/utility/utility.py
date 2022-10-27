@@ -44,6 +44,60 @@ class IETF(Enum):
     EXAMPLE = auto()
 
 
+def list_of_files_of_particular_extensions_in_dir(
+    srcdir: str,
+    extensions: t.Union[tuple[str], list[str]],
+    return_full_paths: bool = False,
+    recursive: bool = False,
+    follow_links: bool = False,
+    debug_level: int = 0,
+) -> list[str]:
+    """
+    Returns the list of files in a directory with matching extensions.
+
+    Arguments:
+        :param srcdir: (str) directory to search for files
+        :param extensions: (str) file extensions to search for
+        :param return_full_paths: (bool) whether return a list of full paths to matching files or only filenames
+        :param recursive: (bool) whether to search for files in subdirectories or not
+        :param follow_links: (bool) set to true in order to follow symbolic links to subdirectories
+        during the recursive search
+        :param debug_level: (int) if greater than 0 - information about every file's extension will be printed
+    :return: list of matching files
+    """
+
+    def check_filename_has_matching_extension(file_path: str, filename: str) -> bool:
+        is_file = os.path.isfile(file_path)
+        if not is_file:
+            return False
+        file_extension = filename.rsplit('.', 1)[-1]
+        if file_extension in extensions:
+            if debug_level > 0:
+                print(f'DEBUG: "{file_path}" ends with {file_extension}')
+            return True
+        if debug_level > 0:
+            print(f'DEBUG: "{file_path}" does not end with one of the extensions: {extensions}')
+        return False
+
+    matching_files = []
+    if recursive:
+        for root, _, filenames in os.walk(srcdir, followlinks=follow_links):
+            for filename in filenames:
+                path = os.path.join(root, filename)
+                if not check_filename_has_matching_extension(path, filename):
+                    continue
+                matching_file = path if return_full_paths else filename
+                matching_files.append(matching_file)
+        return matching_files
+    for filename in os.listdir(srcdir):
+        path = os.path.join(srcdir, filename)
+        if not check_filename_has_matching_extension(path, filename):
+            continue
+        matching_file = path if return_full_paths else filename
+        matching_files.append(matching_file)
+    return matching_files
+
+
 def module_or_submodule(yang_file_path: str) -> t.Optional[str]:
     """
     Try to find out if the given model is a submodule or a module.

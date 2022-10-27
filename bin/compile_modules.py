@@ -33,7 +33,13 @@ from parsers.confdc_parser import ConfdcParser
 from parsers.pyang_parser import PyangParser
 from parsers.yangdump_pro_parser import YangdumpProParser
 from parsers.yanglint_parser import YanglintParser
-from utility.utility import IETF, check_yangcatalog_data, module_or_submodule, number_that_passed_compilation
+from utility.utility import (
+    IETF,
+    check_yangcatalog_data,
+    list_of_files_of_particular_extensions_in_dir,
+    module_or_submodule,
+    number_that_passed_compilation,
+)
 
 __author__ = 'Benoit Claise'
 __copyright__ = 'Copyright(c) 2015-2018, Cisco Systems, Inc.,  Copyright The IETF Trust 2022, All Rights Reserved'
@@ -44,25 +50,6 @@ __email__ = 'bclaise@cisco.com'
 # ----------------------------------------------------------------------
 # Functions
 # ----------------------------------------------------------------------
-
-
-def list_of_yang_modules_in_subdir(srcdir: str, debug_level: int) -> list:
-    """
-    Returns the list of YANG Modules (.yang) in all sub-directories
-
-    Arguments:
-        :param srcdir           (str) root directory to search for yang files
-        :param debug_level      (int) If > 0 print some debug statements to the console
-        :return: list of YANG files found in all subdirectories of root directory
-    """
-    ll = []
-    for root, _, files in os.walk(srcdir):
-        for f in files:
-            if f.endswith('.yang'):
-                if debug_level > 0:
-                    print(os.path.join(root, f))
-                ll.append(os.path.join(root, f))
-    return ll
 
 
 def get_mod_rev(yang_file) -> str:
@@ -394,7 +381,13 @@ def main():
 
     modules = get_modules(temp_dir, yangcatalog_api_prefix)
 
-    yang_list = list_of_yang_modules_in_subdir(args.rootdir, args.debug)
+    yang_list = list_of_files_of_particular_extensions_in_dir(
+        args.rootdir,
+        ('yang',),
+        return_full_paths=True,
+        recursive=True,
+        debug_level=args.debug,
+    )
 
     parser_args = {'root_directory': args.rootdir, 'lint': args.lint, 'allinclusive': args.allinclusive}
 
