@@ -15,11 +15,8 @@ import os
 import re
 import sys
 
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 import networkx as nx
-
-mpl.use('Agg')  # To prevent using a X-Windows server
 
 __author__ = 'Jan Medved, Eric Vyncke'
 __copyright__ = 'Copyright(c) 2015, Cisco Systems, Inc.,  Copyright The IETF Trust 2019, All Rights Reserved'

@@ -1,0 +1,6 @@
+# Matplotlib chooses Xwindows backend by default.
+# We need to set matplotlib to not use it, because it will results
+# in following error:
+#
+# _tkinter.TclError: no display name and no $DISPLAY environment variable
+"backend: Agg"
