@@ -27,7 +27,7 @@ from configparser import ConfigParser
 import matplotlib as mpl
 from create_config import create_config
 from matplotlib.dates import date2num
-from utility.utility import list_of_files_of_particular_extensions_in_dir
+from utility.utility import list_files_by_extensions
 
 mpl.use('Agg')
 
@@ -93,7 +93,7 @@ class GetStats:
         self.remove_old_html_file_paths: list[str] = []
 
     def start_process(self):
-        all_files = list_of_files_of_particular_extensions_in_dir(
+        all_files = list_files_by_extensions(
             self.backup_directory,
             ('html',),
             debug_level=self.debug_level,

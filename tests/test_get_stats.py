@@ -1,3 +1,22 @@
+# Copyright The IETF Trust 2022, All Rights Reserved
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+__author__ = 'Bohdan Konovalenko'
+__copyright__ = 'Copyright The IETF Trust 2022, All Rights Reserved'
+__license__ = 'Apache License, Version 2.0'
+__email__ = 'bohdan.konovalenko@pantheon.tech'
+
 import argparse
 import json
 import os
@@ -7,7 +26,7 @@ from configparser import ConfigParser
 from uuid import uuid4
 
 from create_config import create_config
-from utility.utility import list_of_files_of_particular_extensions_in_dir
+from utility.utility import list_files_by_extensions
 from yang_get_stats import GetStats
 
 
@@ -78,7 +97,7 @@ class TestGetStats(unittest.TestCase):
             self.assertNotEqual(history_data, {})
 
     def test_gather_yang_page_main_compilation_stats(self):
-        self.get_stats_instance.files = list_of_files_of_particular_extensions_in_dir(
+        self.get_stats_instance.files = list_files_by_extensions(
             self.backup_directory,
             ('html',),
         )
@@ -101,7 +120,7 @@ class TestGetStats(unittest.TestCase):
         )
 
     def test_gather_ietf_yang_page_main_compilation_stats(self):
-        self.get_stats_instance.files = list_of_files_of_particular_extensions_in_dir(self.backup_directory, ('html',))
+        self.get_stats_instance.files = list_files_by_extensions(self.backup_directory, ('html',))
         self.get_stats_instance.gather_ietf_yang_page_main_compilation_stats()
         ietf_page_main_prefix = self.get_stats_instance.IETF_YANG_PAGE_MAIN_PREFIX
         stats_data, history_data = self._get_stats_and_history_files_data(ietf_page_main_prefix)
@@ -122,7 +141,7 @@ class TestGetStats(unittest.TestCase):
         )
 
     def test_gather_backups_compilation_stats(self):
-        self.get_stats_instance.files = list_of_files_of_particular_extensions_in_dir(self.backup_directory, ('html',))
+        self.get_stats_instance.files = list_files_by_extensions(self.backup_directory, ('html',))
         self.get_stats_instance.gather_backups_compilation_stats()
         backup_prefix = 'IEEEStandardDraftYANGPageCompilation_'
         stats_data, history_data = self._get_stats_and_history_files_data(backup_prefix)
@@ -141,7 +160,7 @@ class TestGetStats(unittest.TestCase):
         )
 
     def test_gather_ietf_yang_out_of_rfc_compilation_stats(self):
-        self.get_stats_instance.files = list_of_files_of_particular_extensions_in_dir(self.backup_directory, ('html',))
+        self.get_stats_instance.files = list_files_by_extensions(self.backup_directory, ('html',))
         self.get_stats_instance.gather_ietf_yang_out_of_rfc_compilation_stats()
         out_of_rfc_prefix = self.get_stats_instance.IETF_YANG_OUT_OF_RFC_PREFIX
         stats_data, history_data = self._get_stats_and_history_files_data(out_of_rfc_prefix)

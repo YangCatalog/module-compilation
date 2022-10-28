@@ -34,8 +34,8 @@ from remove_directory_content import remove_directory_content
 
 
 def custom_print(message: str):
-    timestamp = '{} ({}):'.format(datetime.datetime.now().time(), os.getpid())
-    print('{} {}'.format(timestamp, message), flush=True)
+    timestamp = f'{datetime.datetime.now().time()} ({os.getpid()}):'
+    print(f'{timestamp} {message}', flush=True)
 
 
 def main():
@@ -53,7 +53,7 @@ def main():
     parser.add_argument('--debug', help='Debug level - default is 0', type=int, default=0)
     args = parser.parse_args()
 
-    custom_print('Starting {} script'.format(os.path.basename(__file__)))
+    custom_print(f'Starting {os.path.basename(__file__)} script')
 
     all_yang_drafts_strict = os.path.join(temp_dir, 'draft-with-YANG-strict')
     missing_modules_directory = os.path.join(temp_dir, 'drafts-missing-modules')
@@ -70,7 +70,7 @@ def main():
         remove_directory_content(missing_modules_directory, args.debug)
         remove_directory_content(all_yang_drafts_strict, args.debug)
 
-        custom_print('Extracting modules from drafts stored in {}'.format(archived_draft_path))
+        custom_print(f'Extracting modules from drafts stored in {archived_draft_path}')
         draft_extractor = DraftExtractor(
             draft_extractor_paths,
             args.debug,
@@ -86,11 +86,11 @@ def main():
         return
 
     custom_print('Loading all modules data from API')
-    all_modules = requests.get('{}/search/modules'.format(yangcatalog_api_prefix)).json()
+    all_modules = requests.get(f'{yangcatalog_api_prefix}/search/modules').json()
     all_modules_keys = []
     if all_modules:
         all_modules = all_modules.get('module', [])
-        all_modules_keys = ['{}@{}'.format(m.get('name'), m.get('revision')) for m in all_modules]
+        all_modules_keys = [f'{m.get("name")}@{m.get("revision")}' for m in all_modules]
 
     try:
         resources_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'resources')
@@ -105,18 +105,22 @@ def main():
         unparsable_modules = []
 
     # Prepare a directory where the missing modules will be copied
-    dst_path = '{}/yangmodels/yang/experimental/ietf-extracted-YANG-modules'.format(missing_modules_directory)
-    if not os.path.isdir(dst_path):
-        os.makedirs(dst_path)
+    dst_path = os.path.join(missing_modules_directory, 'yangmodels/yang/experimental/ietf-extracted-YANG-modules')
+    os.makedirs(dst_path, exist_ok=True)
 
     missing_modules = []
     incorrect_revision_modules = []
+    modules_to_skip = (*old_modules, *unparsable_modules)
     for yang_file in draft_extractor.inverted_draft_yang_dict:
-        name_revision = yang_file.split('.yang')[0]
-        if any(yang_file in module for module in (old_modules, unparsable_modules)) or yang_file.startswith('example'):
+        if (
+            yang_file.startswith('example')
+            or yang_file.startswith('@')
+            or any(yang_file in module for module in modules_to_skip)
+        ):
             continue
-        if '@' in yang_file:
-            revision = yang_file.split('@')[-1].split('.yang')[0]
+        name_revision = yang_file.split('.yang')[0]
+        if '@' in name_revision:
+            revision = name_revision.split('@')[-1]
             _, month, day = revision.split('-')
             if len(month) != 2 or len(day) != 2:
                 incorrect_revision_modules.append(yang_file)
@@ -144,7 +148,7 @@ def main():
     message = {'label': 'Number of missing modules', 'message': len(missing_modules)}
     end = int(time.time())
     job_log(start, end, temp_dir, os.path.basename(__file__), messages=[message], status='Success')
-    custom_print('end of {} job'.format(os.path.basename(__file__)))
+    custom_print(f'end of {os.path.basename(__file__)} job')
 
 
 if __name__ == '__main__':

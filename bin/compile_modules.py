@@ -36,7 +36,7 @@ from parsers.yanglint_parser import YanglintParser
 from utility.utility import (
     IETF,
     check_yangcatalog_data,
-    list_of_files_of_particular_extensions_in_dir,
+    list_files_by_extensions,
     module_or_submodule,
     number_that_passed_compilation,
 )
@@ -381,7 +381,7 @@ def main():
 
     modules = get_modules(temp_dir, yangcatalog_api_prefix)
 
-    yang_list = list_of_files_of_particular_extensions_in_dir(
+    yang_list = list_files_by_extensions(
         args.rootdir,
         ('yang',),
         return_full_paths=True,

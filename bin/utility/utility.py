@@ -44,7 +44,7 @@ class IETF(Enum):
     EXAMPLE = auto()
 
 
-def list_of_files_of_particular_extensions_in_dir(
+def list_files_by_extensions(
     srcdir: str,
     extensions: t.Union[tuple[str], list[str]],
     return_full_paths: bool = False,

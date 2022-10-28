@@ -16,7 +16,7 @@ import sys
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import networkx as nx
-from utility.utility import list_of_files_of_particular_extensions_in_dir
+from utility.utility import list_files_by_extensions
 
 mpl.use('Agg')  # To prevent using a X-Windows server
 
@@ -76,7 +76,7 @@ def get_local_yang_files(local_repos: list[str], recurse: bool = False) -> list[
     yfs = []
     for repo in local_repos:
         yfs.extend(
-            list_of_files_of_particular_extensions_in_dir(
+            list_files_by_extensions(
                 repo,
                 ('yang',),
                 return_full_paths=True,
