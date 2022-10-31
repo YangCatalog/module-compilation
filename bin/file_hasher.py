@@ -28,6 +28,7 @@ __email__ = 'slavomir.mazur@pantheon.tech'
 
 import hashlib
 import json
+import os.path
 
 import filelock
 from create_config import create_config
@@ -46,8 +47,9 @@ class FileHasher:
         self.files_hashes = self._load_hashed_files_list(dst_dir)
         self.updated_hashes = {}
 
-    def hash_file(self, path: str):
-        """Create hash from content of the given file and validators versions.
+    def hash_file(self, path: str) -> str:
+        """
+        Create hash from content of the given file and validators versions.
         Each time either the content of the file or the validator version change,
         the resulting hash will be different.
 
@@ -66,19 +68,19 @@ class FileHasher:
 
         return file_hash.hexdigest()
 
-    def _load_hashed_files_list(self, dst_dir: str = ''):
+    def _load_hashed_files_list(self, dst_dir: str = '') -> list[dict]:
         """Load dumped list of files content hashes from .json file.
         Several threads can access this file at once, so locking the file
         while accessing is necessary.
         """
         dst_dir = dst_dir or self.cache_dir
 
-        with filelock.FileLock('{}/sdo_files_modification_hashes.json.lock'.format(dst_dir)):
+        with filelock.FileLock(os.path.join(dst_dir, 'sdo_files_modification_hashes.json.lock')):
             print('Lock acquired.')
             try:
-                with open('{}/sdo_files_modification_hashes.json'.format(dst_dir), 'r') as reader:
+                with open(os.path.join(dst_dir, 'sdo_files_modification_hashes.json'), 'r') as reader:
                     hashed_files_list = json.load(reader)
-                    print('Dictionary of {} hashes loaded successfully'.format(len(hashed_files_list)))
+                    print(f'Dictionary of {len(hashed_files_list)} hashes loaded successfully')
             except FileNotFoundError:
                 hashed_files_list = {}
 
@@ -95,34 +97,35 @@ class FileHasher:
         dst_dir = self.cache_dir if dst_dir == '' else dst_dir
 
         # Load existing hashes, merge with new one, then dump all to the .json file
-        with filelock.FileLock('{}/sdo_files_modification_hashes.json.lock'.format(dst_dir)):
+        with filelock.FileLock(os.path.join(dst_dir, 'sdo_files_modification_hashes.json.lock')):
             try:
-                with open('{}/sdo_files_modification_hashes.json'.format(dst_dir), 'r') as reader:
+                with open(os.path.join(dst_dir, 'sdo_files_modification_hashes.json'), 'r') as reader:
                     hash_cache = json.load(reader)
-                    print('Dictionary of {} hashes loaded successfully'.format(len(hash_cache)))
+                    print(f'Dictionary of {len(hash_cache)} hashes loaded successfully')
             except FileNotFoundError:
                 hash_cache = {}
 
             hash_cache.update(self.updated_hashes)
 
-            with open('{}/sdo_files_modification_hashes.json'.format(dst_dir), 'w') as writer:
+            with open(os.path.join(dst_dir, 'sdo_files_modification_hashes.json'), 'w') as writer:
                 json.dump(hash_cache, writer, indent=2, sort_keys=True)
-            print('Dictionary of {} hashes successfully dumped into .json file'.format(len(hash_cache)))
+            print(f'Dictionary of {len(hash_cache)} hashes successfully dumped into .json file')
 
-    def _get_versions(self):
+    def _get_versions(self) -> bytes:
         """Return encoded validators versions dictionary."""
         validators_versions = ValidatorsVersions()
         actual_versions = validators_versions.get_versions()
         return json.dumps(actual_versions).encode('utf-8')
 
-    def should_parse(self, path: str):
-        """Decide whether module at the given path should be parsed or not.
+    def should_parse(self, path: str) -> tuple[bool, str]:
+        """
+        Decide whether module at the given path should be parsed or not.
         Check whether file content hash has changed and keep it for the future use.
 
         Argument:
             :param path     (str) Full path to the file to be hashed
         """
         file_hash = self.hash_file(path)
-        old_file_hash = self.files_hashes.get(path, None)
+        old_file_hash = self.files_hashes.get(path)
         hash_changed = old_file_hash != file_hash
-        return [self.force_compilation or hash_changed, file_hash]
+        return self.force_compilation or hash_changed, file_hash
