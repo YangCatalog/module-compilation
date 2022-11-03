@@ -172,16 +172,9 @@ class GetStats:
 
     def _filename_contains_prefix(self, filename: str) -> t.Optional[str]:
         filename = filename.lower()
-        # We have to find the longest one in order to prevent incorrect results, here's the explanation:
-        # filename = IETFYANGPageMain_2022_01_01.html -> prefixes YANGPageMain_ and IETFYANGPageMain_ are both present
-        # in this filename but only IETFYANGPageMain_ is the correct one
-        longest_prefix = None
         for prefix in self.ALL_PREFIXES:
-            if prefix.lower() not in filename:
-                continue
-            if not longest_prefix or len(prefix) > len(longest_prefix):
-                longest_prefix = prefix
-        return longest_prefix
+            if filename.startswith(prefix.lower()):
+                return prefix
 
     def gather_yang_page_main_compilation_stats(self, filename: str):
         prefix_info = self.prefixes_info[self.YANG_PAGE_MAIN_PREFIX]
