@@ -1,0 +1,6 @@
+{% extends "base" %}
+{% block emoji_coverage_down %}
+{% for file_diff_coverage in diff_coverage.files %}
+    <li>PATH: {{ file_diff_coverage.path }}, PERCENT COVERED: {{ file_diff_coverage.percent_covered }}</li>
+{% endfor %}
+{% endblock emoji_coverage_down %}

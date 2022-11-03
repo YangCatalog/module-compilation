@@ -24,6 +24,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -r lint_requirements.txt
+          pip install -r tests_requirements.txt
           cd bin/resources/HTML
           python setup.py install
 
@@ -41,4 +42,19 @@ jobs:
           export YANGCATALOG_CONFIG_PATH=$PWD/tests/resources/test.conf
           export PYTHONPATH=$PWD/bin:$PYTHONPATH
           export VIRTUAL_ENV=$PWD
-          pytest
+          pytest --junitxml=pytest.xml --cov=. | tee pytest-coverage.txt
+
+      - name: Pytest coverage comment
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          title: Coverage Report
+          pytest-coverage-path: pytest-coverage.txt
+          junitxml-title: Coverage Summary
+          junitxml-path: pytest.xml
+          badge-title: Coverage
+          hide-badge: false
+          hide-report: false
+          create-new-comment: false
+          hide-comment: false
+          report-only-changed-files: false
+          remove-link-from-badge: false
