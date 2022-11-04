@@ -13,9 +13,7 @@
 ---
 
 ## COVERAGE
-For test coverage we are using [Coverage.py](https://coverage.readthedocs.io/en/6.5.0/). Here you can see which modules are currently covered in tests (**do not forget to update this information every time you create/update/delete a test; follow the steps listed below, run coverage for all tests, and paste the screenshot of the covered scripts from the ```tests/htmlcov/index.html```**):
-![img.png](tests_coverage.png)
-
+For test coverage we are using [Coverage.py](https://coverage.readthedocs.io/en/6.5.0/).
 To see all the information about the tests coverage locally follow these steps:
 - Attach to the ```yc-sdo-analysis``` container
 - Run ```pip install coverage``` (this is not necessary if ```coverage``` is added to your requirements.txt file locally)

@@ -1,3 +1,4 @@
+[coverage.svg](.github/images/coverage.svg)
 # SDO ANALYSIS
 
 ## Overview

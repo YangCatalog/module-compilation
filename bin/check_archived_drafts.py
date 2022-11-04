@@ -58,6 +58,8 @@ def main():
     all_yang_drafts_strict = os.path.join(temp_dir, 'draft-with-YANG-strict')
     missing_modules_directory = os.path.join(temp_dir, 'drafts-missing-modules')
     all_yang_path = os.path.join(temp_dir, 'YANG-ALL')
+    os.makedirs(all_yang_path, exist_ok=True)
+
     draft_extractor_paths = {
         'draft_path': archived_draft_path,
         'yang_path': yang_path,
@@ -149,6 +151,9 @@ def main():
     end = int(time.time())
     job_log(start, end, temp_dir, os.path.basename(__file__), messages=[message], status='Success')
     custom_print(f'end of {os.path.basename(__file__)} job')
+
+    # Cleaning created directory
+    shutil.rmtree(all_yang_path, ignore_errors=True)
 
 
 if __name__ == '__main__':

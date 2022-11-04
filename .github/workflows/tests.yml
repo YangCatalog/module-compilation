@@ -5,7 +5,6 @@ on: [push]
 jobs:
 
   build:
-
     runs-on: ubuntu-18.04
     strategy:
       matrix:
@@ -14,6 +13,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
@@ -49,3 +49,46 @@ jobs:
         with:
           name: coverage
           path: .coverage
+
+  update-readme:
+    name: Update Coverage
+    needs: build
+    runs-on: ubuntu-18.04
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: coverage
+
+      - name: Coverage badge
+        uses: tj-actions/coverage-badge-py@v1.8
+
+      - name: Move coverage badge to images folder
+        run: mv coverage.svg .github/images
+
+      - name: Verify Changed files
+        uses: tj-actions/verify-changed-files@v9
+        id: changed_files
+        with:
+          files: .github/images/coverage.svg
+
+      - name: Commit files
+        if: steps.changed_files.outputs.files_changed == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add .github/images/coverage.svg
+          git commit -m "Updated coverage.svg"
+
+      - name: Push changes
+        if: steps.changed_files.outputs.files_changed == 'true'
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.github_token }}
+          branch: ${{ github.ref }}
