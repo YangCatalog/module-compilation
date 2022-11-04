@@ -28,16 +28,16 @@ import rename_file_backup as rfb
 
 
 class TestRenameFileBackup(unittest.TestCase):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.resource_path = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/rename_file_backup')
-        self.script_path = os.path.join(os.environ['VIRTUAL_ENV'], 'bin/rename_file_backup.py')
-        self.private_directory = os.path.join(self.resource_path, 'private')
-        self.backup_directory = os.path.join(self.resource_path, 'backup')
-        self.filename = 'IETFYANGPageMain.html'
-        self.backup_filename = 'IETFYANGPageMain_{}.html'
+    @classmethod
+    def setUpClass(cls):
+        cls.resource_path = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/rename_file_backup')
+        cls.script_path = os.path.join(os.environ['VIRTUAL_ENV'], 'bin/rename_file_backup.py')
+        cls.private_directory = os.path.join(cls.resource_path, 'private')
+        cls.backup_directory = os.path.join(cls.resource_path, 'backup')
+        cls.filename = 'IETFYANGPageMain.html'
+        cls.backup_filename = 'IETFYANGPageMain_{}.html'
 
-    def setUp(self) -> None:
+    def setUp(self):
         shutil.rmtree(self.backup_directory, ignore_errors=True)
 
     def test_rename_file_backup(self) -> None:
@@ -72,10 +72,8 @@ class TestRenameFileBackup(unittest.TestCase):
 
     def test_rename_file_backup_from_console(self) -> None:
         """Run the script from the console by passing the arguments."""
-        bash_command = 'python {} --srcdir {} --backupdir {} --debug 1'.format(
-            self.script_path,
-            self.private_directory,
-            self.backup_directory,
+        bash_command = (
+            f'python {self.script_path} --srcdir {self.private_directory} --backupdir {self.backup_directory} --debug 1'
         )
         subprocess.run(bash_command, shell=True, capture_output=True, check=False).stdout.decode()
 

@@ -22,6 +22,7 @@ import datetime
 import json
 import os
 import re
+import typing as t
 from configparser import ConfigParser
 
 import matplotlib as mpl
@@ -33,15 +34,6 @@ mpl.use('Agg')
 
 
 class GetStats:
-    CATEGORIES_LIST = ['FAILED', 'PASSED WITH WARNINGS', 'PASSED', 'Email All Authors']
-    BACKUPS_PREFIXES = [
-        'IETFCiscoAuthorsYANGPageCompilation_',
-        'IETFDraftYANGPageCompilation_',
-        'IANAStandardYANGPageCompilation_',
-        'IEEEStandardYANGPageCompilation_',
-        'IEEEStandardDraftYANGPageCompilation_',
-        'IEEEExperimentalYANGPageCompilation_',
-    ]
     COMPANIES = (
         ('Yumaworks', 'yumaworks.com'),
         ('Tail-f', 'tail-f.com'),
@@ -77,6 +69,14 @@ class GetStats:
     YANG_PAGE_MAIN_PREFIX = 'YANGPageMain_'
     IETF_YANG_PAGE_MAIN_PREFIX = 'IETFYANGPageMain_'
     IETF_YANG_OUT_OF_RFC_PREFIX = 'IETFYANGOutOfRFC_'
+    BACKUPS_PREFIXES = (
+        'IETFCiscoAuthorsYANGPageCompilation_',
+        'IETFDraftYANGPageCompilation_',
+        'IANAStandardYANGPageCompilation_',
+        'IEEEStandardYANGPageCompilation_',
+        'IEEEStandardDraftYANGPageCompilation_',
+        'IEEEExperimentalYANGPageCompilation_',
+    )
 
     def __init__(self, args: argparse.Namespace, config: ConfigParser = create_config()):
         self.debug_level = args.debug
@@ -91,6 +91,35 @@ class GetStats:
         self.stats_path = os.path.join(self.web_private, 'stats')
         self.files: list[str] = []
         self.remove_old_html_file_paths: list[str] = []
+
+        self.ALL_PREFIXES = (
+            self.YANG_PAGE_MAIN_PREFIX,
+            self.IETF_YANG_PAGE_MAIN_PREFIX,
+            self.IETF_YANG_OUT_OF_RFC_PREFIX,
+            *self.BACKUPS_PREFIXES,
+        )
+        self.prefixes_info = {}
+        for prefix in self.ALL_PREFIXES:
+            json_history_file = os.path.join(self.backup_directory, f'{prefix}history.json')
+            self.prefixes_info[prefix] = {
+                'json_history_file': json_history_file,
+                'compilation_stats': self._load_compilation_stats_from_history_file(json_history_file),
+                'stats_filename': (
+                    'IETFYANGPageCompilationStats.json'
+                    if prefix == 'IETFDraftYANGPageCompilation_'
+                    else f'{prefix[:-1]}Stats.json'
+                ),
+            }
+
+    def _load_compilation_stats_from_history_file(self, json_history_file: str) -> dict:
+        compilation_stats = {}
+        if os.path.isfile(json_history_file):
+            with open(json_history_file, 'r') as f:
+                compilation_stats_temp = json.load(f)
+            for key, value in compilation_stats_temp.items():
+                compilation_stats[float(key)] = value
+            del compilation_stats_temp
+        return compilation_stats
 
     def start_process(self):
         all_files = list_files_by_extensions(
@@ -108,10 +137,7 @@ class GetStats:
         else:
             self.files = all_files
 
-        self.gather_yang_page_main_compilation_stats()
-        self.gather_ietf_yang_page_main_compilation_stats()
-        self.gather_backups_compilation_stats()
-        self.gather_ietf_yang_out_of_rfc_compilation_stats()
+        self.gather_stats()
 
         self.print_files_information()
 
@@ -119,174 +145,149 @@ class GetStats:
             if os.path.exists(path):
                 os.unlink(path)
 
-    def gather_yang_page_main_compilation_stats(self):
-        json_history_file = os.path.join(self.backup_directory, f'{self.YANG_PAGE_MAIN_PREFIX}history.json')
-        yang_page_compilation_stats = self._load_compilation_stats_from_history_file(json_history_file)
-        for filename in self._file_names_containing_keyword(self.YANG_PAGE_MAIN_PREFIX):
-            path_to_file = os.path.join(self.backup_directory, filename)
-            generated_at = 0
-            passed = 0
-            passed_with_warnings = 0
-            failed = 0
-            extracted_date = self._extract_date_from_filename(filename)
-            if (datetime.date.today() - extracted_date).days > 30:
-                self.remove_old_html_file_paths.append(path_to_file)
-            i = 0
-            with open(path_to_file) as f:
-                for line in f:
-                    i += 1
-                    if i == 2:
-                        generated_at = line.split('on')[-1].split('by')[0].strip()
-                    elif i == 6:
-                        result = line.split(':')[-1].split('/')[0].strip()
-                        passed = int(result) if result.isnumeric() else 0
-                    elif i == 7:
-                        result = line.split(':')[-1].split('/')[0].strip()
-                        passed_with_warnings = int(result) if result.isnumeric() else 0
-                    elif i == 8:
-                        result = line.split(':')[-1].split('/')[0].strip()
-                        failed = int(result) if result.isnumeric() else 0
-                    elif i == 9:
-                        i = 0
-                        yang_page_compilation_stats[date2num(extracted_date)] = {
-                            'name': {
-                                'generated-at': generated_at,
-                                'passed': passed,
-                                'warnings': passed_with_warnings,
-                                'failed': failed,
-                            },
-                        }
+    def gather_stats(self):
+        for filename in self.files:
+            prefix = self._filename_contains_prefix(filename)
+            if not prefix:
+                print(f'DEBUG: "{filename}" does not contain any prefix')
+                continue
+            print(f'DEBUG: "{filename}" contains "{prefix}"')
+            if prefix == self.YANG_PAGE_MAIN_PREFIX:
+                self.gather_yang_page_main_compilation_stats(filename)
+            elif prefix == self.IETF_YANG_PAGE_MAIN_PREFIX:
+                self.gather_ietf_yang_page_main_compilation_stats(filename)
+            elif prefix == self.IETF_YANG_OUT_OF_RFC_PREFIX:
+                self.gather_ietf_yang_out_of_rfc_compilation_stats(filename)
+            else:
+                self.gather_backups_compilation_stats(filename, prefix=prefix)
         if self.days == -1:
-            with open(json_history_file, 'w') as filename:
-                json.dump(yang_page_compilation_stats, filename)
-            self._write_dictionary_file_in_json(
-                yang_page_compilation_stats,
-                self.stats_path,
-                f'{self.YANG_PAGE_MAIN_PREFIX[:-1]}Stats.json',
-            )
-
-    def gather_ietf_yang_page_main_compilation_stats(self):
-        json_history_file = os.path.join(self.backup_directory, f'{self.IETF_YANG_PAGE_MAIN_PREFIX}history.json')
-        yang_page_compilation_stats = self._load_compilation_stats_from_history_file(json_history_file)
-        for filename in self._file_names_containing_keyword(self.IETF_YANG_PAGE_MAIN_PREFIX):
-            path_to_file = os.path.join(self.backup_directory, filename)
-            total = 0
-            passed_with_warnings = 0
-            passed = 0
-            badly_formated = 0
-            examples = 0
-            with open(path_to_file, 'r') as f:
-                for line in f:
-                    if 'correctly extracted YANG models' in line:
-                        amount = line.split(':')[-1].strip()
-                        total = int(amount) if amount.isnumeric() else total
-                    elif 'without warnings' in line:
-                        amount = line.split(':')[-1].split('/')[0].strip()
-                        passed = int(amount) if amount.isnumeric() else passed
-                    elif 'with warnings' in line:
-                        amount = line.split(':')[-1].split('/')[0].strip()
-                        passed_with_warnings = int(amount) if amount.isnumeric() else passed_with_warnings
-                    elif '(example, badly formatted, etc. )' in line:
-                        amount = line.split(':')[-1].strip()
-                        badly_formated = int(amount) if amount.isnumeric() else badly_formated
-                    elif 'correctly extracted example YANG' in line:
-                        amount = line.split(':')[-1].strip()
-                        examples = int(amount) if amount.isnumeric() else examples
-            extracted_date = self._extract_date_from_filename(filename)
-            if (datetime.date.today() - extracted_date).days > 30:
-                self.remove_old_html_file_paths.append(path_to_file)
-            yang_page_compilation_stats[date2num(extracted_date)] = {
-                'total': total,
-                'warnings': passed_with_warnings,
-                'passed': passed,
-                'badly formated': badly_formated,
-                'examples': examples,
-            }
-        if self.days == -1:
-            with open(json_history_file, 'w') as filename:
-                json.dump(yang_page_compilation_stats, filename)
-            self._write_dictionary_file_in_json(
-                yang_page_compilation_stats,
-                self.stats_path,
-                f'{self.IETF_YANG_PAGE_MAIN_PREFIX[:-1]}Stats.json',
-            )
-
-    def gather_backups_compilation_stats(self):
-        for prefix in self.BACKUPS_PREFIXES:
-            print(f'\nLooking at the files starting with: {prefix}')
-            print('FILENAME: NUMBER OF DAYS SINCE EPOCH, TOTAL YANG MODULES, PASSED, PASSEDWITHWARNINGS, FAILED')
-            json_history_file = os.path.join(self.backup_directory, f'{prefix}history.json')
-            yang_page_compilation_stats = self._load_compilation_stats_from_history_file(json_history_file)
-            for filename in self._file_names_containing_keyword(prefix):
-                path_to_file = os.path.join(self.backup_directory, filename)
-                failed_result = 0
-                passed_result = 0
-                passed_with_warning_result = 0
-                total_result = 0
-                with open(path_to_file, 'r') as f:
-                    for line in f:
-                        if 'FAILED' in line:
-                            failed_result += 1
-                        elif 'PASSED WITH WARNINGS' in line:
-                            passed_with_warning_result += 1
-                        elif 'PASSED' in line:
-                            passed_result += 1
-                        elif '.txt' in line:
-                            total_result += 1
-                if 'ODLPageCompilation_' in prefix:
-                    total_result = str(int(failed_result) + int(passed_with_warning_result) + int(passed_result))
-                extracted_date = self._extract_date_from_filename(filename)
-                if (datetime.date.today() - extracted_date).days > 30:
-                    self.remove_old_html_file_paths.append(path_to_file)
-                yang_page_compilation_stats[date2num(extracted_date)] = {
-                    'total': total_result,
-                    'warning': passed_with_warning_result,
-                    'success': passed_result,
-                }
-            if self.days == -1:
-                filename = (
-                    'IETFYANGPageCompilationStats.json'
-                    if prefix == 'IETFDraftYANGPageCompilation_'
-                    else f'{prefix[:-1]}Stats.json'
+            for prefix_info in self.prefixes_info.values():
+                with open(prefix_info['json_history_file'], 'w') as filename:
+                    json.dump(prefix_info['compilation_stats'], filename)
+                self._write_dictionary_file_in_json(
+                    prefix_info['compilation_stats'],
+                    self.stats_path,
+                    prefix_info['stats_filename'],
                 )
-                with open(json_history_file, 'w') as f:
-                    json.dump(yang_page_compilation_stats, f)
-                self._write_dictionary_file_in_json(yang_page_compilation_stats, self.stats_path, filename)
 
-    def gather_ietf_yang_out_of_rfc_compilation_stats(self):
-        print(f'\nLooking at the files starting with: {self.IETF_YANG_OUT_OF_RFC_PREFIX}')
-        print('FILENAME: NUMBER OF DAYS SINCE EPOCH, NUMBER OF YANG MODELS IN RFCS')
-        json_history_file = os.path.join(self.backup_directory, f'{self.IETF_YANG_OUT_OF_RFC_PREFIX}history.json')
-        yang_page_compilation_stats = self._load_compilation_stats_from_history_file(json_history_file)
-        for filename in self._file_names_containing_keyword(self.IETF_YANG_OUT_OF_RFC_PREFIX):
-            path_to_file = os.path.join(self.backup_directory, filename)
-            rfc_result = 0
-            with open(path_to_file, 'r') as f:
-                for line in f:
-                    if '.yang' in line:
-                        rfc_result += 1
-            extracted_date = self._extract_date_from_filename(filename)
-            if (datetime.date.today() - extracted_date).days > 30:
-                self.remove_old_html_file_paths.append(path_to_file)
-            yang_page_compilation_stats[date2num(extracted_date)] = {'total': rfc_result}
-        if self.days == -1:
-            with open(json_history_file, 'w') as f:
-                json.dump(yang_page_compilation_stats, f)
-            self._write_dictionary_file_in_json(
-                yang_page_compilation_stats,
-                self.stats_path,
-                f'{self.IETF_YANG_OUT_OF_RFC_PREFIX[:-1]}Stats.json',
-            )
+    def _filename_contains_prefix(self, filename: str) -> t.Optional[str]:
+        filename = filename.lower()
+        for prefix in self.ALL_PREFIXES:
+            if filename.startswith(prefix.lower()):
+                return prefix
 
-    def _load_compilation_stats_from_history_file(self, json_history_file: str) -> dict:
-        compilation_stats = {}
-        if os.path.isfile(json_history_file):
-            with open(json_history_file, 'r') as f:
-                compilation_stats_temp = json.load(f)
-            for key, value in compilation_stats_temp.items():
-                compilation_stats[float(key)] = value
-            del compilation_stats_temp
-        return compilation_stats
+    def gather_yang_page_main_compilation_stats(self, filename: str):
+        prefix_info = self.prefixes_info[self.YANG_PAGE_MAIN_PREFIX]
+        path_to_file = os.path.join(self.backup_directory, filename)
+        generated_at = 0
+        passed = 0
+        passed_with_warnings = 0
+        failed = 0
+        extracted_date = self._extract_date_from_filename(filename)
+        if (datetime.date.today() - extracted_date).days > 30:
+            self.remove_old_html_file_paths.append(path_to_file)
+        i = 0
+        with open(path_to_file) as f:
+            for line in f:
+                i += 1
+                if i == 2:
+                    generated_at = line.split('on')[-1].split('by')[0].strip()
+                elif i == 6:
+                    result = line.split(':')[-1].split('/')[0].strip()
+                    passed = int(result) if result.isnumeric() else 0
+                elif i == 7:
+                    result = line.split(':')[-1].split('/')[0].strip()
+                    passed_with_warnings = int(result) if result.isnumeric() else 0
+                elif i == 8:
+                    result = line.split(':')[-1].split('/')[0].strip()
+                    failed = int(result) if result.isnumeric() else 0
+                elif i == 9:
+                    i = 0
+                    prefix_info['compilation_stats'][date2num(extracted_date)] = {
+                        'name': {
+                            'generated-at': generated_at,
+                            'passed': passed,
+                            'warnings': passed_with_warnings,
+                            'failed': failed,
+                        },
+                    }
+
+    def gather_ietf_yang_page_main_compilation_stats(self, filename: str):
+        prefix_info = self.prefixes_info[self.IETF_YANG_PAGE_MAIN_PREFIX]
+        path_to_file = os.path.join(self.backup_directory, filename)
+        total = 0
+        passed_with_warnings = 0
+        passed = 0
+        badly_formated = 0
+        examples = 0
+        with open(path_to_file, 'r') as f:
+            for line in f:
+                if 'correctly extracted YANG models' in line:
+                    amount = line.split(':')[-1].strip()
+                    total = int(amount) if amount.isnumeric() else total
+                elif 'without warnings' in line:
+                    amount = line.split(':')[-1].split('/')[0].strip()
+                    passed = int(amount) if amount.isnumeric() else passed
+                elif 'with warnings' in line:
+                    amount = line.split(':')[-1].split('/')[0].strip()
+                    passed_with_warnings = int(amount) if amount.isnumeric() else passed_with_warnings
+                elif '(example, badly formatted, etc. )' in line:
+                    amount = line.split(':')[-1].strip()
+                    badly_formated = int(amount) if amount.isnumeric() else badly_formated
+                elif 'correctly extracted example YANG' in line:
+                    amount = line.split(':')[-1].strip()
+                    examples = int(amount) if amount.isnumeric() else examples
+        extracted_date = self._extract_date_from_filename(filename)
+        if (datetime.date.today() - extracted_date).days > 30:
+            self.remove_old_html_file_paths.append(path_to_file)
+        prefix_info['compilation_stats'][date2num(extracted_date)] = {
+            'total': total,
+            'warnings': passed_with_warnings,
+            'passed': passed,
+            'badly formated': badly_formated,
+            'examples': examples,
+        }
+
+    def gather_ietf_yang_out_of_rfc_compilation_stats(self, filename: str):
+        print(f'\nGathering stats for "{filename}" with "{self.IETF_YANG_OUT_OF_RFC_PREFIX}" prefix')
+        prefix_info = self.prefixes_info[self.IETF_YANG_OUT_OF_RFC_PREFIX]
+        path_to_file = os.path.join(self.backup_directory, filename)
+        rfc_result = 0
+        with open(path_to_file, 'r') as f:
+            for line in f:
+                if '.yang' in line:
+                    rfc_result += 1
+        extracted_date = self._extract_date_from_filename(filename)
+        if (datetime.date.today() - extracted_date).days > 30:
+            self.remove_old_html_file_paths.append(path_to_file)
+        prefix_info['compilation_stats'][date2num(extracted_date)] = {'total': rfc_result}
+
+    def gather_backups_compilation_stats(self, filename: str, prefix: str):
+        print(f'\nGathering stats for "{filename}" with "{prefix}" prefix')
+        prefix_info = self.prefixes_info[prefix]
+        path_to_file = os.path.join(self.backup_directory, filename)
+        failed_result = 0
+        passed_result = 0
+        passed_with_warning_result = 0
+        total_result = 0
+        with open(path_to_file, 'r') as f:
+            for line in f:
+                if 'FAILED' in line:
+                    failed_result += 1
+                elif 'PASSED WITH WARNINGS' in line:
+                    passed_with_warning_result += 1
+                elif 'PASSED' in line:
+                    passed_result += 1
+                elif '.txt' in line:
+                    total_result += 1
+        extracted_date = self._extract_date_from_filename(filename)
+        if (datetime.date.today() - extracted_date).days > 30:
+            self.remove_old_html_file_paths.append(path_to_file)
+        prefix_info['compilation_stats'][date2num(extracted_date)] = {
+            'total': total_result,
+            'warning': passed_with_warning_result,
+            'success': passed_result,
+        }
 
     def _extract_date_from_filename(self, filename: str) -> datetime.date:
         filename_without_extension = filename.split('.')[0]
@@ -378,27 +379,6 @@ class GetStats:
                 if self.debug_level > 0:
                     print(f'Dont keep {filename}')
         return new_files
-
-    def _file_names_containing_keyword(self, keyword: str) -> list[str]:
-        """
-        Returns the list of files whose names contain a specific keyword
-
-        Arguments:
-            :param keyword:  (str) keyword for which to search
-        :return: list of drafts containing the keyword
-        """
-        keyword = keyword.lower()
-        files_with_keyword = []
-        for filename in self.files:
-            if keyword not in filename.lower():
-                continue
-            if self.debug_level > 0:
-                print(f'DEBUG: {filename} in file_name_containing_keyword: contains {keyword}')
-            files_with_keyword.append(filename)
-        if self.debug_level > 0:
-            print(f'DEBUG: in file_name_containing_keyword: drafts_with_keyword contains {files_with_keyword}')
-        files_with_keyword.sort()
-        return files_with_keyword
 
     def _list_of_ietf_draft_containing_keyword(self, drafts: list[str], keyword: str, draft_path: str) -> list[str]:
         """

@@ -25,9 +25,9 @@ import private_page as pp
 
 
 class TestPrivatePage(unittest.TestCase):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.resources = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/private_page')
+    @classmethod
+    def setUpClass(cls):
+        cls.resources = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/private_page')
 
     def resource(self, file: str):
         return os.path.join(self.resources, file)
@@ -35,8 +35,8 @@ class TestPrivatePage(unittest.TestCase):
     def test_get_vendor_context(self):
         result = pp.get_vendor_context(
             self.resource('vendor'),
-            lambda os_name, os_specific_dir: pp.alnum('{}{}'.format(os_name, os_specific_dir)),
-            lambda os_name, os_specific_dir: '{}{}'.format(os_name, os_specific_dir),
+            lambda os_name, os_specific_dir: pp.alnum(f'{os_name}{os_specific_dir}'),
+            lambda os_name, os_specific_dir: f'{os_name}{os_specific_dir}',
         )
 
         expected = [{'allCharacters': i, 'alphaNumeric': pp.alnum(i)} for i in ['bar1.0', 'foo1.0', 'foo1.1', 'foo1.2']]
@@ -45,8 +45,8 @@ class TestPrivatePage(unittest.TestCase):
     def test_get_vendor_context_separate(self):
         result = pp.get_vendor_context(
             self.resource('vendor'),
-            lambda os_name, os_specific_dir: pp.alnum('{}{}'.format(os_name, os_specific_dir)),
-            lambda os_name, os_specific_dir: '{}{}'.format(os_name, os_specific_dir),
+            lambda os_name, os_specific_dir: pp.alnum(f'{os_name}{os_specific_dir}'),
+            lambda os_name, os_specific_dir: f'{os_name}{os_specific_dir}',
             separate=True,
         )
 

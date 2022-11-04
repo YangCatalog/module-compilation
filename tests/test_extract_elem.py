@@ -26,9 +26,9 @@ import extract_elem as ee
 
 
 class TestExtractElem(unittest.TestCase):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.resource_path = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/extract_elem')
+    @classmethod
+    def setUpClass(cls):
+        cls.resource_path = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/extract_elem')
 
     def test_extract_elem_grouping(self):
         groupings = [

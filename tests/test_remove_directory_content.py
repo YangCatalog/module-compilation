@@ -27,23 +27,21 @@ import remove_directory_content as rdc
 
 
 class TestRemoveDirectoryContent(unittest.TestCase):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.resource_path = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/remove_directory_content')
-        self.script_path = os.path.join(os.environ['VIRTUAL_ENV'], 'bin/remove_directory_content.py')
+    @classmethod
+    def setUpClass(cls):
+        cls.resource_path = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/remove_directory_content')
+        cls.script_path = os.path.join(os.environ['VIRTUAL_ENV'], 'bin/remove_directory_content.py')
+        cls.subdir_path = os.path.join(cls.resource_path, 'subdir')
+        cls.file_path = os.path.join(cls.resource_path, 'test_file.json')
+        cls.symlink_src_file = os.path.join(cls.resource_path, 'test_symlink.json')
+        cls.symlink_dst_file = os.path.join(cls.resource_path, 'test_symlink')
 
-    def setUp(self) -> None:
-        shutil.rmtree(self.resource_path, ignore_errors=True)
-        subdir_path = os.path.join(self.resource_path, 'subdir')
-        file_path = os.path.join(self.resource_path, 'test_file.json')
-        symlink_src_file = os.path.join(self.resource_path, 'test_symlink.json')
-        symlink_dst_file = os.path.join(self.resource_path, 'test_symlink')
-
-        os.makedirs(self.resource_path)
-        os.makedirs(subdir_path)
-        open(file_path, 'w', encoding='utf-8').close()
-        open(symlink_src_file, 'w', encoding='utf-8').close()
-        os.symlink(symlink_src_file, symlink_dst_file)
+    def setUp(self):
+        os.makedirs(self.resource_path, exist_ok=True)
+        os.makedirs(self.subdir_path)
+        open(self.file_path, 'w', encoding='utf-8').close()
+        open(self.symlink_src_file, 'w', encoding='utf-8').close()
+        os.symlink(self.symlink_src_file, self.symlink_dst_file)
 
     def tearDown(self) -> None:
         shutil.rmtree(self.resource_path, ignore_errors=True)
@@ -59,7 +57,7 @@ class TestRemoveDirectoryContent(unittest.TestCase):
 
     def test_rename_file_backup_from_console(self) -> None:
         """Run the script from the console by passing the arguments."""
-        bash_command = 'python {} --dir {} --debug 1'.format(self.script_path, self.resource_path)
+        bash_command = f'python {self.script_path} --dir {self.resource_path} --debug 1'
         subprocess.run(bash_command, shell=True, capture_output=True, check=False).stdout.decode()
 
         self.assertTrue(os.path.isdir(self.resource_path))
@@ -67,17 +65,15 @@ class TestRemoveDirectoryContent(unittest.TestCase):
 
 
 class TestRemoveDirectoryContentEmpty(unittest.TestCase):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.resource_path = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/remove_directory_content')
-        self.non_existing_path = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/non_existing')
+    @classmethod
+    def setUpClass(cls):
+        cls.resource_path = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/remove_directory_content')
+        cls.non_existing_path = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/non_existing')
 
-    def setUp(self) -> None:
-        shutil.rmtree(self.resource_path, ignore_errors=True)
-        shutil.rmtree(self.non_existing_path, ignore_errors=True)
-        os.makedirs(self.resource_path)
+    def setUp(self):
+        os.makedirs(self.resource_path, exist_ok=True)
 
-    def tearDown(self) -> None:
+    def tearDown(self):
         shutil.rmtree(self.resource_path, ignore_errors=True)
         shutil.rmtree(self.non_existing_path, ignore_errors=True)
 

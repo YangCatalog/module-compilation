@@ -96,22 +96,31 @@ class TestGetStats(unittest.TestCase):
             self.assertNotEqual(stats_data, {})
             self.assertNotEqual(history_data, {})
 
+    def _get_stats_and_history_files_data(self, files_prefix: str) -> tuple[dict, dict]:
+        stats_filename = f'{files_prefix[:-1]}Stats.json'
+        with open(os.path.join(self.stats_directory, stats_filename), 'r') as stats_file:
+            stats_data = json.load(stats_file)
+        with open(os.path.join(self.backup_directory, f'{files_prefix}history.json'), 'r') as history_file:
+            history_data = json.load(history_file)
+        return stats_data, history_data
+
     def test_gather_yang_page_main_compilation_stats(self):
         self.get_stats_instance.files = list_files_by_extensions(
             self.backup_directory,
             ('html',),
+            debug_level=self.get_stats_instance.debug_level,
         )
-        self.get_stats_instance.gather_yang_page_main_compilation_stats()
+        self.get_stats_instance.gather_yang_page_main_compilation_stats('YANGPageMain_2022_01_01.html')
         page_main_prefix = self.get_stats_instance.YANG_PAGE_MAIN_PREFIX
-        stats_data, history_data = self._get_stats_and_history_files_data(page_main_prefix)
         self.assertTrue(
-            next(iter(stats_data.values()))['name']
-            == next(iter(history_data.values()))['name']
+            next(iter(self.get_stats_instance.prefixes_info[page_main_prefix]['compilation_stats'].values()))
             == {
-                'generated-at': '2021.01.01',
-                'passed': 15,
-                'warnings': 15,
-                'failed': 15,
+                'name': {
+                    'generated-at': '2021.01.01',
+                    'passed': 15,
+                    'warnings': 15,
+                    'failed': 15,
+                },
             },
         )
         self.assertTrue(
@@ -120,13 +129,15 @@ class TestGetStats(unittest.TestCase):
         )
 
     def test_gather_ietf_yang_page_main_compilation_stats(self):
-        self.get_stats_instance.files = list_files_by_extensions(self.backup_directory, ('html',))
-        self.get_stats_instance.gather_ietf_yang_page_main_compilation_stats()
+        self.get_stats_instance.files = list_files_by_extensions(
+            self.backup_directory,
+            ('html',),
+            debug_level=self.get_stats_instance.debug_level,
+        )
+        self.get_stats_instance.gather_ietf_yang_page_main_compilation_stats('IETFYANGPageMain_2022_01_01.html')
         ietf_page_main_prefix = self.get_stats_instance.IETF_YANG_PAGE_MAIN_PREFIX
-        stats_data, history_data = self._get_stats_and_history_files_data(ietf_page_main_prefix)
         self.assertTrue(
-            next(iter(stats_data.values()))
-            == next(iter(history_data.values()))
+            next(iter(self.get_stats_instance.prefixes_info[ietf_page_main_prefix]['compilation_stats'].values()))
             == {
                 'total': 30,
                 'warnings': 15,
@@ -140,14 +151,36 @@ class TestGetStats(unittest.TestCase):
             in self.get_stats_instance.remove_old_html_file_paths,
         )
 
-    def test_gather_backups_compilation_stats(self):
-        self.get_stats_instance.files = list_files_by_extensions(self.backup_directory, ('html',))
-        self.get_stats_instance.gather_backups_compilation_stats()
-        backup_prefix = 'IEEEStandardDraftYANGPageCompilation_'
-        stats_data, history_data = self._get_stats_and_history_files_data(backup_prefix)
+    def test_gather_ietf_yang_out_of_rfc_compilation_stats(self):
+        self.get_stats_instance.files = list_files_by_extensions(
+            self.backup_directory,
+            ('html',),
+            debug_level=self.get_stats_instance.debug_level,
+        )
+        self.get_stats_instance.gather_ietf_yang_out_of_rfc_compilation_stats('IETFYANGOutOfRFC_2022_01_01.html')
+        out_of_rfc_prefix = self.get_stats_instance.IETF_YANG_OUT_OF_RFC_PREFIX
         self.assertTrue(
-            next(iter(stats_data.values()))
-            == next(iter(history_data.values()))
+            next(iter(self.get_stats_instance.prefixes_info[out_of_rfc_prefix]['compilation_stats'].values()))
+            == {'total': 3},
+        )
+        self.assertTrue(
+            os.path.join(self.backup_directory, f'{out_of_rfc_prefix}2022_01_01.html')
+            in self.get_stats_instance.remove_old_html_file_paths,
+        )
+
+    def test_gather_backups_compilation_stats(self):
+        self.get_stats_instance.files = list_files_by_extensions(
+            self.backup_directory,
+            ('html',),
+            debug_level=self.get_stats_instance.debug_level,
+        )
+        self.get_stats_instance.gather_backups_compilation_stats(
+            'IEEEStandardDraftYANGPageCompilation_2022_01_01.html',
+            'IEEEStandardDraftYANGPageCompilation_',
+        )
+        backup_prefix = 'IEEEStandardDraftYANGPageCompilation_'
+        self.assertTrue(
+            next(iter(self.get_stats_instance.prefixes_info[backup_prefix]['compilation_stats'].values()))
             == {
                 'total': 9,
                 'warning': 3,
@@ -158,25 +191,6 @@ class TestGetStats(unittest.TestCase):
             os.path.join(self.backup_directory, f'{backup_prefix}2022_01_01.html')
             in self.get_stats_instance.remove_old_html_file_paths,
         )
-
-    def test_gather_ietf_yang_out_of_rfc_compilation_stats(self):
-        self.get_stats_instance.files = list_files_by_extensions(self.backup_directory, ('html',))
-        self.get_stats_instance.gather_ietf_yang_out_of_rfc_compilation_stats()
-        out_of_rfc_prefix = self.get_stats_instance.IETF_YANG_OUT_OF_RFC_PREFIX
-        stats_data, history_data = self._get_stats_and_history_files_data(out_of_rfc_prefix)
-        self.assertTrue(next(iter(stats_data.values())) == next(iter(history_data.values())) == {'total': 3})
-        self.assertTrue(
-            os.path.join(self.backup_directory, f'{out_of_rfc_prefix}2022_01_01.html')
-            in self.get_stats_instance.remove_old_html_file_paths,
-        )
-
-    def _get_stats_and_history_files_data(self, files_prefix: str) -> tuple[dict, dict]:
-        stats_filename = f'{files_prefix[:-1]}Stats.json'
-        with open(os.path.join(self.stats_directory, stats_filename), 'r') as stats_file:
-            stats_data = json.load(stats_file)
-        with open(os.path.join(self.backup_directory, f'{files_prefix}history.json'), 'r') as history_file:
-            history_data = json.load(history_file)
-        return stats_data, history_data
 
 
 if __name__ == '__main__':
