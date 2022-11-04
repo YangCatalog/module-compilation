@@ -58,11 +58,7 @@ def main():
     all_yang_drafts_strict = os.path.join(temp_dir, 'draft-with-YANG-strict')
     missing_modules_directory = os.path.join(temp_dir, 'drafts-missing-modules')
     all_yang_path = os.path.join(temp_dir, 'YANG-ALL')
-
-    remove_all_yang_path = False
-    if not os.path.exists(all_yang_path):  # if directory exists, nothing to do
-        os.makedirs(all_yang_path)
-        remove_all_yang_path = True
+    os.makedirs(all_yang_path, exist_ok=True)
 
     draft_extractor_paths = {
         'draft_path': archived_draft_path,
@@ -157,8 +153,7 @@ def main():
     custom_print(f'end of {os.path.basename(__file__)} job')
 
     # Cleaning created directory
-    if remove_all_yang_path:
-        os.rmdir(all_yang_path)
+    shutil.rmtree(all_yang_path, ignore_errors=True)
 
 
 if __name__ == '__main__':
