@@ -1,6 +1,9 @@
 name: Python tests
 
-on: [push]
+on:
+  push:
+  pull_request:
+    types: [opened, reopened, ready_for_review, synchronize, edited]
 
 jobs:
 
@@ -50,10 +53,10 @@ jobs:
           name: coverage
           path: .coverage
 
-  update-readme:
-    name: Update Coverage
+  update-coverage:
     needs: build
     runs-on: ubuntu-18.04
+    if: ${{ github.event_name == 'pull_request' }}
 
     steps:
       - uses: actions/checkout@v2
@@ -65,6 +68,19 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: coverage
+
+      - name: Write coverage comment
+        id: coverage_comment
+        uses: py-cov-action/python-coverage-comment-action@v3
+        with:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Store Pull Request comment to be posted
+        uses: actions/upload-artifact@v3
+        if: ${{ steps.coverage_comment.outputs.COMMENT_FILE_WRITTEN == 'true' }}
+        with:
+          name: python-coverage-comment-action
+          path: python-coverage-comment-action.txt
 
       - name: Coverage badge
         uses: tj-actions/coverage-badge-py@v1.8
