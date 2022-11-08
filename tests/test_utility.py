@@ -100,3 +100,55 @@ class TestUtility(unittest.TestCase):
             'PASSED',
         )
         self.assertEqual(result, 2)
+
+    def test_list_files_by_extension_not_recursive(self):
+        srcdir = os.path.join(self.resource_path, 'files_by_extension')
+        txt_files_not_recursive = u.list_files_by_extensions(
+            srcdir=srcdir,
+            extensions=('txt',),
+            recursive=False,
+            return_full_paths=False,
+        )
+        self.assertEqual(len(txt_files_not_recursive), 2)
+        self.assertListEqual(sorted(txt_files_not_recursive), ['f1.txt', 'f2.txt'])
+        html_and_txt_files_not_recursive = u.list_files_by_extensions(
+            srcdir=srcdir,
+            extensions=('html', 'txt'),
+            recursive=False,
+        )
+        self.assertEqual(len(html_and_txt_files_not_recursive), 4)
+        self.assertListEqual(sorted(html_and_txt_files_not_recursive), ['f1.html', 'f1.txt', 'f2.html', 'f2.txt'])
+
+    def test_list_files_by_extension_recursive(self):
+        srcdir = os.path.join(self.resource_path, 'files_by_extension')
+        recursive_dir1 = os.path.join(srcdir, 'recursive_dir1')
+        recursive_dir2 = os.path.join(recursive_dir1, 'recursive_dir2')
+        txt_files_recursive = u.list_files_by_extensions(
+            srcdir=srcdir,
+            extensions=('txt',),
+            recursive=True,
+            return_full_paths=True,
+        )
+        self.assertEqual(len(txt_files_recursive), 4)
+        self.assertListEqual(
+            sorted(txt_files_recursive),
+            sorted(
+                [
+                    os.path.join(srcdir, 'f1.txt'),
+                    os.path.join(srcdir, 'f2.txt'),
+                    os.path.join(recursive_dir1, 'f1.txt'),
+                    os.path.join(recursive_dir2, 'f1.txt'),
+                ],
+            ),
+        )
+        html_and_txt_files_recursive = u.list_files_by_extensions(
+            srcdir=srcdir,
+            extensions=('html', 'txt'),
+            recursive=True,
+            return_full_paths=False,
+        )
+        self.assertEqual(len(html_and_txt_files_recursive), 8)
+        self.assertEqual(html_and_txt_files_recursive.count('f1.txt'), 3)
+        self.assertEqual(html_and_txt_files_recursive.count('f2.txt'), 1)
+        self.assertEqual(html_and_txt_files_recursive.count('f1.html'), 3)
+        self.assertEqual(html_and_txt_files_recursive.count('f2.html'), 1)
