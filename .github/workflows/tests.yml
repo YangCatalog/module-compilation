@@ -58,6 +58,20 @@ jobs:
         uses: py-cov-action/python-coverage-comment-action@v3
         with:
           GITHUB_TOKEN: ${{ github.token }}
+          COMMENT_TEMPLATE: '
+            {% extends "base" %}
+            {% block title %}
+            {{ super() }}
+
+            <details>
+            <summary>Full coverage report summary (click to unfold)</summary>
+            {% for file_coverage in coverage.files.values() %}
+            {{ file_coverage.path }}: <b>{{ ((file_coverage.info.percent_covered * 100)|int) }}%</b><br>
+            {% endfor %}
+            </details>
+
+            {% endblock title %}
+          '
 
       - name: Store Pull Request comment to be posted
         uses: actions/upload-artifact@v3

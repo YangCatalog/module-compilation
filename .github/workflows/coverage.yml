@@ -24,15 +24,3 @@ jobs:
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_PR_RUN_ID: ${{ github.event.workflow_run.id }}
-          COMMENT_TEMPLATE: '
-            {% extends "base" %}
-            {% block title %}
-            {{ super() }}
-            <details>
-            <summary>Full Coverage Report (click to unfold)</summary>
-            {% for file_coverage in coverage.files.values() %}
-            {{ file_coverage.path }}: {{ ((file_coverage.info.percent_covered * 100)|int) }}%<br>
-            {% endfor %}
-            </details>
-            {% endblock title %}
-          '
