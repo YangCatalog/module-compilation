@@ -26,7 +26,7 @@ jobs:
           GITHUB_PR_RUN_ID: ${{ github.event.workflow_run.id }}
           COMMENT_TEMPLATE: '
             {% extends "base" %}
-            {% block coverage_by_file %}
+            {% block title %}
             {{ super() }}
             <details>
             <summary>Full Coverage Report (click to unfold)</summary>
@@ -34,5 +34,5 @@ jobs:
             {{ file_coverage.path }}: {{ ((file_coverage.info.percent_covered * 100)|int) }}%<br>
             {% endfor %}
             </details>
-            {% endblock coverage_by_file %}
+            {% endblock title %}
           '
