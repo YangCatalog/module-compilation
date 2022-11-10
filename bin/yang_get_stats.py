@@ -129,11 +129,7 @@ class GetStats:
         )
         # only select the files created within the number of days selected
         if self.days > 0:
-            self.files = self._list_of_files_in_dir_created_after_date(
-                all_files,
-                self.backup_directory,
-                self.days,
-            )
+            self.files = self._list_of_files_in_dir_created_after_date(all_files)
         else:
             self.files = all_files
 
@@ -346,32 +342,29 @@ class GetStats:
                 f'so the files with xym extraction issues: {files_diff}',
             )
 
-    def _list_of_files_in_dir_created_after_date(self, files: list[str], srcdir: str, days: int) -> list[str]:
+    def _list_of_files_in_dir_created_after_date(self, files: list[str]) -> list[str]:
         """
-        Selects the files created wihin the number of days selected
+        Selects the files created within the number of days selected
 
         Arguments:
             :param files:  (list[str]) list of files
-            :param srcdir:  (str) directory to search for files
-            :param days:  (int) number of days
         :return: list of files
         """
         new_files = []
         dt = datetime.datetime.utcnow()  # datetime now (all in UTC)
         if self.debug_level > 0:
             print(dt)
-        delta = datetime.timedelta(days)  # x days interval
-        dtdays = dt - delta  # datetime x days earlier than now
-        dtdays = dtdays.date()
+        delta = datetime.timedelta(self.days)  # x days interval
+        datetime_days = (dt - delta).date()  # datetime x days earlier than now
         if self.debug_level > 0:
-            print(dtdays)
+            print(datetime_days)
         for filename in files:
             if self.debug_level > 0:
-                print(f'{srcdir}/{filename}')
+                print(f'{self.backup_directory}/{filename}')
             t_date = re.findall(r'\d+[_-]\d+[_-]\d+', filename)[0]
             t_date = re.findall(r'\d+', t_date)
-            dt = datetime.date(int(t_date[0]), int(t_date[1]), int(t_date[2]))  # time of last modification in seconds
-            if dt >= dtdays:
+            dt = datetime.date(int(t_date[0]), int(t_date[1]), int(t_date[2]))
+            if dt >= datetime_days:
                 if self.debug_level > 0:
                     print(f'Keep {filename}')
                 new_files.append(filename)

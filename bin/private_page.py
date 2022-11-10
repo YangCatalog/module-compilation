@@ -123,14 +123,14 @@ def main():
 
     context['huawei'] = get_vendor_context(
         huawei_dir,
-        lambda os_name, os_specific_dir: alnum('{}{}'.format(os_name, os_specific_dir)),
-        lambda os_name, os_specific_dir: '{} {}'.format(os_name, os_specific_dir),
+        lambda os_name, os_specific_dir: alnum(f'{os_name}{os_specific_dir}'),
+        lambda os_name, os_specific_dir: f'{os_name} {os_specific_dir}',
     )
 
     context['fujitsu'] = get_vendor_context(
         fujitsu_dir,
-        lambda os_name, os_specific_dir: alnum('{}{}'.format(os_name, os_specific_dir)),
-        lambda os_name, os_specific_dir: '{}{}'.format(os_name, os_specific_dir),
+        lambda os_name, os_specific_dir: alnum(f'{os_name}{os_specific_dir}'),
+        lambda os_name, os_specific_dir: f'{os_name}{os_specific_dir}',
     )
 
     context['nokia'] = get_vendor_context(

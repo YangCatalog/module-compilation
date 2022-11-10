@@ -32,19 +32,19 @@ class ValidatorsVersions:
 
         # ConfD version
         try:
-            confd_version = check_output('{} --version'.format(confdc_exec), shell=True).decode('utf-8').rstrip()
+            confd_version = check_output(f'{confdc_exec} --version', shell=True).decode('utf-8').rstrip()
         except CalledProcessError:
             confd_version = 'undefined'
         # yangdump version
         try:
             yangdump_cmd = '/usr/bin/yangdump-pro'
-            yangdump_version = check_output('{} --version'.format(yangdump_cmd), shell=True).decode('utf-8').strip()
+            yangdump_version = check_output(f'{yangdump_cmd} --version', shell=True).decode('utf-8').strip()
         except CalledProcessError:
             yangdump_version = 'undefined'
         # yanglint version
         try:
             yanglint_cmd = '/usr/local/bin/yanglint'
-            yanglint_version = check_output('{} --version'.format(yanglint_cmd), shell=True).decode('utf-8').rstrip()
+            yanglint_version = check_output(f'{yanglint_cmd} --version', shell=True).decode('utf-8').rstrip()
         except CalledProcessError:
             yanglint_version = 'undefined'
 
