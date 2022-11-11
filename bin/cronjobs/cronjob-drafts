@@ -22,7 +22,7 @@
         trap 'rm /var/yang/tmp/cronjob-drafts-lock.lock 2>/dev/null' ERR EXIT
         echo "$(date) starting check_archived_drafts" >>/var/yang/logs/crons-log.log
         (
-            cd /sdo_analysis/bin
+            cd /module-compilation/bin
             source configure.sh
             python check_archived_drafts.py >>$LOG/check_archived_drafts.log 2>&1
         ) >$LOG/check_archived_drafts.log

@@ -31,7 +31,8 @@ from redis_connections.redis_connection import RedisConnection
 from versions import ValidatorsVersions
 
 
-class TestUtility(unittest.TestCase):
+class TestUtilityBase(unittest.TestCase):
+    resource_path: str
     config: ConfigParser
 
     @classmethod
@@ -39,6 +40,8 @@ class TestUtility(unittest.TestCase):
         cls.resource_path = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/utility')
         cls.config = create_config(os.path.join(os.path.dirname(cls.resource_path), 'test.conf'))
 
+
+class TestUtility(TestUtilityBase):
     def test_module_or_submodule(self):
         result = utility.module_or_submodule(os.path.join(self.resource_path, 'module_or_submodule/module.yang'))
         self.assertEqual(result, 'module')
@@ -198,7 +201,7 @@ class TestUtility(unittest.TestCase):
             f.write(file_data)
 
 
-class TestCheckCatalogData(TestUtility):
+class TestCheckCatalogData(TestUtilityBase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

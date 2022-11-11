@@ -9,7 +9,7 @@
 # Unless required by applicable law or agreed to separately in writing, software distributed under the
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either express or implied.
-PATH=/sdo_analysis/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH
+PATH=/module-compilation/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH
 export PATH
 python_exec=$(readlink -f $(command -v python))
 python_version="${python_exec##*/}"
@@ -20,8 +20,8 @@ export LC_ALL=C.UTF-8
 
 export YANG=/.
 export YANGVAR=$(python get_config.py --section Directory-Section --key var)
-export BIN=$YANG/sdo_analysis/bin
-export CONF=$YANG/sdo_analysis/conf
+export BIN=$YANG/module-compilation/bin
+export CONF=$YANG/module-compilation/conf
 export BACKUPDIR=$(python get_config.py --section Directory-Section --key backup)
 export CONFD_DIR=$(python get_config.py --section Tool-Section --key confd-dir)
 export PYANG=$(python get_config.py --section Tool-Section --key pyang-exec)

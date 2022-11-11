@@ -21,7 +21,7 @@
         trap 'rm /var/yang/tmp/cronjob-lock.lock 2>/dev/null' ERR EXIT
         echo "$(date) starting cronjob-daily" >>/var/yang/logs/crons-log.log
         (
-            cd /sdo_analysis/bin/
+            cd /module-compilation/bin/
             ./cronjob-daily
         ) >/var/yang/logs/cronjob-daily.log
     else
