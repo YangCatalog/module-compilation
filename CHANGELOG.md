@@ -1,6 +1,19 @@
-## SDO Analysis Release Notes
+## Module Compilation Release Notes
 
 * ##### vm.m.p - 2022-MM-DD
+
+* ##### v5.7.0 - 2022-11-11
+ 
+  * Coverage badge added to the README.md file
+  * Coverage report generation adde to GitHub Actions
+  * Bugfix: check_archived_drafts.py attempting to use nonexistent directory [#208](https://github.com/YangCatalog/sdo_analysis/issues/208)
+  * Bugfix: Problem with YANGPageMain_ prefix fixed [#223](https://github.com/YangCatalog/sdo_analysis/issues/223)
+  * setUpClass and tearDownClass methods use for tests [#220](https://github.com/YangCatalog/sdo_analysis/issues/220)
+  * README.md file for tests directory added [#218](https://github.com/YangCatalog/sdo_analysis/issues/218)
+  * matplotlibrc file added [#217](https://github.com/YangCatalog/sdo_analysis/issues/217)
+  * Bugfix: Do not report modules with "broken" name [#210](https://github.com/YangCatalog/sdo_analysis/issues/210)
+  * Code reformatted according to the defined style guide [deployment #163](https://github.com/YangCatalog/deployment/issues/163)
+  * parsing of modules with pypy3, replaced parsing by using pyang directly [#209](https://github.com/YangCatalog/sdo_analysis/issues/209)
 
 * ##### v5.6.1 - 2022-10-10
 

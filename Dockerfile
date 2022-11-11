@@ -21,12 +21,12 @@ ENV GIT_PYTHON_GIT_EXECUTABLE=/usr/bin/git
 
 ENV YANG=/.
 ENV YANGVAR="get_config.py --section Directory-Section --key var"
-ENV BIN=$YANG/sdo_analysis/bin
-ENV CONF=$YANG/sdo_analysis/conf
+ENV BIN=$YANG/module-compilation/bin
+ENV CONF=$YANG/module-compilation/conf
 ENV BACKUPDIR="get_config.py --section Directory-Section --key backup"
 ENV CONFD_DIR="get_config.py --section Tool-Section --key confd-dir"
 ENV PYANG="get_config.py --section Tool-Section --key pyang-exec"
-ENV PYANG_PLUGINPATH="/sdo_analysis/bin/utility/pyang_plugin"
+ENV PYANG_PLUGINPATH="/module-compilation/bin/utility/pyang_plugin"
 ENV IS_PROD="get_config.py --section General-Section --key is-prod"
 
 #
@@ -49,7 +49,7 @@ ENV WEB_PRIVATE="get_config.py --section Web-Section --key private-directory"
 ENV WEB_DOWNLOADABLES="get_config.py --section Web-Section --key downloadables-directory"
 ENV WEB="get_config.py --section Web-Section --key public-directory"
 
-ENV VIRTUAL_ENV=/sdo_analysis
+ENV VIRTUAL_ENV=/module-compilation
 
 RUN groupadd -g ${YANG_GID} -r yang && useradd --no-log-init -r -g yang -u ${YANG_ID} -d $VIRTUAL_ENV yang
 
@@ -75,7 +75,7 @@ WORKDIR $VIRTUAL_ENV
 RUN rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install --upgrade pip
-COPY ./sdo_analysis/requirements.txt .
+COPY ./module-compilation/requirements.txt .
 RUN pip3 install -r requirements.txt
 RUN pip3 install xym==${XYM_VERSION} -U
 RUN pypy3 -mpip install pyang==2.5.3
@@ -89,7 +89,7 @@ RUN ./confd-${CONFD_VERSION}.linux.x86_64.installer.bin /opt/confd
 RUN dpkg -i yumapro-client-20.10-9.u1804.amd64.deb
 
 # Setup cron job
-COPY ./sdo_analysis/crontab /etc/cron.d/ietf-cron
+COPY ./module-compilation/crontab /etc/cron.d/ietf-cron
 RUN chown yang:yang /etc/cron.d/ietf-cron
 RUN chmod 0644 /etc/cron.d/ietf-cron
 RUN sed -i "s|<MAIL_TO>|${CRON_MAIL_TO}|g" /etc/cron.d/ietf-cron
@@ -98,8 +98,8 @@ RUN sed -i "/imklog/s/^/#/" /etc/rsyslog.conf
 
 RUN rm -rf /usr/bin/python
 RUN ln -s /usr/bin/python3 /usr/bin/python
-COPY ./sdo_analysis $VIRTUAL_ENV
-RUN cd /sdo_analysis/bin/resources/HTML && python setup.py install
+COPY ./module-compilation $VIRTUAL_ENV
+RUN cd /module-compilation/bin/resources/HTML && python setup.py install
 
 RUN chmod 0777 bin/configure.sh
 

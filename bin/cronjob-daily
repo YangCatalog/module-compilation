@@ -13,7 +13,7 @@
 # either express or implied.
 #
 START=$(date "+%s")
-BIN=/sdo_analysis/bin
+BIN=/module-compilation/bin
 cd $BIN
 #source activate
 source configure.sh
