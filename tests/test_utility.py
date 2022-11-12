@@ -26,7 +26,7 @@ from unittest import mock
 
 import utility.utility as utility
 from create_config import create_config
-from redis_connections.constants import RedisDatabasesDefaultsEnum
+from redis_connections.constants import RedisDatabasesEnum
 from redis_connections.redis_connection import RedisConnection
 from versions import ValidatorsVersions
 
@@ -207,7 +207,7 @@ class TestCheckCatalogData(TestUtilityBase):
         super().setUpClass()
         cls.modules_redis_connection = RedisConnection(config=cls.config)
         cls.incomplete_modules_redis_connection = RedisConnection(
-            modules_db=RedisDatabasesDefaultsEnum.INCOMPLETE_MODULES_DB.value,
+            modules_db=RedisDatabasesEnum.INCOMPLETE_MODULES_DB.value,
             config=cls.config,
         )
         utility.module_db = cls.modules_redis_connection

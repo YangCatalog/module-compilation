@@ -29,7 +29,7 @@ import dateutil.parser
 import jinja2
 from parsers import yang_parser
 from pyang.statements import Statement
-from redis_connections.constants import RedisDatabasesDefaultsEnum
+from redis_connections.constants import RedisDatabasesEnum
 from redis_connections.redis_connection import RedisConnection
 from utility.static_variables import IETF_RFC_MAP, NAMESPACE_MAP, ORGANIZATIONS
 from versions import ValidatorsVersions
@@ -207,7 +207,7 @@ def check_yangcatalog_data(
     global module_db, incomplete_db
     if not (module_db and incomplete_db):
         module_db = RedisConnection()
-        incomplete_db = RedisConnection(modules_db=RedisDatabasesDefaultsEnum.INCOMPLETE_MODULES_DB.value)
+        incomplete_db = RedisConnection(modules_db=RedisDatabasesEnum.INCOMPLETE_MODULES_DB.value)
 
     yang_file_path = _path_in_dir(yang_file_pseudo_path)
     is_rfc = ietf_type == IETF.RFC

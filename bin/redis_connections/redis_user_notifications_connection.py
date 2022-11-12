@@ -3,7 +3,7 @@ from configparser import ConfigParser
 
 from create_config import create_config
 from redis import Redis
-from redis_connections.constants import RedisDatabasesDefaultsEnum
+from redis_connections.constants import RedisDatabasesEnum
 
 
 class RedisUserNotificationsConnection:
@@ -18,7 +18,7 @@ class RedisUserNotificationsConnection:
         db = db or config.get(
             'DB-Section',
             'redis-user-notifications-db',
-            fallback=RedisDatabasesDefaultsEnum.USERS_NOTIFICATIONS_DB.value,
+            fallback=RedisDatabasesEnum.USERS_NOTIFICATIONS_DB.value,
         )
         self.redis = Redis(host=self._redis_host, port=self._redis_port, db=db)
 
