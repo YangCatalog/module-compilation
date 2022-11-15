@@ -18,6 +18,8 @@ __email__ = 'slavomir.mazur@pantheon.tech'
 
 import argparse
 import json
+import os.path
+import typing as t
 
 from create_config import create_config
 
@@ -27,39 +29,34 @@ def job_log(
     end_time: int,
     temp_dir: str,
     filename: str,
-    messages: list = [],
+    messages: t.Optional[list] = None,
     error: str = '',
     status: str = '',
 ):
-    result = {}
-    result['start'] = start_time
-    result['end'] = end_time
-    result['status'] = status
-    result['error'] = error
-    result['messages'] = messages
+    cronjob_results_path = os.path.join(temp_dir, 'cronjob.json')
+    result = {'start': start_time, 'end': end_time, 'status': status, 'error': error, 'messages': messages or []}
 
     try:
-        with open('{}/cronjob.json'.format(temp_dir), 'r') as f:
+        with open(cronjob_results_path, 'r') as f:
             file_content = json.load(f)
     except (FileNotFoundError, json.decoder.JSONDecodeError):
         file_content = {}
 
     filename = filename.split('.py')[0]
-    last_successfull = None
-    # If successfull rewrite, otherwise use last_successfull value from JSON
+    # If successful rewrite, otherwise use last_successful value from JSON
     if status == 'Success':
-        last_successfull = end_time
+        last_successful = end_time
     else:
         try:
             previous_state = file_content[filename]
-            last_successfull = previous_state.get('last_successfull')
+            last_successful = previous_state.get('last_successfull')
         except KeyError:
-            last_successfull = None
+            last_successful = None
 
-    result['last_successfull'] = last_successfull
+    result['last_successfull'] = last_successful
     file_content[filename] = result
 
-    with open('{}/cronjob.json'.format(temp_dir), 'w') as f:
+    with open(cronjob_results_path, 'w') as f:
         f.write(json.dumps(file_content, indent=4))
 
 
