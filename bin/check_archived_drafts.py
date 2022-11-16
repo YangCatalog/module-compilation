@@ -61,12 +61,11 @@ class CheckArchivedDrafts:
         self.archived_draft_path = os.path.join(ietf_directory, 'my-id-archive-mirror')
         self.yang_path = os.path.join(ietf_directory, 'archived-drafts-modules')
         os.makedirs(self.all_yang_path, exist_ok=True)
-        os.makedirs(self.extracted_missing_modules_directory, exist_ok=True)
 
         self.draft_extractor_paths = {
             'draft_path': self.archived_draft_path,
             'yang_path': self.yang_path,
-            'all_yang_draft_path_strict': self.all_yang_drafts_strict,
+            'draft_path_strict': self.all_yang_drafts_strict,
             'all_yang_path': self.all_yang_path,
         }
         self.draft_extractor = DraftExtractor(
@@ -78,7 +77,7 @@ class CheckArchivedDrafts:
         )
 
         self.all_modules_keys: list[str] = []
-        self.modules_to_skip: set[str] = set()
+        self.modules_to_skip: tuple[str] = ()
         self.missing_modules: list[str] = []
         self.incorrect_revision_modules: list[str] = []
 
@@ -130,11 +129,16 @@ class CheckArchivedDrafts:
                 unparsable_modules = json.load(f)
         except (FileNotFoundError, json.decoder.JSONDecodeError):
             unparsable_modules = []
-        self.modules_to_skip = {*old_modules, *unparsable_modules}
+        self.modules_to_skip = (*old_modules, *unparsable_modules)
 
     def _get_incorrect_and_missing_modules(self):
+        os.makedirs(self.extracted_missing_modules_directory, exist_ok=True)
         for yang_file in self.draft_extractor.inverted_draft_yang_dict:
-            if yang_file.startswith('example') or yang_file.startswith('@') or yang_file in self.modules_to_skip:
+            if (
+                yang_file.startswith('example')
+                or yang_file.startswith('@')
+                or any(yang_file in module for module in self.modules_to_skip)
+            ):
                 continue
             name_revision = yang_file.split('.yang')[0]
             if '@' in name_revision:
