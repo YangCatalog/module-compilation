@@ -11,7 +11,8 @@ jobs:
     runs-on: ubuntu-18.04
     strategy:
       matrix:
-        python-version: ["3.9"]
+        python-version: [3.9]
+        redis-version: [6]
     environment: tests
 
     steps:
@@ -39,6 +40,11 @@ jobs:
 
       - name: Check black
         uses: psf/black@stable
+
+      - name: Setup Redis ${{ matrix.redis-version }}
+        uses: supercharge/redis-github-action@1.2.0
+        with:
+          redis-version: ${{ matrix.redis-version }}
 
       - name: Test with pytest
         run: |

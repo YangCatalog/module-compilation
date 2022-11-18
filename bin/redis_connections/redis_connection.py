@@ -19,35 +19,39 @@ __email__ = 'slavomir.mazur@pantheon.tech'
 
 
 import json
+from configparser import ConfigParser
 
 from create_config import create_config
 from redis import Redis
+from redis_connections.constants import RedisDatabasesEnum
 
 
 class RedisConnection:
-    def __init__(self, modules_db: int = 1):
-        config = create_config()
+    def __init__(
+        self,
+        modules_db: int = RedisDatabasesEnum.MODULES_DB.value,
+        config: ConfigParser = create_config(),
+    ):
         self._redis_host = config.get('DB-Section', 'redis-host')
-        self._redis_port = config.get('DB-Section', 'redis-port')
-        self.modulesDB = Redis(host=self._redis_host, port=self._redis_port, db=modules_db)  # pyright: ignore
+        self._redis_port = int(config.get('DB-Section', 'redis-port'))
+        self.modules_db = Redis(host=self._redis_host, port=self._redis_port, db=modules_db)
 
     def populate_module(self, new_module: dict):
         """Create the redis key and set the module."""
         redis_key = self._create_module_key(new_module)
         self.set_module(new_module, redis_key)
 
-    def get_module(self, key: str):
-        data = self.modulesDB.get(key)
+    def get_module(self, key: str) -> str:
+        data = self.modules_db.get(key)
         return (data or b'{}').decode('utf-8')
 
     def set_module(self, module: dict, redis_key: str):
-        result = self.modulesDB.set(redis_key, json.dumps(module))
+        result = self.modules_db.set(redis_key, json.dumps(module))
         if result:
-            print('{} key updated'.format(redis_key), flush=True)
+            print(f'{redis_key} key updated', flush=True)
         else:
-            print('Problem while setting {}'.format(redis_key), flush=True)
-
+            print(f'Problem while setting {redis_key}', flush=True)
         return result
 
-    def _create_module_key(self, module: dict):
-        return '{}@{}/{}'.format(module.get('name'), module.get('revision'), module.get('organization'))
+    def _create_module_key(self, module: dict) -> str:
+        return f'{module.get("name")}@{module.get("revision")}/{module.get("organization")}'

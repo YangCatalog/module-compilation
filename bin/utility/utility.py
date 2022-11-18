@@ -29,12 +29,13 @@ import dateutil.parser
 import jinja2
 from parsers import yang_parser
 from pyang.statements import Statement
+from redis_connections.constants import RedisDatabasesEnum
 from redis_connections.redis_connection import RedisConnection
 from utility.static_variables import IETF_RFC_MAP, NAMESPACE_MAP, ORGANIZATIONS
 from versions import ValidatorsVersions
 
-module_db = None
-incomplete_db = None
+module_db: t.Optional[RedisConnection] = None
+incomplete_db: t.Optional[RedisConnection] = None
 
 
 class IETF(Enum):
@@ -195,7 +196,7 @@ def check_yangcatalog_data(
     yang_file_pseudo_path: str,
     new_module_data: dict,
     compilation_results: dict,
-    all_modules: t.Dict[str, dict],
+    all_modules_data: t.Dict[str, dict],
     ietf_type: t.Optional[IETF] = None,
 ):
     result_html_dir = config.get('Web-Section', 'result-html-dir')
@@ -206,7 +207,7 @@ def check_yangcatalog_data(
     global module_db, incomplete_db
     if not (module_db and incomplete_db):
         module_db = RedisConnection()
-        incomplete_db = RedisConnection(modules_db=5)
+        incomplete_db = RedisConnection(modules_db=RedisDatabasesEnum.INCOMPLETE_MODULES_DB.value)
 
     yang_file_path = _path_in_dir(yang_file_pseudo_path)
     is_rfc = ietf_type == IETF.RFC
@@ -220,8 +221,8 @@ def check_yangcatalog_data(
         return
     revision = _resolve_revision(parsed_yang)
     name_revision = f'{name}@{revision}'
-    if name_revision in all_modules:
-        module_data = all_modules[name_revision].copy()
+    if name_revision in all_modules_data:
+        module_data = all_modules_data[name_revision].copy()
         incomplete = False
         update = False
     else:
@@ -267,8 +268,7 @@ def check_yangcatalog_data(
         wg = _resolve_working_group(name_revision, ietf_type, new_module_data['document-name'])
         if (module_data.get('ietf') is None or module_data['ietf']['ietf-wg'] != wg) and wg is not None:
             update = True
-            module_data['ietf'] = {}
-            module_data['ietf']['ietf-wg'] = wg
+            module_data['ietf'] = {'ietf-wg': wg}
 
     mat_level = _resolve_maturity_level(ietf_type, new_module_data.get('document-name'))
     if module_data.get('maturity-level') != mat_level:
@@ -336,20 +336,6 @@ def _resolve_working_group(name_revision: str, ietf_type: IETF, document_name: s
     return document_name.split('-')[2]
 
 
-def _render(tpl_path: str, context: dict) -> str:
-    """Render jinja html template
-    Arguments:
-        :param tpl_path: (str) path to a file
-        :param context: (dict) dictionary containing data to render jinja
-            template file
-        :return: string containing rendered html file
-    """
-    for key in context['result']:
-        context['result'][key] = context['result'][key].replace('\n', '<br>')
-    path, filename = os.path.split(tpl_path)
-    return jinja2.Environment(loader=jinja2.FileSystemLoader(path or './')).get_template(filename).render(context)
-
-
 def _path_in_dir(yang_file_path: str) -> str:
     yang_path, yang_file = os.path.split(yang_file_path)
 
@@ -360,6 +346,44 @@ def _path_in_dir(yang_file_path: str) -> str:
     else:
         print(f'Error: file {yang_file} not found in dir or subdir of {yang_path}')
     return yang_file_path
+
+
+def _generate_compilation_result_file(
+    module_data: dict,
+    compilation_results: dict,
+    result_html_dir: str,
+    is_rfc: bool,
+    versions: dict,
+    ietf_type: t.Optional[IETF] = None,
+) -> str:
+    name = module_data['name']
+    rev = module_data['revision']
+    org = module_data['organization']
+    file_url = f'{name}@{rev}_{org}.html'
+    compilation_results['name'] = name
+    compilation_results['revision'] = rev
+    compilation_results['generated'] = time.strftime('%d/%m/%Y')
+
+    context = {'result': compilation_results, 'ths': _generate_ths(versions, ietf_type)}
+    template = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../resources/compilationStatusTemplate.html')
+    rendered_html = _render(template, context)
+    result_html_file = os.path.join(result_html_dir, file_url)
+    if os.path.isfile(result_html_file):
+        with open(result_html_file, 'r', encoding='utf-8') as f:
+            existing_output = f.read()
+        if existing_output != rendered_html:
+            if is_rfc and ietf_type is None:
+                pass
+            else:
+                with open(result_html_file, 'w', encoding='utf-8') as f:
+                    f.write(rendered_html)
+                os.chmod(result_html_file, 0o664)
+    else:
+        with open(result_html_file, 'w', encoding='utf-8') as f:
+            f.write(rendered_html)
+        os.chmod(result_html_file, 0o664)
+
+    return file_url
 
 
 def _generate_ths(versions: dict, ietf_type: t.Optional[IETF]) -> t.List[str]:
@@ -385,39 +409,15 @@ def _generate_ths(versions: dict, ietf_type: t.Optional[IETF]) -> t.List[str]:
     return ths
 
 
-def _generate_compilation_result_file(
-    module_data: dict,
-    compilation_results: dict,
-    result_html_dir: str,
-    is_rfc: bool,
-    versions: dict,
-    ietf_type: t.Optional[IETF],
-) -> str:
-    name = module_data['name']
-    rev = module_data['revision']
-    org = module_data['organization']
-    file_url = f'{name}@{rev}_{org}.html'
-    compilation_results['name'] = name
-    compilation_results['revision'] = rev
-    compilation_results['generated'] = time.strftime('%d/%m/%Y')
-
-    context = {'result': compilation_results, 'ths': _generate_ths(versions, ietf_type)}
-    template = os.path.dirname(os.path.realpath(__file__)) + '/../resources/compilationStatusTemplate.html'
-    rendered_html = _render(template, context)
-    result_html_file = os.path.join(result_html_dir, file_url)
-    if os.path.isfile(result_html_file):
-        with open(result_html_file, 'r', encoding='utf-8') as f:
-            existing_output = f.read()
-        if existing_output != rendered_html:
-            if is_rfc and ietf_type is None:
-                pass
-            else:
-                with open(result_html_file, 'w', encoding='utf-8') as f:
-                    f.write(rendered_html)
-                os.chmod(result_html_file, 0o664)
-    else:
-        with open(result_html_file, 'w', encoding='utf-8') as f:
-            f.write(rendered_html)
-        os.chmod(result_html_file, 0o664)
-
-    return file_url
+def _render(tpl_path: str, context: dict) -> str:
+    """Render jinja html template
+    Arguments:
+        :param tpl_path: (str) path to a file
+        :param context: (dict) dictionary containing data to render jinja
+            template file
+        :return: string containing rendered html file
+    """
+    for key in context['result']:
+        context['result'][key] = context['result'][key].replace('\n', '<br>')
+    path, filename = os.path.split(tpl_path)
+    return jinja2.Environment(loader=jinja2.FileSystemLoader(path or './')).get_template(filename).render(context)

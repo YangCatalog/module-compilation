@@ -23,6 +23,7 @@ import os
 import shutil
 import unittest
 from configparser import ConfigParser
+from datetime import datetime, timedelta
 from uuid import uuid4
 
 from create_config import create_config
@@ -39,9 +40,12 @@ class TestGetStats(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.config = create_config()
+        cls.config.set('Directory-Section', 'backup', 'tests/resources/yang_get_stats/backup')
+        cls.config.set('Directory-Section', 'ietf-directory', 'tests/resources/yang_get_stats/ietf')
+        cls.config.set('Web-Section', 'private-directory', 'tests/resources/yang_get_stats/private')
         cls.backup_directory = cls.config.get('Directory-Section', 'backup')
         cls.web_private_directory = cls.config.get('Web-Section', 'private-directory')
-        cls.directory_to_store_backup_files = os.path.join('tests', 'resources', uuid4().hex)
+        cls.directory_to_store_backup_files = os.path.join('tests/resources/yang_get_stats', uuid4().hex)
         cls.stats_directory = os.path.join(cls.web_private_directory, 'stats')
         os.makedirs(cls.directory_to_store_backup_files, exist_ok=True)
         for filename in os.listdir(cls.backup_directory):
@@ -191,6 +195,19 @@ class TestGetStats(unittest.TestCase):
             os.path.join(self.backup_directory, f'{backup_prefix}2022_01_01.html')
             in self.get_stats_instance.remove_old_html_file_paths,
         )
+
+    def test_list_of_files_in_dir_created_after_date(self):
+        self.get_stats_instance.days = 2
+        current_date = datetime.now().date()
+        first_file = f'{(current_date - timedelta(days=1)).strftime("%Y-%m-%d")}.txt'
+        second_file = f'{(current_date - timedelta(days=2)).strftime("%Y_%m-%d")}.txt'
+        third_file = f'{(current_date - timedelta(days=3)).strftime("%Y-%m-%d")}.txt'
+        files = [first_file, second_file, third_file]
+        matching_files = self.get_stats_instance._list_of_files_in_dir_created_after_date(files)
+        self.assertEqual(len(matching_files), 2)
+        self.assertIn(first_file, matching_files)
+        self.assertIn(second_file, matching_files)
+        self.assertNotIn(third_file, matching_files)
 
 
 if __name__ == '__main__':

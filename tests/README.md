@@ -16,7 +16,7 @@
 For test coverage we are using [Coverage.py](https://coverage.readthedocs.io/en/6.5.0/).
 To see all the information about the tests coverage locally follow these steps:
 - Attach to the ```yc-module-compilation``` container
-- Run ```pip install coverage``` (this is not necessary if ```coverage``` is added to your requirements.txt file locally)
+- Run ```pip install -r tests_requirements.txt```
 - Set all the needed environment variables using (this is not necessary if they are already set): ```export YANGCATALOG_CONFIG_PATH=$PWD/tests/resources/test.conf && export PYTHONPATH=$PWD/bin:$PYTHONPATH && export VIRTUAL_ENV=$PWD```
 - Run the tests with coverage:
   - To run all the tests: ```coverage run -m pytest```
