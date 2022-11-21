@@ -8,7 +8,7 @@ on:
 jobs:
 
   build:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         python-version: [3.9]
@@ -16,12 +16,17 @@ jobs:
     environment: tests
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+          cache-dependency-path: |
+            requirements.txt
+            tests_requirements.txt
+            lint_requirements.txt
 
       - name: Install dependencies
         run: |
@@ -42,7 +47,7 @@ jobs:
         uses: psf/black@stable
 
       - name: Setup Redis ${{ matrix.redis-version }}
-        uses: supercharge/redis-github-action@1.2.0
+        uses: supercharge/redis-github-action@1.4.0
         with:
           redis-version: ${{ matrix.redis-version }}
 
@@ -54,7 +59,7 @@ jobs:
           coverage run -am pytest
 
       - name: Store coverage file
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v3.1.1
         with:
           name: coverage
           path: .coverage
@@ -80,7 +85,7 @@ jobs:
           '
 
       - name: Store Pull Request comment to be posted
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v3.1.1
         if: ${{ steps.coverage_comment.outputs.COMMENT_FILE_WRITTEN == 'true' }}
         with:
           name: python-coverage-comment-action
@@ -88,7 +93,7 @@ jobs:
 
   update-coverage-badge:
     needs: build
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
     if: ${{ github.event_name == 'push' && github.event.push.head.repo.full_name != 'YangCatalog/module-compilation' }}
 
     steps:
@@ -100,9 +105,9 @@ jobs:
 
       - uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: 3.9
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v3.0.1
         with:
           name: coverage
 
@@ -113,7 +118,7 @@ jobs:
         run: mv coverage.svg .github/images
 
       - name: Verify Changed files
-        uses: tj-actions/verify-changed-files@v9
+        uses: tj-actions/verify-changed-files@v12
         id: changed_files
         with:
           files: .github/images/coverage.svg
