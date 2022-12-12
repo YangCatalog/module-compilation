@@ -49,7 +49,16 @@ compile_modules() {
 compile_modules --metadata "RFC-produced YANG models: Oh gosh, not all of them correctly passed $($PYANG -v) with --ietf :-( " --rfc
 
 # IETF drafts
-if [ $(date +%u) -eq 6 ]; then
+# TODO: force compilation of draft-archive is only needed once then this part should be removed in future releases
+filename="draft_archive_compilation_complete.txt"
+if [ -f "$filename" ]
+then
+   force_draft_archive_compilation=false
+else
+   force_draft_archive_compilation=true
+   touch "$filename"
+fi
+if [ "$force_draft_archive_compilation" ] || [ "$(date +%u)" -eq 6 ]; then
    compile_modules --draft-archive
    # high RAM usage
    wait

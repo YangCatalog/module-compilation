@@ -6,9 +6,11 @@ class ExampleMetadataGenerator(DraftMetadataGenerator):
         return {}
 
     def get_file_compilation(self):
-        return [
-            self.draft_url_anchor,
-            self.email_anchor,
-            self.compilation_status,
-            *list(self.compilation_results.values()),
-        ]
+        return {
+            'compilation_metadata': (
+                self.draft_url_anchor,
+                self.email_anchor,
+                self.compilation_status,
+            ),
+            'compilation_results': self.compilation_results.copy(),
+        }

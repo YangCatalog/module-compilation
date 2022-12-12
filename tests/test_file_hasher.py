@@ -24,7 +24,7 @@ import subprocess
 import unittest
 
 from file_hasher import FileHasher
-from versions import ValidatorsVersions
+from versions import get_validator_versions
 
 
 class TestFileHasher(unittest.TestCase):
@@ -38,10 +38,16 @@ class TestFileHasher(unittest.TestCase):
             cls.resource('sdo_files_modification_hashes.json.lock'),
         )
         with open(cls.resource('versions.json'), 'w') as f:
-            json.dump(ValidatorsVersions().get_versions(), f)
+            json.dump(get_validator_versions(), f)
         cls.correct_hashes = {
-            cls.resource('file.txt'): cls.compute_hash('file.txt'),
-            cls.resource('other_file.txt'): cls.compute_hash('other_file.txt'),
+            cls.resource('file.txt'): {
+                'hash': cls.compute_hash('file.txt'),
+                'validator_versions': {},
+            },
+            cls.resource('other_file.txt'): {
+                'hash': cls.compute_hash('other_file.txt'),
+                'validator_versions': {},
+            },
         }
         cls.incorrect_hashes = cls.correct_hashes.copy()
         cls.incorrect_hashes[cls.resource('file.txt')] = 64 * '0'
@@ -54,7 +60,7 @@ class TestFileHasher(unittest.TestCase):
 
     @classmethod
     def compute_hash(cls, file: str) -> str:
-        command = f'cat {cls.resource(file)} {cls.resource("versions.json")} | sha256sum'
+        command = f'cat {cls.resource(file)} | sha256sum'
         return subprocess.run(command, shell=True, capture_output=True).stdout.decode().split()[0]
 
     @classmethod
@@ -63,10 +69,16 @@ class TestFileHasher(unittest.TestCase):
 
     def test_hash_values(self):
         fh = FileHasher(dst_dir=self.resource_path, force_compilation=False)
-        _, hash = fh.should_parse(self.resource('file.txt'))
-        fh.updated_hashes[self.resource('file.txt')] = hash
-        _, hash = fh.should_parse(self.resource('other_file.txt'))
-        fh.updated_hashes[self.resource('other_file.txt')] = hash
+        module_hash_info = fh.should_parse(self.resource('file.txt'))
+        fh.updated_hashes[self.resource('file.txt')] = {
+            'hash': module_hash_info.hash,
+            'validator_versions': {},
+        }
+        module_hash_info = fh.should_parse(self.resource('other_file.txt'))
+        fh.updated_hashes[self.resource('other_file.txt')] = {
+            'hash': module_hash_info.hash,
+            'validator_versions': {},
+        }
         fh.dump_hashed_files_list(self.resource_path)
 
         with open(self.resource('sdo_files_modification_hashes.json')) as f:
@@ -79,10 +91,16 @@ class TestFileHasher(unittest.TestCase):
             json.dump(self.incorrect_hashes, f)
 
         fh = FileHasher(dst_dir=self.resource_path, force_compilation=False)
-        _, hash = fh.should_parse(self.resource('file.txt'))
-        fh.updated_hashes[self.resource('file.txt')] = hash
-        _, hash = fh.should_parse(self.resource('other_file.txt'))
-        fh.updated_hashes[self.resource('other_file.txt')] = hash
+        module_hash_info = fh.should_parse(self.resource('file.txt'))
+        fh.updated_hashes[self.resource('file.txt')] = {
+            'hash': module_hash_info.hash,
+            'validator_versions': {},
+        }
+        module_hash_info = fh.should_parse(self.resource('other_file.txt'))
+        fh.updated_hashes[self.resource('other_file.txt')] = {
+            'hash': module_hash_info.hash,
+            'validator_versions': {},
+        }
         fh.dump_hashed_files_list(self.resource_path)
 
         with open(self.resource('sdo_files_modification_hashes.json')) as f:
@@ -95,17 +113,17 @@ class TestFileHasher(unittest.TestCase):
             json.dump(self.incorrect_hashes, f)
 
         fh = FileHasher(dst_dir=self.resource_path, force_compilation=False)
-        should_parse, _ = fh.should_parse(self.resource('file.txt'))
-        self.assertEqual(should_parse, True)
-        should_parse, _ = fh.should_parse(self.resource('other_file.txt'))
-        self.assertEqual(should_parse, False)
+        module_hash_info = fh.should_parse(self.resource('file.txt'))
+        self.assertEqual(module_hash_info.hash_changed, True)
+        module_hash_info = fh.should_parse(self.resource('other_file.txt'))
+        self.assertEqual(module_hash_info.hash_changed, False)
 
     def test_force_compilation(self):
         with open(self.resource('sdo_files_modification_hashes.json'), 'w') as f:
             json.dump(self.correct_hashes, f)
 
         fh = FileHasher(dst_dir=self.resource_path, force_compilation=True)
-        should_parse, _ = fh.should_parse(self.resource('file.txt'))
-        self.assertEqual(should_parse, True)
-        should_parse, _ = fh.should_parse(self.resource('other_file.txt'))
-        self.assertEqual(should_parse, True)
+        module_hash_info = fh.should_parse(self.resource('file.txt'))
+        self.assertEqual(module_hash_info.hash_changed, True)
+        module_hash_info = fh.should_parse(self.resource('other_file.txt'))
+        self.assertEqual(module_hash_info.hash_changed, True)

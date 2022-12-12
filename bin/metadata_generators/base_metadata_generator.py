@@ -12,4 +12,7 @@ class BaseMetadataGenerator:
         return {'compilation-status': self.compilation_status}
 
     def get_file_compilation(self):
-        return [self.compilation_status, *list(self.compilation_results.values())]
+        return {
+            'compilation_metadata': (self.compilation_status,),
+            'compilation_results': self.compilation_results.copy(),
+        }

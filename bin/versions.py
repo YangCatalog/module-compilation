@@ -18,6 +18,7 @@ __license__ = 'Apache License, Version 2.0'
 __email__ = 'slavomir.mazur@pantheon.tech'
 __version__ = '1.1.0'
 
+from configparser import ConfigParser
 from subprocess import CalledProcessError, check_output
 
 from create_config import create_config
@@ -25,37 +26,32 @@ from pyang import __version__ as pyang_version
 from xym import __version__ as xym_version
 
 
-class ValidatorsVersions:
-    def __init__(self):
-        config = create_config()
-        confdc_exec = config.get('Tool-Section', 'confdc-exec')
+def get_validator_versions(config: ConfigParser = create_config()) -> dict:
+    confdc_exec = config.get('Tool-Section', 'confdc-exec')
 
-        # ConfD version
-        try:
-            confd_version = check_output(f'{confdc_exec} --version', shell=True).decode('utf-8').rstrip()
-        except CalledProcessError:
-            confd_version = 'undefined'
-        # yangdump version
-        try:
-            yangdump_cmd = '/usr/bin/yangdump-pro'
-            yangdump_version = check_output(f'{yangdump_cmd} --version', shell=True).decode('utf-8').strip()
-        except CalledProcessError:
-            yangdump_version = 'undefined'
-        # yanglint version
-        try:
-            yanglint_cmd = '/usr/local/bin/yanglint'
-            yanglint_version = check_output(f'{yanglint_cmd} --version', shell=True).decode('utf-8').rstrip()
-        except CalledProcessError:
-            yanglint_version = 'undefined'
+    # ConfD version
+    try:
+        confd_version = check_output(f'{confdc_exec} --version', shell=True).decode('utf-8').rstrip()
+    except CalledProcessError:
+        confd_version = 'undefined'
+    # yangdump version
+    try:
+        yangdump_cmd = '/usr/bin/yangdump-pro'
+        yangdump_version = check_output(f'{yangdump_cmd} --version', shell=True).decode('utf-8').strip()
+    except CalledProcessError:
+        yangdump_version = 'undefined'
+    # yanglint version
+    try:
+        yanglint_cmd = '/usr/local/bin/yanglint'
+        yanglint_version = check_output(f'{yanglint_cmd} --version', shell=True).decode('utf-8').rstrip()
+    except CalledProcessError:
+        yanglint_version = 'undefined'
 
-        self.versions = {
-            'validator_version': __version__,
-            'pyang_version': pyang_version,
-            'xym_version': xym_version,
-            'confd_version': confd_version,
-            'yanglint_version': yanglint_version,
-            'yangdump_version': yangdump_version,
-        }
-
-    def get_versions(self):
-        return self.versions
+    return {
+        'validator_version': __version__,
+        'pyang_version': pyang_version,
+        'xym_version': xym_version,
+        'confd_version': confd_version,
+        'yanglint_version': yanglint_version,
+        'yangdump_version': yangdump_version,
+    }

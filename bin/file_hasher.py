@@ -29,21 +29,19 @@ __email__ = 'slavomir.mazur@pantheon.tech'
 import hashlib
 import json
 import os.path
+from configparser import ConfigParser
+from dataclasses import dataclass
 
 import filelock
 from create_config import create_config
-from versions import ValidatorsVersions
 
 BLOCK_SIZE = 65536  # The size of each read from the file
 
 
 class FileHasher:
-    def __init__(self, dst_dir: str = '', force_compilation: bool = False):
-        config = create_config()
+    def __init__(self, dst_dir: str = '', force_compilation: bool = False, config: ConfigParser = create_config()):
         self.cache_dir = config.get('Directory-Section', 'cache')
-
         self.force_compilation = force_compilation
-        self.validators_versions_bytes = self._get_versions()
         self.files_hashes = self._load_hashed_files_list(dst_dir)
         self.updated_hashes = {}
 
@@ -63,13 +61,11 @@ class FileHasher:
             while len(file_block) > 0:
                 file_hash.update(file_block)
                 file_block = reader.read(BLOCK_SIZE)
-
-        file_hash.update(self.validators_versions_bytes)
-
         return file_hash.hexdigest()
 
-    def _load_hashed_files_list(self, dst_dir: str = '') -> list[dict]:
-        """Load dumped list of files content hashes from .json file.
+    def _load_hashed_files_list(self, dst_dir: str = '') -> dict:
+        """
+        Load dumped list of files content hashes from .json file.
         Several threads can access this file at once, so locking the file
         while accessing is necessary.
         """
@@ -87,7 +83,8 @@ class FileHasher:
         return hashed_files_list
 
     def dump_hashed_files_list(self, dst_dir: str = ''):
-        """Dumped updated list of files content hashes into .json file.
+        """
+        Dumped updated list of files content hashes into .json file.
         Several threads can access this file at once, so locking the file
         while accessing is necessary.
         """
@@ -111,13 +108,21 @@ class FileHasher:
                 json.dump(hash_cache, writer, indent=2, sort_keys=True)
             print(f'Dictionary of {len(hash_cache)} hashes successfully dumped into .json file')
 
-    def _get_versions(self) -> bytes:
-        """Return encoded validators versions dictionary."""
-        validators_versions = ValidatorsVersions()
-        actual_versions = validators_versions.get_versions()
-        return json.dumps(actual_versions).encode('utf-8')
+    @dataclass
+    class ModuleHashCheckForParsing:
+        hash_changed: bool
+        hash: str
+        validator_versions: dict
 
-    def should_parse(self, path: str) -> tuple[bool, str]:
+        def get_changed_validator_versions(self, validators_to_check: dict) -> list[str]:
+            changed_validators = []
+            for validator, version in validators_to_check.items():
+                if self.validator_versions.get(validator) == version:
+                    continue
+                changed_validators.append(validator)
+            return changed_validators
+
+    def should_parse(self, path: str) -> ModuleHashCheckForParsing:
         """
         Decide whether module at the given path should be parsed or not.
         Check whether file content hash has changed and keep it for the future use.
@@ -126,6 +131,11 @@ class FileHasher:
             :param path     (str) Full path to the file to be hashed
         """
         file_hash = self.hash_file(path)
-        old_file_hash = self.files_hashes.get(path)
-        hash_changed = old_file_hash != file_hash
-        return self.force_compilation or hash_changed, file_hash
+        old_file_hash_info = self.files_hashes.get(path)
+        if not old_file_hash_info or not isinstance(old_file_hash_info, dict):
+            return self.ModuleHashCheckForParsing(hash_changed=True, hash=file_hash, validator_versions={})
+        return self.ModuleHashCheckForParsing(
+            hash_changed=self.force_compilation or old_file_hash_info['hash'] != file_hash,
+            hash=file_hash,
+            validator_versions=old_file_hash_info['validator_versions'],
+        )

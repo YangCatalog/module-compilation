@@ -32,7 +32,7 @@ from pyang.statements import Statement
 from redis_connections.constants import RedisDatabasesEnum
 from redis_connections.redis_connection import RedisConnection
 from utility.static_variables import IETF_RFC_MAP, NAMESPACE_MAP, ORGANIZATIONS
-from versions import ValidatorsVersions
+from versions import get_validator_versions
 
 module_db: t.Optional[RedisConnection] = None
 incomplete_db: t.Optional[RedisConnection] = None
@@ -106,34 +106,35 @@ def module_or_submodule(yang_file_path: str) -> t.Optional[str]:
     Argument:
         :param yang_file_path   (str) Full path to the yang model to check
     """
-    if os.path.isfile(yang_file_path):
-        with open(yang_file_path, 'r', encoding='utf-8', errors='ignore') as f:
-            all_lines = f.readlines()
-        commented_out = False
-        for each_line in all_lines:
-            module_position = each_line.find('module')
-            submodule_position = each_line.find('submodule')
-            cpos = each_line.find('//')
+    if not os.path.isfile(yang_file_path):
+        return
+    with open(yang_file_path, 'r', encoding='utf-8', errors='ignore') as f:
+        all_lines = f.readlines()
+    commented_out = False
+    for each_line in all_lines:
+        module_position = each_line.find('module')
+        submodule_position = each_line.find('submodule')
+        cpos = each_line.find('//')
+        if commented_out:
+            mcpos = each_line.find('*/')
+        else:
+            mcpos = each_line.find('/*')
+        if mcpos != -1 and (cpos > mcpos or cpos == -1):
             if commented_out:
-                mcpos = each_line.find('*/')
+                commented_out = False
             else:
-                mcpos = each_line.find('/*')
-            if mcpos != -1 and (cpos > mcpos or cpos == -1):
-                if commented_out:
-                    commented_out = False
-                else:
-                    commented_out = True
-            if submodule_position >= 0 and (submodule_position < cpos or cpos == -1) and not commented_out:
-                return 'submodule'
-            if module_position >= 0 and (module_position < cpos or cpos == -1) and not commented_out:
-                return 'module'
-        print(f'File {yang_file_path} is not yang file or not well formated')
-        return 'wrong file'
-    return None
+                commented_out = True
+        if submodule_position >= 0 and (submodule_position < cpos or cpos == -1) and not commented_out:
+            return 'submodule'
+        if module_position >= 0 and (module_position < cpos or cpos == -1) and not commented_out:
+            return 'module'
+    print(f'File {yang_file_path} is not yang file or not well formated')
+    return 'wrong file'
 
 
 def dict_to_list(in_dict: dict, is_rfc: bool = False) -> list[list]:
-    """Create a list out of compilation results from 'in_dict' dictionary variable.
+    """
+    Create a list out of compilation results from 'in_dict' dictionary variable.
     First element of each list is name of the module, second one is compilation-status
     which is followed by compilation-results.
 
@@ -145,11 +146,16 @@ def dict_to_list(in_dict: dict, is_rfc: bool = False) -> list[list]:
     """
     if is_rfc:
         return [[key, value] for key, value in in_dict.items() if value is not None]
-    return [[key, *value] for key, value in in_dict.items() if value is not None]
+    return [
+        [key, *value['compilation_metadata'], *value['compilation_results'].values()]
+        for key, value in in_dict.items()
+        if value is not None
+    ]
 
 
 def list_br_html_addition(modules_list: list):
-    """Replace the newlines ( \n ) by the <br> HTML tag throughout the list.
+    """
+    Replace the newlines ( \n ) by the <br> HTML tag throughout the list.
 
     Argument:
         :param modules_list     (list) List of lists of compilation results
@@ -166,14 +172,14 @@ def number_that_passed_compilation(in_dict: dict, position: int, compilation_con
 
     Arguments:
         :param in_dict                  (dict) Dictionary of key=yang-model, value=list of compilation results
-        :param position                 (int) Position in the list where the 'compilation_condidtion' is
+        :param position                 (int) Position in the list where the 'compilation_condition' is met
         :param compilation_condition    (str) Compilation result we are looking for -
                                               PASSED, PASSED WITH WARNINGS, FAILED
     :return: the number of YANG models which meet the 'compilation_condition'
     """
     total = 0
     for results in in_dict.values():
-        if results[position] == compilation_condition:
+        if results['compilation_metadata'][position] == compilation_condition:
             total += 1
     return total
 
@@ -198,11 +204,12 @@ def check_yangcatalog_data(
     compilation_results: dict,
     all_modules_data: t.Dict[str, dict],
     ietf_type: t.Optional[IETF] = None,
+    validator_versions: t.Optional[dict] = None,
 ):
     result_html_dir = config.get('Web-Section', 'result-html-dir')
     domain_prefix = config.get('Web-Section', 'domain-prefix')
     save_file_dir = config.get('Directory-Section', 'save-file-dir')
-    versions = ValidatorsVersions().get_versions()
+    validator_versions = validator_versions or get_validator_versions(config=config)
 
     global module_db, incomplete_db
     if not (module_db and incomplete_db):
@@ -253,7 +260,7 @@ def check_yangcatalog_data(
             compilation_results,
             result_html_dir,
             is_rfc,
-            versions,
+            validator_versions,
             ietf_type,
         )
         if module_data.get('compilation-status') == 'unknown':
@@ -300,10 +307,11 @@ def _resolve_revision(parsed_yang: Statement) -> str:
 
 
 def _resolve_organization(parsed_yang: Statement, save_file_dir: str) -> str:
-    parsed_organization = parsed_yang.search('organization')[0].arg.lower()
-    for possible_organization in ORGANIZATIONS:
-        if possible_organization in parsed_organization:
-            return possible_organization
+    parsed_organization = org[0].arg.lower() if (org := parsed_yang.search('organization')) else None
+    if parsed_organization:
+        for possible_organization in ORGANIZATIONS:
+            if possible_organization in parsed_organization:
+                return possible_organization
     if parsed_yang.keyword == 'submodule':
         belongs_to = belongs_to[0].arg if (belongs_to := parsed_yang.search('belongs-to')) else None
         if not belongs_to:
@@ -410,7 +418,8 @@ def _generate_ths(versions: dict, ietf_type: t.Optional[IETF]) -> t.List[str]:
 
 
 def _render(tpl_path: str, context: dict) -> str:
-    """Render jinja html template
+    """
+    Render jinja html template
     Arguments:
         :param tpl_path: (str) path to a file
         :param context: (dict) dictionary containing data to render jinja

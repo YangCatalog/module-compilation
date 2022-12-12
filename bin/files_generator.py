@@ -24,15 +24,14 @@ import time
 
 import HTML
 from utility.utility import dict_to_list, list_br_html_addition
-from versions import ValidatorsVersions
+from versions import get_validator_versions
 
 
 class FilesGenerator:
     def __init__(self, htmlpath: str):
         self._htmlpath = htmlpath
         self.__imported_note = 'Note: also generates errors for imported files.'
-        validators_versions = ValidatorsVersions()
-        self._versions = validators_versions.get_versions()
+        self._versions = get_validator_versions()
 
     def write_dictionary(self, dictionary_data: dict, file_name: str):
         """
@@ -58,7 +57,7 @@ class FilesGenerator:
         metadata: str = '',
     ):
         """
-        Create YANGPageCompilation HTML table out of the modules compilation messages and generate a HTML file.
+        Create YANGPageCompilation HTML table out of the modules compilation messages and generate an HTML file.
 
         Arguments:
             :param modules_results  (list) List of the values to generate the HTML table
@@ -178,9 +177,6 @@ class FilesGenerator:
         os.chmod(html_filename, 0o664)
         self._custom_print('{} HTML page generated in directory {}'.format(html_filename, self._htmlpath))
 
-    #
-    # HEADERS
-    #
     def get_yang_page_compilation_headers(self, lint: bool):
         """
         Create headers for YANGPageCompilation HTML table.
@@ -266,9 +262,6 @@ class FilesGenerator:
             ),
         ]
 
-    #
-    # HELPERS
-    #
     def _custom_print(self, message: str):
         timestamp = '{} ({}):'.format(datetime.datetime.now().time(), os.getpid())
         print('{} {}'.format(timestamp, message), flush=True)
