@@ -32,7 +32,7 @@ from pyang.statements import Statement
 from redis_connections.constants import RedisDatabasesEnum
 from redis_connections.redis_connection import RedisConnection
 from utility.static_variables import IETF_RFC_MAP, NAMESPACE_MAP, ORGANIZATIONS
-from versions import get_validator_versions
+from versions import validator_versions
 
 module_db: t.Optional[RedisConnection] = None
 incomplete_db: t.Optional[RedisConnection] = None
@@ -204,12 +204,10 @@ def check_yangcatalog_data(
     compilation_results: dict,
     all_modules_data: t.Dict[str, dict],
     ietf_type: t.Optional[IETF] = None,
-    validator_versions: t.Optional[dict] = None,
 ):
     result_html_dir = config.get('Web-Section', 'result-html-dir')
     domain_prefix = config.get('Web-Section', 'domain-prefix')
     save_file_dir = config.get('Directory-Section', 'save-file-dir')
-    validator_versions = validator_versions or get_validator_versions(config=config)
 
     global module_db, incomplete_db
     if not (module_db and incomplete_db):

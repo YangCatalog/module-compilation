@@ -55,3 +55,6 @@ def get_validator_versions(config: ConfigParser = create_config()) -> dict:
         'yanglint_version': yanglint_version,
         'yangdump_version': yangdump_version,
     }
+
+
+validator_versions = get_validator_versions()

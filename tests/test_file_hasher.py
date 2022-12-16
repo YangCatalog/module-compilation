@@ -24,7 +24,7 @@ import subprocess
 import unittest
 
 from file_hasher import FileHasher
-from versions import get_validator_versions
+from versions import validator_versions
 
 
 class TestFileHasher(unittest.TestCase):
@@ -38,7 +38,7 @@ class TestFileHasher(unittest.TestCase):
             cls.resource('sdo_files_modification_hashes.json.lock'),
         )
         with open(cls.resource('versions.json'), 'w') as f:
-            json.dump(get_validator_versions(), f)
+            json.dump(validator_versions, f)
         cls.correct_hashes = {
             cls.resource('file.txt'): {
                 'hash': cls.compute_hash('file.txt'),

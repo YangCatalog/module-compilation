@@ -41,7 +41,7 @@ from utility.utility import (
     module_or_submodule,
     number_that_passed_compilation,
 )
-from versions import get_validator_versions
+from versions import validator_versions
 
 __author__ = 'Benoit Claise'
 __copyright__ = 'Copyright(c) 2015-2018, Cisco Systems, Inc.,  Copyright The IETF Trust 2022, All Rights Reserved'
@@ -227,7 +227,6 @@ def validate(
     except (FileNotFoundError, json.JSONDecodeError):
         cached_compilation_results = {}
 
-    validator_versions = get_validator_versions(config=config)
     validator_versions_to_check = {
         'pyang': validator_versions['pyang_version'],
         'confdc': validator_versions['confd_version'],
@@ -276,7 +275,6 @@ def validate(
                 module_compilation_results,
                 all_yang_catalog_metadata,
                 ietf,
-                validator_versions=validator_versions,
             )
 
             # Revert to previous hash if compilation status is 'UNKNOWN' -> try to parse model again next time
@@ -524,10 +522,10 @@ def main():
         path = os.path.join(web_private, 'IETFCiscoAuthors.json')
         try:
             with open(path) as f:
-                draft_keys = json.load(f).keys()
+                old_draft_results = json.load(f)
         except FileNotFoundError:
-            draft_keys = set()
-        draft_results = {key: aggregate_results['all'] for key in draft_keys}
+            old_draft_results = {}
+        draft_results = old_draft_results | aggregate_results['all']
         files_generator.write_dictionary(draft_results, 'IETFCiscoAuthors')
     elif ietf == IETF.EXAMPLE:
         files_generator.write_dictionary(aggregate_results['all'], args.prefix)

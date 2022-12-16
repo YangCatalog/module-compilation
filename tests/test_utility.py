@@ -28,7 +28,7 @@ import utility.utility as utility
 from create_config import create_config
 from redis_connections.constants import RedisDatabasesEnum
 from redis_connections.redis_connection import RedisConnection
-from versions import get_validator_versions
+from versions import validator_versions
 
 
 class TestUtilityBase(unittest.TestCase):
@@ -212,20 +212,19 @@ class TestUtility(TestUtilityBase):
         with open(result_file_path, 'rb') as f:
             file_data = f.read()
         file_last_modification_time = os.path.getmtime(result_file_path)
-        versions = get_validator_versions()
         compilation_results = {
             'pyang_lint': 'lint',
-            'pyang': versions.get('pyang_version', 'test'),
-            'confdrc': versions.get('confd_version', 'test'),
-            'yumadump': versions.get('yangdump_version', 'test'),
-            'yanglint': versions.get('yanglin4t_version', 'test'),
+            'pyang': validator_versions.get('pyang_version', 'test'),
+            'confdrc': validator_versions.get('confd_version', 'test'),
+            'yumadump': validator_versions.get('yangdump_version', 'test'),
+            'yanglint': validator_versions.get('yanglin4t_version', 'test'),
         }
         file_url = utility._generate_compilation_result_file(
             module_data=module_data,
             compilation_results=compilation_results,
             result_html_dir=result_dir,
             is_rfc=False,
-            versions=versions,
+            versions=validator_versions,
         )
         self.assertEqual(file_url, filename)
         self.assertGreater(os.path.getmtime(result_file_path), file_last_modification_time)
