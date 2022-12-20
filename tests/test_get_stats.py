@@ -27,8 +27,8 @@ from datetime import datetime, timedelta
 from uuid import uuid4
 
 from create_config import create_config
+from figures_and_stats.yang_get_stats import GetStats
 from utility.utility import list_files_by_extensions
-from yang_get_stats import GetStats
 
 
 class TestGetStats(unittest.TestCase):

@@ -23,14 +23,14 @@ import shutil
 import subprocess
 import unittest
 
-import yang_version_1_1 as yv11
+from ietf_modules_extraction import yang_version_1_1 as yv11
 
 
 class TestYangVersion11(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.resource_path = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/yang_version_1_1')
-        cls.script_path = os.path.join(os.environ['VIRTUAL_ENV'], 'bin/yang_version_1_1.py')
+        cls.script_path = os.path.join(os.environ['VIRTUAL_ENV'], 'ietf_modules_extraction/yang_version_1_1.py')
         cls.src = os.path.join(cls.resource_path, 'YANG')
         cls.dst = os.path.join(cls.resource_path, 'YANG-v11')
 

@@ -6,4 +6,4 @@ select=E,F,W,C4,Q0,N80,ABS,W504
 ignore=W503,Q003,C417
 extend-ignore=E203
 per-file-ignores=
-    bin/yang_figures.py:F405,F403
+    yang_figures.py:F405,F403

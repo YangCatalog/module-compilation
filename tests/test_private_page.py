@@ -21,7 +21,7 @@ __email__ = 'richard.zilincik@pantheon.tech'
 import os
 import unittest
 
-import private_page as pp
+from main_page_generation import private_page as pp
 
 
 class TestPrivatePage(unittest.TestCase):

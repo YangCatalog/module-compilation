@@ -31,7 +31,7 @@ class TestRenameFileBackup(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.resource_path = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/rename_file_backup')
-        cls.script_path = os.path.join(os.environ['VIRTUAL_ENV'], 'bin/rename_file_backup.py')
+        cls.script_path = os.path.join(os.environ['VIRTUAL_ENV'], 'rename_file_backup.py')
         cls.private_directory = os.path.join(cls.resource_path, 'private')
         cls.backup_directory = os.path.join(cls.resource_path, 'backup')
         cls.filename = 'IETFYANGPageMain.html'

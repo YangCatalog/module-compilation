@@ -7,5 +7,5 @@ YANGCATALOG_CONFIG_PATH=<YANGCATALOG_CONFIG_PATH>
 # m h  dom mon dow   command
 #
 
-5 1 * * * (cd /module-compilation/bin/cronjobs ; ./cronjob)
-0 10 * * 3 (cd /module-compilation/bin/cronjobs ; ./cronjob-drafts)
+5 1 * * * (cd /module-compilation/cronjobs ; ./cronjob)
+0 10 * * 3 (cd /module-compilation/cronjobs ; ./cronjob-drafts)

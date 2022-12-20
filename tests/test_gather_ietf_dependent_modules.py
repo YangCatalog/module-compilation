@@ -25,7 +25,7 @@ import unittest
 from unittest import mock
 
 from create_config import create_config
-from gather_ietf_dependent_modules import copy_modules
+from ietf_modules_extraction.gather_ietf_dependent_modules import copy_modules
 
 
 class TestGatherIetfDependentModules(unittest.TestCase):

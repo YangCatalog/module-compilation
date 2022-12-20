@@ -30,7 +30,7 @@ class TestRemoveDirectoryContent(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.resource_path = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/remove_directory_content')
-        cls.script_path = os.path.join(os.environ['VIRTUAL_ENV'], 'bin/remove_directory_content.py')
+        cls.script_path = os.path.join(os.environ['VIRTUAL_ENV'], 'remove_directory_content.py')
         cls.subdir_path = os.path.join(cls.resource_path, 'subdir')
         cls.file_path = os.path.join(cls.resource_path, 'test_file.json')
         cls.symlink_src_file = os.path.join(cls.resource_path, 'test_symlink.json')

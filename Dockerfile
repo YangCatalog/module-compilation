@@ -16,17 +16,16 @@ ENV YANGLINT_VERSION "$YANGLINT_VERSION"
 ENV XYM_VERSION "$XYM_VERSION"
 ENV LANG=C.UTF-8 LC_ALL=C.UTF-8 PYTHONUNBUFFERED=1
 
-RUN echo "export PATH=$VIRTUAL_ENV/bin:$PATH" >/etc/environment
+RUN echo "export PATH=$VIRTUAL_ENV:$PATH" >/etc/environment
 ENV GIT_PYTHON_GIT_EXECUTABLE=/usr/bin/git
 
-ENV YANG=/.
+ENV VIRTUAL_ENV=/module-compilation
+ENV CONF=$VIRTUAL_ENV/conf
 ENV YANGVAR="get_config.py --section Directory-Section --key var"
-ENV BIN=$YANG/module-compilation/bin
-ENV CONF=$YANG/module-compilation/conf
 ENV BACKUPDIR="get_config.py --section Directory-Section --key backup"
 ENV CONFD_DIR="get_config.py --section Tool-Section --key confd-dir"
 ENV PYANG="get_config.py --section Tool-Section --key pyang-exec"
-ENV PYANG_PLUGINPATH="/module-compilation/bin/utility/pyang_plugin"
+ENV PYANG_PLUGINPATH="/module-compilation/utility/pyang_plugin"
 ENV IS_PROD="get_config.py --section General-Section --key is-prod"
 
 #
@@ -48,8 +47,6 @@ ENV TMP="get_config.py --section Directory-Section --key temp"
 ENV WEB_PRIVATE="get_config.py --section Web-Section --key private-directory"
 ENV WEB_DOWNLOADABLES="get_config.py --section Web-Section --key downloadables-directory"
 ENV WEB="get_config.py --section Web-Section --key public-directory"
-
-ENV VIRTUAL_ENV=/module-compilation
 
 RUN groupadd -g ${YANG_GID} -r yang && useradd --no-log-init -r -g yang -u ${YANG_ID} -d $VIRTUAL_ENV yang
 
@@ -103,9 +100,9 @@ RUN sed -i "/imklog/s/^/#/" /etc/rsyslog.conf
 RUN rm -rf /usr/bin/python
 RUN ln -s /usr/bin/python3 /usr/bin/python
 COPY ./module-compilation $VIRTUAL_ENV
-RUN cd /module-compilation/bin/resources/HTML && python setup.py install
+RUN cd /module-compilation/resources/HTML && python setup.py install
 
-RUN chmod 0777 bin/configure.sh
+RUN chmod 0777 conf/configure.sh
 
 RUN chown -R yang:yang $VIRTUAL_ENV
 USER ${YANG_ID}:${YANG_GID}
