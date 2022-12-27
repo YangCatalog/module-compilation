@@ -17,6 +17,7 @@ import datetime
 import json
 import os
 import re
+import time
 import typing as t
 from configparser import ConfigParser
 
@@ -27,6 +28,7 @@ from filelock import FileLock
 from create_config import create_config
 from file_hasher import FileHasher
 from files_generator import FilesGenerator
+from job_log import JobLogStatuses, job_log
 from metadata_generators.base_metadata_generator import BaseMetadataGenerator
 from metadata_generators.draft_metadata_generator import ArchivedMetadataGenerator, DraftMetadataGenerator
 from metadata_generators.example_metadata_generator import ExampleMetadataGenerator
@@ -43,6 +45,8 @@ from utility.utility import (
     number_that_passed_compilation,
 )
 from versions import validator_versions
+
+file_basename = os.path.basename(__file__)
 
 __author__ = 'Benoit Claise'
 __copyright__ = 'Copyright(c) 2015-2018, Cisco Systems, Inc.,  Copyright The IETF Trust 2022, All Rights Reserved'
@@ -430,6 +434,8 @@ def main():
     )
     args = parser.parse_args()
 
+    start_time = int(time.time())
+    job_log(start_time, None, temp_dir, file_basename, status=JobLogStatuses.IN_PROGRESS)
     # Set options depending on the type of documents we're compiling
     if not any([args.draft, args.draft_archive, args.example, args.rfc]):
         ietf = None
@@ -462,6 +468,14 @@ def main():
         args.prefix = 'IETFDraftExample'
         args.rootdir = os.path.join(ietf_directory, 'YANG-example')
     else:
+        job_log(
+            start_time,
+            int(time.time()),
+            temp_dir,
+            file_basename,
+            error='Incorrect ietf arg',
+            status=JobLogStatuses.FAIL,
+        )
         assert False, 'This is unreachable'
 
     custom_print(f'Start of job in {args.rootdir}')
@@ -600,6 +614,8 @@ def main():
 
     # Update files content hashes and dump into .json file
     file_hasher.dump_hashed_files_list()
+
+    job_log(start_time, int(time.time()), temp_dir, file_basename, status=JobLogStatuses.SUCCESS)
 
 
 def _print_compilation_results_summary(files_prefix: str, ietf: IETF, compilation_stats: dict):

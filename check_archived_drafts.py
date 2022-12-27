@@ -31,7 +31,7 @@ import requests
 
 from create_config import create_config
 from extractors.draft_extractor import DraftExtractor
-from job_log import job_log
+from job_log import JobLogStatuses, job_log
 from message_factory.message_factory import MessageFactory
 from remove_directory_content import remove_directory_content
 
@@ -83,14 +83,15 @@ class CheckArchivedDrafts:
         self.incorrect_revision_modules: list[str] = []
 
     def start_process(self):
-        start = int(time.time())
+        start_time = int(time.time())
         self._custom_print(f'Starting {file_basename} script')
+        job_log(start_time, None, self.temp_dir, file_basename, status=JobLogStatuses.IN_PROGRESS)
         try:
             self._extract_drafts()
         except Exception as err:
             self._custom_print('Error occurred while extracting modules')
             end = int(time.time())
-            job_log(start, end, self.temp_dir, file_basename, error=repr(err), status='Fail')
+            job_log(start_time, end, self.temp_dir, file_basename, error=repr(err), status=JobLogStatuses.FAIL)
             return
         self._get_all_modules()
         self._get_incorrect_and_missing_modules()
@@ -101,7 +102,7 @@ class CheckArchivedDrafts:
             mf.send_missing_modules(self.missing_modules, self.incorrect_revision_modules)
         message = {'label': 'Number of missing modules', 'message': len(self.missing_modules)}
         end = int(time.time())
-        job_log(start, end, self.temp_dir, file_basename, messages=[message], status='Success')
+        job_log(start_time, end, self.temp_dir, file_basename, messages=[message], status=JobLogStatuses.SUCCESS)
         self._custom_print(f'end of {file_basename} job')
         shutil.rmtree(self.all_yang_path, ignore_errors=True)  # Cleaning created directory
 

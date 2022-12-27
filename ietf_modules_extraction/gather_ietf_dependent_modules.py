@@ -19,11 +19,15 @@ __email__ = 'miroslav.kovac@pantheon.tech'
 
 import os
 import shutil
+import time
 from typing import Set
 
 import requests
 
 from create_config import create_config
+from job_log import JobLogStatuses, job_log
+
+file_basename = os.path.basename(__file__)
 
 ORGANIZATIONS = ['ieee', 'ietf']
 
@@ -64,7 +68,11 @@ if __name__ == '__main__':
     config = create_config()
     yangcatalog_api_prefix = config.get('Web-Section', 'yangcatalog-api-prefix')
     all_modules_dir = config.get('Directory-Section', 'save-file-dir')
+    temp_dir = config.get('Directory-Section', 'temp')
     ietf_dir = config.get('Directory-Section', 'ietf-directory')
     ietf_dependencies_dir = os.path.join(ietf_dir, 'dependencies')
 
+    start_time = int(time.time())
+    job_log(start_time, None, temp_dir, file_basename, status=JobLogStatuses.IN_PROGRESS)
     copy_modules(yangcatalog_api_prefix, all_modules_dir, ietf_dependencies_dir)
+    job_log(start_time, int(time.time()), temp_dir, file_basename, status=JobLogStatuses.SUCCESS)

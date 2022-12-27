@@ -20,18 +20,25 @@ import argparse
 import json
 import os.path
 import typing as t
+from enum import Enum
 
 from create_config import create_config
 
 
+class JobLogStatuses(str, Enum):
+    SUCCESS = 'Success'
+    IN_PROGRESS = 'In Progress'
+    FAIL = 'Fail'
+
+
 def job_log(
     start_time: int,
-    end_time: int,
+    end_time: t.Optional[int],
     temp_dir: str,
     filename: str,
     messages: t.Optional[list] = None,
     error: str = '',
-    status: str = '',
+    status: str = JobLogStatuses,
 ):
     cronjob_results_path = os.path.join(temp_dir, 'cronjob.json')
     result = {'start': start_time, 'end': end_time, 'status': status, 'error': error, 'messages': messages or []}
@@ -44,14 +51,11 @@ def job_log(
 
     filename = filename.split('.py')[0]
     # If successful rewrite, otherwise use last_successful value from JSON
-    if status == 'Success':
+    last_successful = None
+    if status == JobLogStatuses.SUCCESS:
         last_successful = end_time
-    else:
-        try:
-            previous_state = file_content[filename]
-            last_successful = previous_state.get('last_successfull')
-        except KeyError:
-            last_successful = None
+    elif previous_state := file_content.get(filename):
+        last_successful = previous_state.get('last_successfull')
 
     result['last_successfull'] = last_successful
     file_content[filename] = result

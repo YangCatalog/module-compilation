@@ -19,11 +19,15 @@ __email__ = 'miroslav.kovac@pantheon.tech'
 import argparse
 import json
 import os
+import time
 import typing as t
 
 import jinja2
 
 from create_config import create_config
+from job_log import JobLogStatuses, job_log
+
+file_basename = os.path.basename(__file__)
 
 
 def alnum(s: str):
@@ -98,6 +102,7 @@ def main():
     config = create_config()
     private_dir = config.get('Web-Section', 'private-directory')
     yang_repo_dir = config.get('Directory-Section', 'yang-models-dir')
+    temp_dir = config.get('Directory-Section', 'temp')
 
     cisco_dir = os.path.join(yang_repo_dir, 'vendor/cisco')
     juniper_dir = os.path.join(yang_repo_dir, 'vendor/juniper')
@@ -106,6 +111,8 @@ def main():
     nokia_dir = os.path.join(yang_repo_dir, 'vendor/nokia')
     etsi_dir = os.path.join(yang_repo_dir, 'standard/etsi')
 
+    start_time = int(time.time())
+    job_log(start_time, None, temp_dir, file_basename, status=JobLogStatuses.IN_PROGRESS)
     context = {}
 
     cisco_contexts = get_vendor_context(
@@ -180,6 +187,8 @@ def main():
             'figures/ietf-routing.png',
         ]
         json.dump(context, writer)
+
+    job_log(start_time, int(time.time()), temp_dir, file_basename, status=JobLogStatuses.SUCCESS)
 
 
 if __name__ == '__main__':

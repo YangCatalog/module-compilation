@@ -25,9 +25,13 @@ import argparse
 import os
 import shutil
 import subprocess
+import time
 
 from create_config import create_config
+from job_log import JobLogStatuses, job_log
 from remove_directory_content import remove_directory_content
+
+file_basename = os.path.basename(__file__)
 
 
 def find_v11_models(src_dir: str, dst_dir: str, debug: int = 0) -> list:
@@ -67,6 +71,7 @@ def find_v11_models(src_dir: str, dst_dir: str, debug: int = 0) -> list:
 if __name__ == '__main__':
     config = create_config()
     ietf_directory = config.get('Directory-Section', 'ietf-directory')
+    temp_dir = config.get('Directory-Section', 'temp')
 
     src = os.path.join(ietf_directory, 'YANG')
     dst = os.path.join(ietf_directory, 'YANG-v11')
@@ -88,4 +93,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    start_time = int(time.time())
+    job_log(start_time, None, temp_dir, file_basename, status=JobLogStatuses.IN_PROGRESS)
     find_v11_models(args.srcpath, args.dstpath, args.debug)
+    job_log(start_time, int(time.time()), temp_dir, file_basename, status=JobLogStatuses.SUCCESS)

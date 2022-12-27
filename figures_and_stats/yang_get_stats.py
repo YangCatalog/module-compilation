@@ -22,6 +22,7 @@ import datetime
 import json
 import os
 import re
+import time
 import typing as t
 from configparser import ConfigParser
 
@@ -29,7 +30,10 @@ import matplotlib as mpl
 from matplotlib.dates import date2num
 
 from create_config import create_config
+from job_log import JobLogStatuses, job_log
 from utility.utility import list_files_by_extensions
+
+file_basename = os.path.basename(__file__)
 
 mpl.use('Agg')
 
@@ -85,6 +89,7 @@ class GetStats:
         self.web_private = config.get('Web-Section', 'private-directory')
         self.backup_directory = config.get('Directory-Section', 'backup')
         self.ietf_directory = config.get('Directory-Section', 'ietf-directory')
+        self.temp_dir = config.get('Directory-Section', 'temp')
 
         self.draft_path_strict = os.path.join(self.ietf_directory, 'draft-with-YANG-strict')
         self.draft_path_nostrict = os.path.join(self.ietf_directory, 'draft-with-YANG-no-strict')
@@ -123,6 +128,8 @@ class GetStats:
         return compilation_stats
 
     def start_process(self):
+        start_time = int(time.time())
+        job_log(start_time, None, self.temp_dir, file_basename, status=JobLogStatuses.IN_PROGRESS)
         all_files = list_files_by_extensions(
             self.backup_directory,
             ('html',),
@@ -141,6 +148,8 @@ class GetStats:
         for path in self.remove_old_html_file_paths:
             if os.path.exists(path):
                 os.unlink(path)
+
+        job_log(start_time, int(time.time()), self.temp_dir, file_basename, status=JobLogStatuses.SUCCESS)
 
     def gather_stats(self):
         for filename in self.files:
