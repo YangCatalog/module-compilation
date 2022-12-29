@@ -20,7 +20,6 @@ __email__ = 'slavomir.mazur@pantheon.tech'
 
 import os
 import shutil
-import subprocess
 import unittest
 
 from utility.utility import remove_directory_content
@@ -51,14 +50,6 @@ class TestRemoveDirectoryContent(unittest.TestCase):
         self.assertNotEqual(os.listdir(self.resource_path), [])
 
         remove_directory_content(self.resource_path, 1)
-
-        self.assertTrue(os.path.isdir(self.resource_path))
-        self.assertEqual(os.listdir(self.resource_path), [])
-
-    def test_rename_file_backup_from_console(self) -> None:
-        """Run the script from the console by passing the arguments."""
-        bash_command = f'python {self.script_path} --dir {self.resource_path} --debug 1'
-        subprocess.run(bash_command, shell=True, capture_output=True, check=False).stdout.decode()
 
         self.assertTrue(os.path.isdir(self.resource_path))
         self.assertEqual(os.listdir(self.resource_path), [])
