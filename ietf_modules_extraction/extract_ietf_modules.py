@@ -25,7 +25,7 @@ import os
 from create_config import create_config
 from extractors.draft_extractor import DraftExtractor
 from extractors.rfc_extractor import RFCExtractor
-from remove_directory_content import remove_directory_content
+from utility.utility import remove_directory_content
 
 # ----------------------------------------------------------------------
 # Functions

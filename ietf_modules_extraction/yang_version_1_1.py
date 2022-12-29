@@ -27,7 +27,7 @@ import shutil
 import subprocess
 
 from create_config import create_config
-from remove_directory_content import remove_directory_content
+from utility.utility import remove_directory_content
 
 
 def find_v11_models(src_dir: str, dst_dir: str, debug: int = 0) -> list:

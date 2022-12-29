@@ -20,6 +20,7 @@ __email__ = 'slavomir.mazur@pantheon.tech'
 import configparser
 import glob
 import os
+import shutil
 import time
 import typing as t
 from datetime import date
@@ -429,3 +430,27 @@ def _render(tpl_path: str, context: dict) -> str:
         context['result'][key] = context['result'][key].replace('\n', '<br>')
     path, filename = os.path.split(tpl_path)
     return jinja2.Environment(loader=jinja2.FileSystemLoader(path or './')).get_template(filename).render(context)
+
+
+def remove_directory_content(directory: str, debug_level: int = 0) -> None:
+    """
+    Empty the content of the directory passed as an argument.
+
+    Arguments:
+        :param directory    (str) Path to the directory from which the content should be removed
+        :param debug_level  (int) debug level; If > 0 print some debug statements to the console
+    """
+    if not directory:
+        return
+    if not os.path.isdir(directory):
+        os.makedirs(directory)
+    for filename in os.listdir(directory):
+        file_path = os.path.join(directory, filename)
+        try:
+            os.unlink(file_path)
+            if debug_level > 0:
+                print('DEBUG: removing the file {}'.format(file_path))
+        except IsADirectoryError:
+            shutil.rmtree(file_path)
+            if debug_level > 0:
+                print('DEBUG: removing the subdirectory {}'.format(file_path))
