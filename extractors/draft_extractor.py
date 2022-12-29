@@ -27,7 +27,7 @@ from io import StringIO
 
 from xym import xym
 
-from extract_elem import extract_elem
+from extractors.extract_elem import extract_elem
 from extractors.helper import check_after_xym_extraction, invert_yang_modules_dict, remove_invalid_files
 from message_factory.message_factory import MessageFactory
 

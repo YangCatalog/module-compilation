@@ -22,7 +22,7 @@ import filecmp
 import os
 import unittest
 
-import extract_elem as ee
+import extractors.extract_elem as ee
 
 
 class TestExtractElem(unittest.TestCase):
