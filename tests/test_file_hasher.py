@@ -23,7 +23,7 @@ import os
 import subprocess
 import unittest
 
-from file_hasher import FileHasher
+from modules_compilation.file_hasher import FileHasher
 from versions import validator_versions
 
 

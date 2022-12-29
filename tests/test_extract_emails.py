@@ -21,7 +21,7 @@ __email__ = 'richard.zilincik@pantheon.tech'
 import os
 import unittest
 
-import extract_emails as ee
+import metadata_generators.extract_emails as ee
 
 
 class TestExtractElem(unittest.TestCase):

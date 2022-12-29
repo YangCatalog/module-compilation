@@ -26,13 +26,13 @@ from compilation_status import combined_compilation, pyang_compilation_status
 from filelock import FileLock
 
 from create_config import create_config
-from file_hasher import FileHasher
-from files_generator import FilesGenerator
 from job_log import JobLogStatuses, job_log
 from metadata_generators.base_metadata_generator import BaseMetadataGenerator
 from metadata_generators.draft_metadata_generator import ArchivedMetadataGenerator, DraftMetadataGenerator
 from metadata_generators.example_metadata_generator import ExampleMetadataGenerator
 from metadata_generators.rfc_metadata_generator import RfcMetadataGenerator
+from modules_compilation.file_hasher import FileHasher
+from modules_compilation.files_generator import FilesGenerator
 from parsers.confdc_parser import ConfdcParser
 from parsers.pyang_parser import PyangParser
 from parsers.yangdump_pro_parser import YangdumpProParser

@@ -29,7 +29,7 @@ import time
 
 from create_config import create_config
 from job_log import JobLogStatuses, job_log
-from remove_directory_content import remove_directory_content
+from utility.utility import remove_directory_content
 
 file_basename = os.path.basename(__file__)
 

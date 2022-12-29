@@ -27,7 +27,7 @@ from create_config import create_config
 from extractors.draft_extractor import DraftExtractor
 from extractors.rfc_extractor import RFCExtractor
 from job_log import JobLogStatuses, job_log
-from remove_directory_content import remove_directory_content
+from utility.utility import remove_directory_content
 
 file_basename = os.path.basename(__file__)
 

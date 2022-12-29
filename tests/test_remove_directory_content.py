@@ -23,7 +23,7 @@ import shutil
 import subprocess
 import unittest
 
-import remove_directory_content as rdc
+from utility.utility import remove_directory_content
 
 
 class TestRemoveDirectoryContent(unittest.TestCase):
@@ -50,7 +50,7 @@ class TestRemoveDirectoryContent(unittest.TestCase):
         """Try to delete the content of a directory - it should be empty after script run."""
         self.assertNotEqual(os.listdir(self.resource_path), [])
 
-        rdc.remove_directory_content(self.resource_path, 1)
+        remove_directory_content(self.resource_path, 1)
 
         self.assertTrue(os.path.isdir(self.resource_path))
         self.assertEqual(os.listdir(self.resource_path), [])
@@ -79,21 +79,21 @@ class TestRemoveDirectoryContentEmpty(unittest.TestCase):
 
     def test_remove_directory_content_empty(self):
         """Try to delete the content of an empty directory."""
-        rdc.remove_directory_content(self.resource_path)
+        remove_directory_content(self.resource_path)
 
         self.assertTrue(os.path.isdir(self.resource_path))
         self.assertEqual(os.listdir(self.resource_path), [])
 
     def test_remove_directory_content_non_existing_dir(self):
         """Try to delete the content of a directory that does not exist."""
-        rdc.remove_directory_content(self.non_existing_path)
+        remove_directory_content(self.non_existing_path)
 
         self.assertTrue(os.path.isdir(self.non_existing_path))
         self.assertEqual(os.listdir(self.non_existing_path), [])
 
     def test_remove_directory_content_default(self):
         """Try to delete the content of a directory - using default value."""
-        result = rdc.remove_directory_content('')
+        result = remove_directory_content('')
 
         self.assertEqual(result, None)
 
