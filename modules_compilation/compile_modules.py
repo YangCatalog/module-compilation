@@ -221,7 +221,10 @@ def validate(
     }
     all_yang_catalog_metadata = {}
     for module in modules['module']:
-        key = f'{module["name"]}@{module["revision"]}'
+        try:
+            key = f'{module["name"]}@{module["revision"]}'
+        except KeyError:
+            continue
         all_yang_catalog_metadata[key] = module
 
     cached_compilation_results_filename = 'IETFCiscoAuthors.json' if ietf == IETF.DRAFT else f'{prefix}.json'
