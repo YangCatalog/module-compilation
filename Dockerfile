@@ -92,6 +92,12 @@ RUN ./confd-${CONFD_VERSION}.linux.x86_64.installer.bin /opt/confd
 RUN ./repack.sh yumapro-client-21.10-12.u2204.amd64.deb
 RUN dpkg -i package.deb
 
+# TODO: Fix issue https://github.com/YangCatalog/deployment/issues/178
+# before using yumapro-client-21.10-12.
+# This is a workaround for correct extraction of yumapro 21.10 release.
+# RUN ./repack.sh yumapro-client-21.10-12.u2204.amd64.deb
+# RUN dpkg -i package.deb
+
 # Setup cron job
 COPY ./module-compilation/crontab /etc/cron.d/ietf-cron
 RUN chown yang:yang /etc/cron.d/ietf-cron

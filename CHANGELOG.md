@@ -1,20 +1,26 @@
 ## Module Compilation Release Notes
 
-* ##### vm.m.p - 2022-MM-DD
+* ##### vm.m.p - 2023-MM-DD
+
+* ##### v5.8.0 - 2022-12-20
+
+  * GitHub Actions environment updated to use Ubuntu 22.04 [deployment #173](https://github.com/YangCatalog/deployment/issues/173)
+  * Python base image bumped to version 3.10 [deployment #172](https://github.com/YangCatalog/deployment/issues/172)
+  * Unit tests covering gather_ietf_dependent_modules.py [#240](https://github.com/YangCatalog/module-compilation/issues/240)
 
 * ##### v5.7.0 - 2022-11-11
  
   * Repository renamed from sdo_analysis to module-compilation [deployment #154](https://github.com/YangCatalog/deployment/issues/154)
   * Coverage badge added to the README.md file
   * Coverage report generation adde to GitHub Actions
-  * Bugfix: check_archived_drafts.py attempting to use nonexistent directory [#208](https://github.com/YangCatalog/sdo_analysis/issues/208)
-  * Bugfix: Problem with YANGPageMain_ prefix fixed [#223](https://github.com/YangCatalog/sdo_analysis/issues/223)
-  * setUpClass and tearDownClass methods use for tests [#220](https://github.com/YangCatalog/sdo_analysis/issues/220)
-  * README.md file for tests directory added [#218](https://github.com/YangCatalog/sdo_analysis/issues/218)
-  * matplotlibrc file added [#217](https://github.com/YangCatalog/sdo_analysis/issues/217)
-  * Bugfix: Do not report modules with "broken" name [#210](https://github.com/YangCatalog/sdo_analysis/issues/210)
+  * Bugfix: check_archived_drafts.py attempting to use nonexistent directory [#208](https://github.com/YangCatalog/module-compilation/issues/208)
+  * Bugfix: Problem with YANGPageMain_ prefix fixed [#223](https://github.com/YangCatalog/module-compilation/issues/223)
+  * setUpClass and tearDownClass methods use for tests [#220](https://github.com/YangCatalog/module-compilation/issues/220)
+  * README.md file for tests directory added [#218](https://github.com/YangCatalog/module-compilation/issues/218)
+  * matplotlibrc file added [#217](https://github.com/YangCatalog/module-compilation/issues/217)
+  * Bugfix: Do not report modules with "broken" name [#210](https://github.com/YangCatalog/module-compilation/issues/210)
   * Code reformatted according to the defined style guide [deployment #163](https://github.com/YangCatalog/deployment/issues/163)
-  * parsing of modules with pypy3, replaced parsing by using pyang directly [#209](https://github.com/YangCatalog/sdo_analysis/issues/209)
+  * parsing of modules with pypy3, replaced parsing by using pyang directly [#209](https://github.com/YangCatalog/module-compilation/issues/209)
 
 * ##### v5.6.1 - 2022-10-10
 
