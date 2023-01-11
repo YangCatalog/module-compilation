@@ -305,8 +305,7 @@ def _get_module_parsers_to_use_and_previous_compilation_results(
             for parser_name, parser_object in all_parsers.items()
             if parser_name in changed_validator_versions
         }
-        module_compilation_results = previous_compilation_results
-        return parsers_to_use, module_compilation_results
+        return parsers_to_use, previous_compilation_results
     return all_parsers, {}
 
 
