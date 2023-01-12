@@ -316,7 +316,9 @@ def _resolve_organization(parsed_yang: Statement, save_file_dir: str) -> str:
         belongs_to = belongs_to[0].arg if (belongs_to := parsed_yang.search('belongs-to')) else None
         if not belongs_to:
             return 'independent'
-        filename = max(glob.glob(os.path.join(save_file_dir, f'{belongs_to}@*.yang')))
+        belongs_to = glob.glob(os.path.join(save_file_dir, f'{belongs_to}@*.yang'))
+        # calling the max() function with an empty sequence causes an error
+        filename = max(belongs_to) if belongs_to else None
         if not filename:
             return 'independent'
         try:

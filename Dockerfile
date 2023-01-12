@@ -107,7 +107,7 @@ RUN cd /module-compilation/resources/HTML && python setup.py install
 
 RUN chmod 0777 conf/configure.sh
 
-RUN chown -R yang:yang $VIRTUAL_ENV
+RUN chown -R yang:yang $VIRTUAL_ENV && chmod -R 700 $VIRTUAL_ENV && chmod -x rsync
 USER ${YANG_ID}:${YANG_GID}
 RUN crontab /etc/cron.d/ietf-cron
 
