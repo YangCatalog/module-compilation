@@ -13,7 +13,7 @@ class BaseMetadataGenerator:
         return {'compilation-status': self.compilation_status}
 
     class FileCompilationData(t.TypedDict):
-        compilation_metadata: tuple[str]
+        compilation_metadata: tuple[str, ...]
         compilation_results: dict[str, str]
 
     def get_file_compilation(self) -> FileCompilationData:

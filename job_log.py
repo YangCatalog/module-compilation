@@ -19,6 +19,7 @@ __email__ = 'slavomir.mazur@pantheon.tech'
 import argparse
 import json
 import os.path
+import time
 import typing as t
 from enum import Enum
 
@@ -31,12 +32,40 @@ class JobLogStatuses(str, Enum):
     FAIL = 'Fail'
 
 
+def job_log_decorator(file_basename: str):
+    def _job_log_decorator(func):
+        config = create_config()
+        temp_dir = config.get('Directory-Section', 'temp')
+
+        def _job_log(*args, **kwargs):
+            nonlocal temp_dir, file_basename
+            start_time = int(time.time())
+            job_log(start_time, None, temp_dir, file_basename, status=JobLogStatuses.IN_PROGRESS)
+            try:
+                success_messages: list[dict[str, str], ...] = func(*args, **kwargs)
+            except Exception as e:
+                job_log(start_time, int(time.time()), temp_dir, file_basename, error=str(e), status=JobLogStatuses.FAIL)
+                return
+            job_log(
+                start_time,
+                int(time.time()),
+                temp_dir,
+                file_basename,
+                messages=success_messages,
+                status=JobLogStatuses.SUCCESS,
+            )
+
+        return _job_log
+
+    return _job_log_decorator
+
+
 def job_log(
     start_time: int,
     end_time: t.Optional[int],
     temp_dir: str,
     filename: str,
-    messages: t.Optional[list] = None,
+    messages: t.Optional[list[dict[str, str]]] = None,
     error: str = '',
     status: str = JobLogStatuses,
 ):
@@ -72,6 +101,24 @@ if __name__ == '__main__':
     parser.add_argument('--end', help='Cronjob end time', type=int, default=0, required=True)
     parser.add_argument('--status', help='Result of cronjob run', type=str, default='Fail', required=True)
     parser.add_argument('--filename', help='Name of job', type=str, default='', required=True)
-    args = parser.parse_args()
+    parser.add_argument('--error', help='Error message in case of an exception', type=str, default='')
+    parser.add_argument('--messages', help='Success messages, could be 0 or more', nargs='*')
+    parser.add_argument(
+        '--load-messages-json',
+        help='True if messages should be json loaded',
+        action='store_true',
+        default=False,
+    )
+    parsed_args = parser.parse_args()
+    if parsed_args.load_messages_json:
+        parsed_args.messages = [json.loads(message) for message in parsed_args.messages]
 
-    job_log(int(args.start), int(args.end), temp_dir, args.filename, status=args.status)
+    job_log(
+        int(parsed_args.start),
+        int(parsed_args.end),
+        temp_dir,
+        parsed_args.filename,
+        status=parsed_args.status,
+        error=parsed_args.error,
+        messages=parsed_args.messages,
+    )

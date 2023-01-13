@@ -13,26 +13,46 @@
 # either express or implied.
 #
 START=$(date "+%s")
+python "$VIRTUAL_ENV"/job_log.py --start "$START" --end 0 --status "In Progress" --filename "cronjob-daily"
 #source activate
 source "$CONF"/configure.sh
 date +"%c: Downloading from GitHub YangModels"
-./run_download_github.sh
+{
+  DOWNLOAD_GITHUB_STATUS=$(./run_download_github.sh)
+} || {
+  python "$VIRTUAL_ENV"/job_log.py --start "$START" --end "$(date "+%s")" --status "Fail" --error "GitHub download failed" --filename "cronjob-daily" && exit 1
+}
 date +"%c: Starting run_ietf_module_extraction.sh"
-"$VIRTUAL_ENV"/ietf_modules_extraction/run_ietf_module_extraction.sh
+{
+  IETF_MODULES_EXTRACTION_MESSAGE=$("$VIRTUAL_ENV"/ietf_modules_extraction/run_ietf_module_extraction.sh)
+} || {
+  python "$VIRTUAL_ENV"/job_log.py --start "$START" --end "$(date "+%s")" --status "Fail" --error "IETF modules extraction failed" --filename "cronjob-daily" && exit 1
+}
 date +"%c: Starting run_module_compilation.sh"
-"$VIRTUAL_ENV"/modules_compilation/run_module_compilation.sh
+{
+  MODULES_COMPILATION_MESSAGE=$("$VIRTUAL_ENV"/modules_compilation/run_module_compilation.sh)
+} || {
+  python "$VIRTUAL_ENV"/job_log.py --start "$START" --end "$(date "+%s")" --status "Fail" --error "Modules compilation failed" --filename "cronjob-daily" && exit 1
+}
 date +"%c: Starting rename_file_backup.py"
 mkdir -p "$BACKUPDIR"
 python "$VIRTUAL_ENV"/rename_file_backup.py
 date +"%c: Starting run_generate_main_page.sh"
-"$VIRTUAL_ENV"/main_page_generation/run_generate_main_page.sh
+{
+  MAIN_PAGE_GENERATION_MESSAGE=$("$VIRTUAL_ENV"/main_page_generation/run_generate_main_page.sh)
+} || {
+  python "$VIRTUAL_ENV"/job_log.py --start "$START" --end "$(date "+%s")" --status "Fail" --error "Main page generation failed" --filename "cronjob-daily" && exit 1
+}
 date +"%c: Starting run_generate_figures_and_stats.sh"
-"$VIRTUAL_ENV"/figures_and_stats/run_generate_figures_and_stats.sh
+{
+  FIGURES_AND_STATS_GENERATION_MESSAGE=$("$VIRTUAL_ENV"/figures_and_stats/run_generate_figures_and_stats.sh)
+} || {
+  python "$VIRTUAL_ENV"/job_log.py --start "$START" --end "$(date "+%s")" --status "Fail" --error "Figures and stats generation failed" --filename "cronjob-daily" && exit 1
+}
 
-# This simple files for other Yang Catalog to know which files have been created
+# This are simple files for other Yang Catalog to know which files have been created
 cd "$WEB_PRIVATE"
 ls *.json > json_links
 END=$(date "+%s")
-# shellcheck disable=SC2086
-python "$VIRTUAL_ENV"/job_log.py --start "$START" --end $END --status "Success" --filename "cronjob-daily"
+python "$VIRTUAL_ENV"/job_log.py --start "$START" --end "$END" --status "Success" --filename "cronjob-daily" --load-messages-json --messages '{"label":"run_download_github.sh","message":"'"$DOWNLOAD_GITHUB_STATUS"'"}' '{"label":"run_ietf_module_extraction.sh","message":"'"$IETF_MODULES_EXTRACTION_MESSAGE"'"}' '{"label":"run_module_compilation.sh","message":"'"$MODULES_COMPILATION_MESSAGE"'"}' '{"label":"run_generate_main_page.sh","message":"'"$MAIN_PAGE_GENERATION_MESSAGE"'"}' '{"label":"run_generate_figures_and_stats.sh","message":"'"$FIGURES_AND_STATS_GENERATION_MESSAGE"'"}'
 date +"%c: End of $0"

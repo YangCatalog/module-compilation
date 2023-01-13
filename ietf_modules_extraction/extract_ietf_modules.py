@@ -21,12 +21,10 @@ import argparse
 import datetime
 import json
 import os
-import time
 
 from create_config import create_config
 from extractors.draft_extractor import DraftExtractor
 from extractors.rfc_extractor import RFCExtractor
-from job_log import JobLogStatuses, job_log
 from utility.utility import remove_directory_content
 
 file_basename = os.path.basename(__file__)
@@ -43,7 +41,6 @@ def main():
     draft_path = config.get('Directory-Section', 'ietf-drafts')
     rfc_path = config.get('Directory-Section', 'ietf-rfcs')
     cache_directory = config.get('Directory-Section', 'cache')
-    temp_dir = config.get('Directory-Section', 'temp')
     public_directory = config.get('Web-Section', 'public-directory')
     send_emails_about_problematic_drafts = (
         config.get('General-Section', 'send_emails_about_problematic_drafts', fallback='False') == 'True'
@@ -133,8 +130,6 @@ def main():
     if args.archived:
         draft_path = os.path.join(ietf_directory, 'my-id-archive-mirror')
     custom_print(f'Start of {os.path.basename(__file__)} job in {draft_path}')
-    start_time = int(time.time())
-    job_log(start_time, None, temp_dir, file_basename, status=JobLogStatuses.IN_PROGRESS)
     debug_level = args.debug
 
     draft_extractor_paths = {
@@ -193,7 +188,6 @@ def main():
         json.dump(draft_extractor.inverted_draft_yang_example_dict, f)
 
     custom_print(f'end of {os.path.basename(__file__)} job')
-    job_log(start_time, int(time.time()), temp_dir, file_basename, status=JobLogStatuses.SUCCESS)
 
 
 if __name__ == '__main__':

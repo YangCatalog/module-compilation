@@ -26,18 +26,18 @@ refresh_repo () {
     local repo=$1
     local owner=${1%%/*}
     local directory=${1##*/}
-    if [ ! -d $NONIETFDIR/$repo ]
+    if [ ! -d "$NONIETFDIR"/"$repo" ]
     then
-        mkdir -p $NONIETFDIR/$owner
-        cd $NONIETFDIR/$owner
-        git clone --recurse-submodules ${REPOSITORIES[$repo]} $directory >> $LOG 2>&1
+        mkdir -p "$NONIETFDIR"/"$owner"
+        cd "$NONIETFDIR"/"$owner"
+        git clone --recurse-submodules "${REPOSITORIES[$repo]}" "$directory" >> "$LOG" 2>&1
     else
-        cd $NONIETFDIR/$repo
-        if [ "$(git pull origin HEAD 2>&1 | tee -a $LOG | tail -n 1)" != "Already up to date." ]
+        cd "$NONIETFDIR"/"$repo"
+        if [ "$(git pull origin HEAD 2>&1 | tee -a "$LOG" | tail -n 1)" != "Already up to date." ]
         then
             modified+=([$repo]=true)
         fi
-        git submodule update --init --recursive >> $LOG 2>&1
+        git submodule update --init --recursive >> "$LOG" 2>&1
     fi
 }
 
@@ -46,26 +46,27 @@ then
     # Get the local configuration
     source "$CONF"/configure.sh
     LOG=$LOGS/downloadGitHub.log
-    date +"%c: Starting" >$LOG
+    date +"%c: Starting" >"$LOG"
 
     for repo in "${!REPOSITORIES[@]}"
     do
-        refresh_repo $repo
+        refresh_repo "$repo"
     done
 
     # "Flatten" all .yang files from subdirectories into one directory to avoid confd path issues.
-    if [ ${modified[openconfig/public]} ]
+    if [ "${modified[openconfig/public]}" ]
     then
-        cd $NONIETFDIR/openconfig
+        cd "$NONIETFDIR"/openconfig
         rm -rf public-flat
         cp -r public public-flat
         cd public-flat
         mkdir -p release/models-flat
         cd release
-        find ./models -name "*.yang" -exec mv -t $NONIETFDIR/openconfig/public-flat/release/models-flat/ {} + >>$LOG 2>&1
+        find ./models -name "*.yang" -exec mv -t "$NONIETFDIR"/openconfig/public-flat/release/models-flat/ {} + >>"$LOG" 2>&1
         rm -rf models
         mv models-flat models
     fi
 
-    date +"%c: End of the script!" >>$LOG
+    date +"%c: End of the script!" >>"$LOG"
 fi
+echo "$(date +%c): GitHub downloading is successful"

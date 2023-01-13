@@ -37,9 +37,8 @@ class TestCheckArchivedDrafts(unittest.TestCase):
     def setUpClass(cls):
         resources_path = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/check_archived_drafts')
         cls.config = create_config()
+        cls.cronjob_result_path = os.path.join(cls.config.get('Directory-Section', 'temp'), 'cronjob.json')
         cls.config.set('Directory-Section', 'var', os.path.join(resources_path, 'var'))
-        cls.temp_directory = os.path.join(resources_path, 'tmp')
-        cls.config.set('Directory-Section', 'temp', cls.temp_directory)
         cls.ietf_directory = os.path.join(resources_path, 'ietf')
         cls.config.set('Directory-Section', 'ietf-directory', cls.ietf_directory)
 
@@ -50,9 +49,8 @@ class TestCheckArchivedDrafts(unittest.TestCase):
         )
 
     def tearDown(self):
-        cronjob_result_path = os.path.join(self.check_archived_drafts_instance.temp_dir, 'cronjob.json')
-        if os.path.exists(cronjob_result_path):
-            os.remove(cronjob_result_path)
+        if os.path.exists(self.cronjob_result_path):
+            os.remove(self.cronjob_result_path)
         shutil.rmtree(self.check_archived_drafts_instance.extracted_missing_modules_directory, ignore_errors=True)
         shutil.rmtree(self.check_archived_drafts_instance.yang_path, ignore_errors=True)
 
@@ -72,9 +70,8 @@ class TestCheckArchivedDrafts(unittest.TestCase):
             self.check_archived_drafts_instance.missing_modules,
             [],
         )
-        cronjob_result_path = os.path.join(self.check_archived_drafts_instance.temp_dir, 'cronjob.json')
-        self.assertTrue(os.path.exists(cronjob_result_path))
-        with open(cronjob_result_path, 'r') as f:
+        self.assertTrue(os.path.exists(self.cronjob_result_path))
+        with open(self.cronjob_result_path, 'r') as f:
             cronjob_result = json.load(f)
         self.assertNotEqual(cronjob_result, {})
         self.assertTrue(
@@ -85,10 +82,12 @@ class TestCheckArchivedDrafts(unittest.TestCase):
     def test_check_archived_drafts_script_failure(self):
         self.check_archived_drafts_instance._extract_drafts = mock.MagicMock()
         self.check_archived_drafts_instance._extract_drafts.side_effect = Exception()
-        self.check_archived_drafts_instance.start_process()
-        cronjob_result_path = os.path.join(self.check_archived_drafts_instance.temp_dir, 'cronjob.json')
-        self.assertTrue(os.path.exists(cronjob_result_path))
-        with open(cronjob_result_path, 'r') as f:
+        try:
+            self.check_archived_drafts_instance.start_process()
+        except Exception:
+            pass
+        self.assertTrue(os.path.exists(self.cronjob_result_path))
+        with open(self.cronjob_result_path, 'r') as f:
             cronjob_result = json.load(f)
         self.assertNotEqual(cronjob_result, {})
         self.assertTrue(

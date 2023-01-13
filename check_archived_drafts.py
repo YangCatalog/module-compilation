@@ -23,7 +23,6 @@ import datetime
 import json
 import os
 import shutil
-import time
 import typing as t
 from configparser import ConfigParser
 
@@ -31,7 +30,7 @@ import requests
 
 from create_config import create_config
 from extractors.draft_extractor import DraftExtractor
-from job_log import JobLogStatuses, job_log
+from job_log import job_log_decorator
 from message_factory.message_factory import MessageFactory
 from utility.utility import remove_directory_content
 
@@ -82,17 +81,14 @@ class CheckArchivedDrafts:
         self.missing_modules: list[str] = []
         self.incorrect_revision_modules: list[str] = []
 
-    def start_process(self):
-        start_time = int(time.time())
+    @job_log_decorator(file_basename=file_basename)
+    def start_process(self) -> list[dict]:
         self._custom_print(f'Starting {file_basename} script')
-        job_log(start_time, None, self.temp_dir, file_basename, status=JobLogStatuses.IN_PROGRESS)
         try:
             self._extract_drafts()
         except Exception as err:
             self._custom_print('Error occurred while extracting modules')
-            end = int(time.time())
-            job_log(start_time, end, self.temp_dir, file_basename, error=repr(err), status=JobLogStatuses.FAIL)
-            return
+            raise err
         self._get_all_modules()
         self._get_incorrect_and_missing_modules()
         shutil.rmtree(self.yang_path)
@@ -100,11 +96,9 @@ class CheckArchivedDrafts:
         if self.missing_modules:
             mf = self.message_factory or MessageFactory()
             mf.send_missing_modules(self.missing_modules, self.incorrect_revision_modules)
-        message = {'label': 'Number of missing modules', 'message': len(self.missing_modules)}
-        end = int(time.time())
-        job_log(start_time, end, self.temp_dir, file_basename, messages=[message], status=JobLogStatuses.SUCCESS)
         self._custom_print(f'end of {file_basename} job')
         shutil.rmtree(self.all_yang_path, ignore_errors=True)  # Cleaning created directory
+        return [{'label': 'Number of missing modules', 'message': len(self.missing_modules)}]
 
     def _extract_drafts(self):
         remove_directory_content(self.yang_path, self.debug)

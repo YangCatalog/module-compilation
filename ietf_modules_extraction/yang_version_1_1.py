@@ -36,8 +36,7 @@ file_basename = os.path.basename(__file__)
 
 def find_v11_models(src_dir: str, dst_dir: str, debug: int = 0) -> list:
     """
-    This method will copy all yang models of version 1.1
-    from directory 'src_dir' to directory 'dst_dir'.
+    This method will copy all yang models of version 1.1 from directory 'src_dir' to directory 'dst_dir'.
 
     Arguments:
         :param src_dir      (str) directory where to find the source YANG models files
