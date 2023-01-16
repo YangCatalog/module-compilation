@@ -40,7 +40,7 @@ def job_log(file_basename: str):
         def _job_log(*args, **kwargs):
             nonlocal temp_dir, file_basename
             start_time = int(time.time())
-            write_job_log(start_time, None, temp_dir, file_basename, status=JobLogStatuses.IN_PROGRESS)
+            write_job_log(start_time, '', temp_dir, file_basename, status=JobLogStatuses.IN_PROGRESS)
             try:
                 success_messages: list[dict[str, str], ...] = func(*args, **kwargs)
             except Exception as e:
@@ -69,7 +69,7 @@ def job_log(file_basename: str):
 
 def write_job_log(
     start_time: int,
-    end_time: t.Optional[int],
+    end_time: t.Union[str, int],
     temp_dir: str,
     filename: str,
     messages: t.Optional[list[dict[str, str]]] = None,
@@ -105,7 +105,7 @@ if __name__ == '__main__':
     temp_dir = config.get('Directory-Section', 'temp')
     parser = argparse.ArgumentParser()
     parser.add_argument('--start', help='Cronjob start time', type=int, default=0, required=True)
-    parser.add_argument('--end', help='Cronjob end time', type=int, default=0, required=True)
+    parser.add_argument('--end', help='Cronjob end time', type=str, default='', required=True)
     parser.add_argument('--status', help='Result of cronjob run', type=str, default='Fail', required=True)
     parser.add_argument('--filename', help='Name of job', type=str, default='', required=True)
     parser.add_argument('--error', help='Error message in case of an exception', type=str, default='')
@@ -117,12 +117,13 @@ if __name__ == '__main__':
         default=False,
     )
     parsed_args = parser.parse_args()
+
     if parsed_args.load_messages_json:
         parsed_args.messages = [json.loads(message) for message in parsed_args.messages]
 
     write_job_log(
         int(parsed_args.start),
-        int(parsed_args.end),
+        int(parsed_args.end) if parsed_args.end.isnumeric() else '',
         temp_dir,
         parsed_args.filename,
         status=parsed_args.status,

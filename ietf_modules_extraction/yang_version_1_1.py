@@ -93,6 +93,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     start_time = int(time.time())
-    write_job_log(start_time, None, temp_dir, file_basename, status=JobLogStatuses.IN_PROGRESS)
+    write_job_log(start_time, '', temp_dir, file_basename, status=JobLogStatuses.IN_PROGRESS)
     find_v11_models(args.srcpath, args.dstpath, args.debug)
     write_job_log(start_time, int(time.time()), temp_dir, file_basename, status=JobLogStatuses.SUCCESS)
