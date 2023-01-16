@@ -28,7 +28,7 @@ import subprocess
 import time
 
 from create_config import create_config
-from job_log import JobLogStatuses, job_log
+from job_log import JobLogStatuses, write_job_log
 from utility.utility import remove_directory_content
 
 file_basename = os.path.basename(__file__)
@@ -93,6 +93,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     start_time = int(time.time())
-    job_log(start_time, None, temp_dir, file_basename, status=JobLogStatuses.IN_PROGRESS)
+    write_job_log(start_time, None, temp_dir, file_basename, status=JobLogStatuses.IN_PROGRESS)
     find_v11_models(args.srcpath, args.dstpath, args.debug)
-    job_log(start_time, int(time.time()), temp_dir, file_basename, status=JobLogStatuses.SUCCESS)
+    write_job_log(start_time, int(time.time()), temp_dir, file_basename, status=JobLogStatuses.SUCCESS)

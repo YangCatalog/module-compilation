@@ -32,7 +32,7 @@ class JobLogStatuses(str, Enum):
     FAIL = 'Fail'
 
 
-def job_log_decorator(file_basename: str):
+def job_log(file_basename: str):
     def _job_log_decorator(func):
         config = create_config()
         temp_dir = config.get('Directory-Section', 'temp')
@@ -40,13 +40,20 @@ def job_log_decorator(file_basename: str):
         def _job_log(*args, **kwargs):
             nonlocal temp_dir, file_basename
             start_time = int(time.time())
-            job_log(start_time, None, temp_dir, file_basename, status=JobLogStatuses.IN_PROGRESS)
+            write_job_log(start_time, None, temp_dir, file_basename, status=JobLogStatuses.IN_PROGRESS)
             try:
                 success_messages: list[dict[str, str], ...] = func(*args, **kwargs)
             except Exception as e:
-                job_log(start_time, int(time.time()), temp_dir, file_basename, error=str(e), status=JobLogStatuses.FAIL)
+                write_job_log(
+                    start_time,
+                    int(time.time()),
+                    temp_dir,
+                    file_basename,
+                    error=str(e),
+                    status=JobLogStatuses.FAIL,
+                )
                 return
-            job_log(
+            write_job_log(
                 start_time,
                 int(time.time()),
                 temp_dir,
@@ -60,7 +67,7 @@ def job_log_decorator(file_basename: str):
     return _job_log_decorator
 
 
-def job_log(
+def write_job_log(
     start_time: int,
     end_time: t.Optional[int],
     temp_dir: str,
@@ -113,7 +120,7 @@ if __name__ == '__main__':
     if parsed_args.load_messages_json:
         parsed_args.messages = [json.loads(message) for message in parsed_args.messages]
 
-    job_log(
+    write_job_log(
         int(parsed_args.start),
         int(parsed_args.end),
         temp_dir,

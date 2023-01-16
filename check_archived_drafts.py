@@ -30,7 +30,7 @@ import requests
 
 from create_config import create_config
 from extractors.draft_extractor import DraftExtractor
-from job_log import job_log_decorator
+from job_log import job_log
 from message_factory.message_factory import MessageFactory
 from utility.utility import remove_directory_content
 
@@ -81,7 +81,7 @@ class CheckArchivedDrafts:
         self.missing_modules: list[str] = []
         self.incorrect_revision_modules: list[str] = []
 
-    @job_log_decorator(file_basename=file_basename)
+    @job_log(file_basename=file_basename)
     def start_process(self) -> list[dict]:
         self._custom_print(f'Starting {file_basename} script')
         try:
