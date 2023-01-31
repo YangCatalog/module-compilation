@@ -84,13 +84,8 @@ COPY ./resources/main.cf /etc/postfix/main.cf
 COPY ./conf/yangdump-pro.conf /etc/yumapro/yangdump-pro.conf
 COPY ./conf/yangdump-pro-allinclusive.conf /etc/yumapro/yangdump-pro-allinclusive.conf
 RUN ./confd-${CONFD_VERSION}.linux.x86_64.installer.bin /opt/confd
-RUN dpkg -i yumapro-client-20.10-9.u1804.amd64.deb
 
-# TODO: Fix issue https://github.com/YangCatalog/deployment/issues/178
-# before using yumapro-client-21.10-12.
-# This is a workaround for correct extraction of yumapro 21.10 release.
-# RUN ./repack.sh yumapro-client-21.10-12.u2204.amd64.deb
-# RUN dpkg -i package.deb
+RUN dpkg -i yumapro-client-21.10-12.deb11.amd64.deb
 
 # Setup cron job
 COPY ./module-compilation/crontab /etc/cron.d/ietf-cron

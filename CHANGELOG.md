@@ -1,12 +1,18 @@
 ## Module Compilation Release Notes
 
-* ##### vm.m.p - 2023-MM-DD
+* ##### v5.9.0 - 2023-01-26
+
+  * YumaPro validator updated to version 21.10-12 [deployment #178](https://github.com/YangCatalog/deployment/issues/178)
+  * job_log transformed into function decorator [#252](https://github.com/YangCatalog/module-compilation/issues/252)
+  * 'In Progress' status added to the job_log [#250](https://github.com/YangCatalog/module-compilation/issues/250)
+  * All the code in repository reorganized into directories [#247](https://github.com/YangCatalog/module-compilation/issues/247)
+  * Modules hashing improved to decrease compilation time [#237](https://github.com/YangCatalog/module-compilation/issues/237)
 
 * ##### v5.8.0 - 2022-12-20
 
   * GitHub Actions environment updated to use Ubuntu 22.04 [deployment #173](https://github.com/YangCatalog/deployment/issues/173)
   * Python base image bumped to version 3.10 [deployment #172](https://github.com/YangCatalog/deployment/issues/172)
-  * Unit tests covering gather_ietf_dependent_modules.py [#240](https://github.com/YangCatalog/module-compilation/issues/240)
+  * Unit tests covering check_archived_drafts.py [#240](https://github.com/YangCatalog/module-compilation/issues/240)
 
 * ##### v5.7.0 - 2022-11-11
  
