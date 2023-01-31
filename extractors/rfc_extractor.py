@@ -59,12 +59,12 @@ class RFCExtractor:
                     continue
 
                 if self.debug_level > 0:
-                    print('DEBUG: Extracted YANG models from RFC\n {}'.format(str(extracted_yang_models)))
+                    print(f'DEBUG: Extracted YANG models from RFC\n {extracted_yang_models}')
 
                 # typedef, grouping and identity extraction from RFCs
                 for extracted_model in extracted_yang_models:
                     if not extracted_model.startswith('example-'):
-                        print('Identifier definition extraction for {}'.format(extracted_model))
+                        print(f'Identifier definition extraction for {extracted_model}')
                         module_fname = os.path.join(self.rfc_yang_path, extracted_model)
                         extract_elem(module_fname, self.rfc_extraction_yang_path, 'typedef')
                         extract_elem(module_fname, self.rfc_extraction_yang_path, 'grouping')
@@ -101,7 +101,7 @@ class RFCExtractor:
             :param srcdir       (str) Source dir path from where we move the YANG modules
             :param dstdir       (str) Destinationd dir path to where we move the YANG modules
         """
-        with open('{}/../resources/old-rfcs.json'.format(os.path.dirname(os.path.realpath(__file__))), 'r') as f:
+        with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), '../resources/old-rfcs.json'), 'r') as f:
             old_modules = json.load(f)
 
         for old_module in old_modules:
