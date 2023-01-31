@@ -228,4 +228,3 @@ read -ra CRED <<<$(sed 's/\"//g' <<<"$CREDENTIALS")
 curl -s -X POST -u "${CRED[0]}":"${CRED[1]}" $MY_URI/api/load-cache >>$LOG 2>&1
 
 date +"%c: End of the script!" >>$LOG
-echo "$(date +%c): Modules compilation is successful"

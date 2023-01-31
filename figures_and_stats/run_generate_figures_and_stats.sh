@@ -56,4 +56,3 @@ python "$VIRTUAL_ENV"/symd.py --recurse --draft-repos "$IETFDIR"/YANG/ --rfc-rep
 
 trap - EXIT ERR
 date +"%c: End of the script" >>"$LOG"
-echo "$(date +%c): Figures and stats generation is successful"

@@ -18,34 +18,44 @@ python "$VIRTUAL_ENV"/job_log.py --start "$START" --end "" --status "In Progress
 source "$CONF"/configure.sh
 date +"%c: Downloading from GitHub YangModels"
 {
-  DOWNLOAD_GITHUB_STATUS=$(./run_download_github.sh)
+  ./run_download_github.sh
+  DOWNLOAD_GITHUB_STATUS="$(date +%c): GitHub downloading is successful"
+  echo "$DOWNLOAD_GITHUB_STATUS"
 } || {
   python "$VIRTUAL_ENV"/job_log.py --start "$START" --end "$(date "+%s")" --status "Fail" --error "GitHub download failed" --filename "cronjob-daily" && exit 1
 }
 date +"%c: Starting run_ietf_module_extraction.sh"
 {
-  IETF_MODULES_EXTRACTION_MESSAGE=$("$VIRTUAL_ENV"/ietf_modules_extraction/run_ietf_module_extraction.sh)
+  "$VIRTUAL_ENV"/ietf_modules_extraction/run_ietf_module_extraction.sh
+  IETF_MODULES_EXTRACTION_MESSAGE="$(date +%c): Modules compilation is successful"
+  echo "$IETF_MODULES_EXTRACTION_MESSAGE"
 } || {
   python "$VIRTUAL_ENV"/job_log.py --start "$START" --end "$(date "+%s")" --status "Fail" --error "IETF modules extraction failed, check the logs for more details: $LOGS/extract_ietf_modules.log" --filename "cronjob-daily" && exit 1
 }
 date +"%c: Starting run_module_compilation.sh"
 {
-  MODULES_COMPILATION_MESSAGE=$("$VIRTUAL_ENV"/modules_compilation/run_module_compilation.sh)
+  "$VIRTUAL_ENV"/modules_compilation/run_module_compilation.sh
+  MODULES_COMPILATION_MESSAGE="$(date +%c): Modules compilation is successful"
+  echo "$MODULES_COMPILATION_MESSAGE"
 } || {
   python "$VIRTUAL_ENV"/job_log.py --start "$START" --end "$(date "+%s")" --status "Fail" --error "Modules compilation failed, check the logs for more details: $LOGS/compile_modules.log" --filename "cronjob-daily" && exit 1
 }
 date +"%c: Starting rename_file_backup.py"
 mkdir -p "$BACKUPDIR"
-python "$VIRTUAL_ENV"/rename_file_backup.py
+python "$VIRTUAL_ENV"/rename_file_backup.py || python "$VIRTUAL_ENV"/job_log.py --start "$START" --end "$(date "+%s")" --status "Fail" --error "rename_file_backup.py script failed" --filename "cronjob-daily" && exit 1
 date +"%c: Starting run_generate_main_page.sh"
 {
-  MAIN_PAGE_GENERATION_MESSAGE=$("$VIRTUAL_ENV"/main_page_generation/run_generate_main_page.sh)
+  "$VIRTUAL_ENV"/main_page_generation/run_generate_main_page.sh
+  MAIN_PAGE_GENERATION_MESSAGE="$(date +%c): Main page generation is successful"
+  echo "$MAIN_PAGE_GENERATION_MESSAGE"
 } || {
   python "$VIRTUAL_ENV"/job_log.py --start "$START" --end "$(date "+%s")" --status "Fail" --error "Main page generation failed" --filename "cronjob-daily" && exit 1
 }
 date +"%c: Starting run_generate_figures_and_stats.sh"
 {
-  FIGURES_AND_STATS_GENERATION_MESSAGE=$("$VIRTUAL_ENV"/figures_and_stats/run_generate_figures_and_stats.sh)
+  "$VIRTUAL_ENV"/figures_and_stats/run_generate_figures_and_stats.sh
+  FIGURES_AND_STATS_GENERATION_MESSAGE="$(date +%c): Figures and stats generation is successful"
+  echo "$FIGURES_AND_STATS_GENERATION_MESSAGE"
 } || {
   python "$VIRTUAL_ENV"/job_log.py --start "$START" --end "$(date "+%s")" --status "Fail" --error "Figures and stats generation failed, check the logs for more details: $LOGS/generate_figures_and_stats.log" --filename "cronjob-daily" && exit 1
 }

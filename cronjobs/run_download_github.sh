@@ -69,4 +69,3 @@ then
 
     date +"%c: End of the script!" >>"$LOG"
 fi
-echo "$(date +%c): GitHub downloading is successful"
