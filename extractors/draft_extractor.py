@@ -175,7 +175,6 @@ class DraftExtractor:
         strict: bool = False,
         strict_examples: bool = False,
     ):
-
         extracted = []
         old_stderr = None
         try:

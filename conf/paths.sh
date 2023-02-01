@@ -47,6 +47,8 @@ export MODULES
 # Working directories
 LOGS=$(python "$VIRTUAL_ENV"/get_config.py --section Directory-Section --key logs)
 export LOGS
+SUCCESSFUL_MESSAGES_LOG="$LOGS"/successful-cronjob-daily-messages.log
+export SUCCESSFUL_MESSAGES_LOG
 TMP=$(python "$VIRTUAL_ENV"/get_config.py --section Directory-Section --key temp)
 export TMP
 

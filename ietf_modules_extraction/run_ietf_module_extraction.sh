@@ -153,4 +153,4 @@ curl -s -X POST -u "${CRED[0]}":"${CRED[1]}" "$MY_URI"/api/load-cache >>"$LOG" 2
 
 date +"%c: End of the script!" >>"$LOG"
 cd "$VIRTUAL_ENV"
-echo "$(date +%c): IETF modules extraction is successful"
+echo "$(date +%c): Modules extraction is successful" >>"$SUCCESSFUL_MESSAGES_LOG"

@@ -488,7 +488,6 @@ def list(*args, **kwargs):
 # Show sample usage when this file is launched as a script.
 
 if __name__ == '__main__':
-
     # open an HTML file to show output in a browser
     f = open('test.html', 'w')
 

@@ -31,4 +31,4 @@ python "$VIRTUAL_ENV"/main_page_generation/private_page.py --openRoadM "${openro
 cd "$WEB_PRIVATE"
 rm -f YANGPageMain.html
 cat *PageMain.html >YANGPageMain.html
-echo "$(date +%c): Main page generation is successful"
+echo "$(date +%c): Main page generation is successful" >>"$SUCCESSFUL_MESSAGES_LOG"
