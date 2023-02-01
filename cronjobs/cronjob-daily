@@ -42,7 +42,11 @@ date +"%c: Starting run_module_compilation.sh"
 }
 date +"%c: Starting rename_file_backup.py"
 mkdir -p "$BACKUPDIR"
-python "$VIRTUAL_ENV"/rename_file_backup.py || python "$VIRTUAL_ENV"/job_log.py --start "$START" --end "$(date "+%s")" --status "Fail" --error "rename_file_backup.py script failed" --filename "cronjob-daily" && exit 1
+{
+  python "$VIRTUAL_ENV"/rename_file_backup.py
+} || {
+  python "$VIRTUAL_ENV"/job_log.py --start "$START" --end "$(date "+%s")" --status "Fail" --error "rename_file_backup.py script failed" --filename "cronjob-daily" && exit 1
+}
 date +"%c: Starting run_generate_main_page.sh"
 {
   "$VIRTUAL_ENV"/main_page_generation/run_generate_main_page.sh
