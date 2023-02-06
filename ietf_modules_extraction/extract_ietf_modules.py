@@ -42,6 +42,12 @@ def main():
     rfc_path = config.get('Directory-Section', 'ietf-rfcs')
     cache_directory = config.get('Directory-Section', 'cache')
     public_directory = config.get('Web-Section', 'public-directory')
+    downloadables_directory = config.get('Web-Section', 'downloadables-directory')
+    code_snippets_directory = config.get(
+        'Web-Section',
+        'code-snippets-directory',
+        fallback=os.path.join(downloadables_directory, 'code-snippets'),
+    )
     send_emails_about_problematic_drafts = (
         config.get('General-Section', 'send_emails_about_problematic_drafts', fallback='False') == 'True'
     )
@@ -124,6 +130,13 @@ def main():
         type=str,
         default=f'{ietf_directory}/draft-elements/',
     )
+    parser.add_argument(
+        '--code-snippets-directory',
+        help='Path to the directory where the extract code snippets from drafts will be stored. '
+        f'Default is {code_snippets_directory}',
+        type=str,
+        default=code_snippets_directory,
+    )
     parser.add_argument('--debug', help='Debug level - default is 0', type=int, default=0)
 
     args = parser.parse_args()
@@ -141,11 +154,10 @@ def main():
         'draft_path_only_example': args.draftpathonlyexample,
         'all_yang_path': args.allyangpath,
         'draft_path_no_strict': args.draftpathnostrict,
+        'code_snippets_dir': args.code_snippets_directory,
     }
 
-    # ----------------------------------------------------------------------
-    # Empty the yangpath, allyangpath, and rfcyangpath directories content
-    # ----------------------------------------------------------------------
+    # Remove directories content
     for dir in [
         args.yangpath,
         args.allyangpath,
@@ -162,7 +174,13 @@ def main():
         remove_directory_content(dir, debug_level)
 
     # Extract YANG models from IETF RFCs files
-    rfc_extractor = RFCExtractor(rfc_path, args.rfcyangpath, args.rfcextractionyangpath, debug_level)
+    rfc_extractor = RFCExtractor(
+        rfc_path,
+        args.rfcyangpath,
+        args.rfcextractionyangpath,
+        args.code_snippets_directory,
+        debug_level,
+    )
     rfc_extractor.extract()
     rfc_extractor.clean_old_rfc_yang_modules(args.rfcyangpath, args.yangexampleoldrfcpath)
     custom_print('Old examples YANG modules moved')

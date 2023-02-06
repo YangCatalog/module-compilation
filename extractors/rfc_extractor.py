@@ -28,11 +28,19 @@ from extractors.helper import check_after_xym_extraction, invert_yang_modules_di
 
 
 class RFCExtractor:
-    def __init__(self, rfc_path: str, rfc_yang_path: str, rfc_extraction_yang_path: str, debug_level: int):
+    def __init__(
+        self,
+        rfc_path: str,
+        rfc_yang_path: str,
+        rfc_extraction_yang_path: str,
+        code_snippets_directory: str,
+        debug_level: int,
+    ):
         self.rfc_path = rfc_path
         self.rfc_yang_path = rfc_yang_path
         self.rfc_extraction_yang_path = rfc_extraction_yang_path
         self.debug_level = debug_level
+        self.code_snippets_directory = code_snippets_directory
         self.ietf_rfcs = []
         self.rfc_yang_dict = {}
         self.inverted_rfc_yang_dict = {}
@@ -82,6 +90,8 @@ class RFCExtractor:
             add_line_refs=False,
             force_revision_pyang=False,
             force_revision_regexp=True,
+            extract_code_snippets=True,
+            code_snippets_dir=os.path.join(self.code_snippets_directory, os.path.splitext(rfc_file)[0]),
         )
 
     def invert_dict(self):

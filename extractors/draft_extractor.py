@@ -50,6 +50,7 @@ class DraftExtractor:
         self.draft_path_only_example = draft_extractor_paths.get('draft_path_only_example', '')
         self.all_yang_path = draft_extractor_paths.get('all_yang_path', '')
         self.draft_path_no_strict = draft_extractor_paths.get('draft_path_no_strict', '')
+        self.code_snippets_directory = draft_extractor_paths.get('code_snippets_dir', '')
         self.debug_level = debug_level
         self.extract_examples = extract_examples
         self.extract_elements = extract_elements
@@ -175,7 +176,6 @@ class DraftExtractor:
         strict: bool = False,
         strict_examples: bool = False,
     ):
-        extracted = []
         old_stderr = None
         try:
             old_stderr = sys.stderr
@@ -191,6 +191,8 @@ class DraftExtractor:
                 add_line_refs=False,
                 force_revision_pyang=False,
                 force_revision_regexp=True,
+                extract_code_snippets=True,
+                code_snippets_dir=os.path.join(self.code_snippets_directory, os.path.splitext(draft_file)[0]),
             )
             result_string = result.getvalue()
         finally:
