@@ -35,7 +35,7 @@ def get_vendor_context(
     get_alpha_numeric: t.Callable[[str, str], str],
     get_all_characters: t.Callable[[str, str], str],
     separate: bool = False,
-):
+) -> list[dict]:
     operating_systems = [name for name in os.listdir(directory) if os.path.isdir(os.path.join(directory, name))]
     separate_contexts = {}
     vendor_context = []
@@ -58,7 +58,7 @@ def get_vendor_context(
     return sorted(vendor_context, key=lambda i: i['alphaNumeric'])
 
 
-def get_etsi_context(etsi_dir):
+def get_etsi_context(etsi_dir: str) -> list[dict]:
     etsi_all_versions = [name for name in os.listdir(etsi_dir) if os.path.isdir(os.path.join(etsi_dir, name))]
     etsi_context = []
     for etsi_version in etsi_all_versions:
@@ -71,13 +71,13 @@ def get_etsi_context(etsi_dir):
     return sorted(etsi_context, key=lambda i: i['alphaNumeric'])
 
 
-def get_openroadm_context(openroadm_files):
+def get_openroadm_context(openroadm_files: list[str]) -> list[dict]:
     return [
         {'alphaNumeric': specific_version, 'allCharacters': specific_version} for specific_version in openroadm_files
     ]
 
 
-def render(tpl_path: str, context: dict):
+def render(tpl_path: str, context: dict) -> str:
     """Render jinja html template
 
     Arguments:
@@ -92,7 +92,7 @@ def render(tpl_path: str, context: dict):
 
 def main():
     parser = argparse.ArgumentParser(description='Generate yangcatalog main private page.')
-    parser.add_argument('--openRoadM', help='List of openRoadM files', type=str, nargs='*', default=[])
+    parser.add_argument('--openRoadM', help='List of openRoadM files', nargs='*')
     args = parser.parse_args()
 
     config = create_config()
@@ -149,36 +149,36 @@ def main():
     if result:
         with open(os.path.join(private_dir, 'index.html'), 'w') as writer:
             writer.write(result)
+    context['graphs-cisco-authors'] = [
+        'IETFCiscoAuthorsYANGPageCompilation.json',
+        'figures/IETFCiscoAuthorsYANGPageCompilation.png',
+        'figures/IETFYANGOutOfRFC.png',
+        'figures/IETFYANGPageCompilation.png',
+    ]
+    context['sdo-stats'] = [
+        'IETFDraft.json',
+        'IETFDraftExample.json',
+        'IETFYANGRFC.json',
+        'RFCStandard.json',
+        'BBF.json',
+        'MEFStandard.json',
+        'MEFExperimental.json',
+        'IEEEStandard.json',
+        'IEEEStandardDraft.json',
+        'IANAStandard.json',
+        'SysrepoInternal.json',
+        'SysrepoApplication.json',
+        'ONFOpenTransport.json',
+        'Openconfig.json',
+    ]
+    context['dependency-graph'] = [
+        'figures/modules-ietf.png',
+        'figures/modules-all.png',
+        'figures/ietf-interfaces.png',
+        'figures/ietf-interfaces-all.png',
+        'figures/ietf-routing.png',
+    ]
     with open(os.path.join(private_dir, 'private.json'), 'w') as writer:
-        context['graphs-cisco-authors'] = [
-            'IETFCiscoAuthorsYANGPageCompilation.json',
-            'figures/IETFCiscoAuthorsYANGPageCompilation.png',
-            'figures/IETFYANGOutOfRFC.png',
-            'figures/IETFYANGPageCompilation.png',
-        ]
-        context['sdo-stats'] = [
-            'IETFDraft.json',
-            'IETFDraftExample.json',
-            'IETFYANGRFC.json',
-            'RFCStandard.json',
-            'BBF.json',
-            'MEFStandard.json',
-            'MEFExperimental.json',
-            'IEEEStandard.json',
-            'IEEEStandardDraft.json',
-            'IANAStandard.json',
-            'SysrepoInternal.json',
-            'SysrepoApplication.json',
-            'ONFOpenTransport.json',
-            'Openconfig.json',
-        ]
-        context['dependency-graph'] = [
-            'figures/modules-ietf.png',
-            'figures/modules-all.png',
-            'figures/ietf-interfaces.png',
-            'figures/ietf-interfaces-all.png',
-            'figures/ietf-routing.png',
-        ]
         json.dump(context, writer)
 
 

@@ -18,6 +18,7 @@ source "$CONF"/configure.sh
 cur_dir=$(pwd)
 cd "$NONIETFDIR"/openroadm/OpenROADM_MSA_Public
 branches=$(git branch -a | grep remotes)
+openroadm=""
 for b in $branches; do
   last_word=${b##*/}
   first_char=${last_word:0:1}
@@ -27,7 +28,7 @@ for b in $branches; do
 done
 
 cd "$cur_dir"
-python "$VIRTUAL_ENV"/main_page_generation/private_page.py --openRoadM "${openroadm}"
+python "$VIRTUAL_ENV"/main_page_generation/private_page.py --openRoadM ${openroadm}
 cd "$WEB_PRIVATE"
 rm -f YANGPageMain.html
 cat *PageMain.html >YANGPageMain.html

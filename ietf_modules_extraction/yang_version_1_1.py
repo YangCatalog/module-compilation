@@ -25,10 +25,8 @@ import argparse
 import os
 import shutil
 import subprocess
-import time
 
 from create_config import create_config
-from job_log import JobLogStatuses, write_job_log
 from utility.utility import remove_directory_content
 
 file_basename = os.path.basename(__file__)
@@ -91,8 +89,4 @@ if __name__ == '__main__':
     parser.add_argument('--debug', help='Debug level - default is 0', type=int, default=0)
 
     args = parser.parse_args()
-
-    start_time = int(time.time())
-    write_job_log(start_time, '', temp_dir, file_basename, status=JobLogStatuses.IN_PROGRESS)
     find_v11_models(args.srcpath, args.dstpath, args.debug)
-    write_job_log(start_time, int(time.time()), temp_dir, file_basename, status=JobLogStatuses.SUCCESS)
