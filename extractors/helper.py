@@ -37,7 +37,7 @@ def invert_yang_modules_dict(in_dict: dict, debug_level: int = 0):
     :return: inverted output dictionary
     """
     if debug_level > 0:
-        print('DEBUG: invert_yang_modules_dict: dictionary before inversion:\n{}'.format(str(in_dict)))
+        print(f'DEBUG: invert_yang_modules_dict: dictionary before inversion:\n{in_dict}')
 
     inv_dict = {}
     for key, yang_modules in in_dict.items():
@@ -45,7 +45,7 @@ def invert_yang_modules_dict(in_dict: dict, debug_level: int = 0):
             inv_dict[yang_model] = key
 
     if debug_level > 0:
-        print('DEBUG: invert_yang_modules_dict: dictionary after inversion:\n{}'.format(str(inv_dict)))
+        print(f'DEBUG: invert_yang_modules_dict: dictionary after inversion:\n{inv_dict}')
 
     return inv_dict
 
@@ -59,29 +59,29 @@ def remove_invalid_files(directory: str, yang_dict: dict):
         :param directory    (str) the directory to analyze for invalid filenames of extracted modules
         :param yang_dict    (dict) dictionary of key:extracted YANG modul name, value:RFC/Draft file name
     """
-    path = '{}*.yang'.format(directory)
+    path = f'{directory}*.yang'
     for full_path in glob.glob(path):
         filename = os.path.basename(full_path)
         if ' ' in filename:
             os.remove(full_path)
             if yang_dict.get(filename):
                 yang_dict.pop(filename)
-            print('Invalid YANG module removed: {}'.format(full_path))
+            print(f'Invalid YANG module removed: {full_path}')
         if '@YYYY-MM-DD' in filename:
             os.remove(full_path)
             if yang_dict.get(filename):
                 yang_dict.pop(filename)
-            print('Invalid YANG module removed: {}'.format(full_path))
+            print(f'Invalid YANG module removed: {full_path}')
         if filename.startswith('.yang'):
             os.remove(full_path)
             if yang_dict.get(filename):
                 yang_dict.pop(filename)
-            print('Invalid YANG module removed: {}'.format(full_path))
+            print(f'Invalid YANG module removed: {full_path}')
         if filename.startswith('@'):
             os.remove(full_path)
             if yang_dict.get(filename):
                 yang_dict.pop(filename)
-            print('Invalid YANG module removed: {}'.format(full_path))
+            print(f'Invalid YANG module removed: {full_path}')
 
 
 def check_after_xym_extraction(filename: str, extracted_yang_models: list):
@@ -94,13 +94,13 @@ def check_after_xym_extraction(filename: str, extracted_yang_models: list):
     """
     correct = True
     if any(' ' in extracted_model for extracted_model in extracted_yang_models):
-        print('File {} contains module with invalid name [{}]'.format(filename, ', '.join(extracted_yang_models)))
+        print(f'File {filename} contains module with invalid name [{", ".join(extracted_yang_models)}]')
         correct = False
     if any('YYYY-MM-DD' in extracted_model for extracted_model in extracted_yang_models):
-        print('File {} contains module with invalid revision [{}]'.format(filename, ', '.join(extracted_yang_models)))
+        print(f'File {filename} contains module with invalid revision [{", ".join(extracted_yang_models)}]')
         correct = False
     if any('.yang' == extracted_model for extracted_model in extracted_yang_models):
-        print('File {} contains module with missing name [{}]'.format(filename, ', '.join(extracted_yang_models)))
+        print(f'File {filename} contains module with missing name [{", ".join(extracted_yang_models)}]')
         correct = False
 
     return correct
