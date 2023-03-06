@@ -68,12 +68,13 @@ class CompileModulesABC(abc.ABC):
         lint: bool
         allinclusive: bool
         metadata: str
+        save_compilation_results_to_db: bool
         config: ConfigParser = create_config()
 
     def __init__(self, options: Options):
         self.config = options.config
         self.yangcatalog_api_prefix = self.config.get('Web-Section', 'yangcatalog-api-prefix')
-        self.web_private = self.config.get('Web-Section', 'private-directory') + '/'
+        self.web_private = self.config.get('Web-Section', 'private-directory')
         self.cache_directory = self.config.get('Directory-Section', 'cache')
         self.modules_directory = self.config.get('Directory-Section', 'modules-directory')
         self.temp_dir = self.config.get('Directory-Section', 'temp')
@@ -155,6 +156,8 @@ class CompileModulesABC(abc.ABC):
             if not yang_file_with_revision:
                 continue
             yang_file_compilation_data = cached_compilation_results.get(yang_file_with_revision)
+            yang_file_compilation_data = yang_file_compilation_data.get('original')
+            # yang_file_compilation_data.get('duplicates')
             previous_compilation_results = (
                 yang_file_compilation_data.get('compilation_results')
                 if yang_file_compilation_data and isinstance(yang_file_compilation_data, dict)
@@ -162,6 +165,19 @@ class CompileModulesABC(abc.ABC):
             )
             module_hash_info = self.file_hasher.should_parse(yang_file_path)
             changed_validator_versions = module_hash_info.get_changed_validator_versions(self.validator_versions)
+            # if module_hash_info.hash_changed:
+            #     duplicated_paths = ...
+            #     hash_loaded_from_populated_script = ...
+            #     for path in duplicated_paths:
+            #         duplicate_module_hash_info = self.file_hasher.should_parse(path)
+            #         duplicate_changed_validator_versions = module_hash_info.get_changed_validator_versions(
+            #             self.validator_versions
+            #         )
+            #         if duplicate_module_hash_info.hash == hash_loaded_from_populated_script:
+            #             yang_file_path = path
+            #             module_hash_info = ...
+            #             changed_validator_versions = changed_validator_versions
+            # see what to do if hash not changed but duplicate has the same hash as populated module from populate.py
             if not previous_compilation_results or module_hash_info.hash_changed or changed_validator_versions:
                 parsers_to_use, module_compilation_results = self._get_parsers_to_use_and_previous_compilation_results(
                     previous_compilation_results,
@@ -323,6 +339,8 @@ class CompileModulesABC(abc.ABC):
             self.prefix,
             self.metadata,
         )
+
+    # def _save_compilation_results_hash
 
     def _generate_statistics_page(self) -> dict:
         passed = number_that_passed_compilation(self.aggregated_results['all'], 0, 'PASSED')
@@ -567,6 +585,18 @@ class CompileExampleModules(CompileModulesABC):
         )
 
 
+class CompileAllSavedModules(CompileModulesABC):
+    d = {
+        IETF.RFC: {},
+    }
+
+    def __init__(self, options: CompileModulesABC.Options):
+        super().__init__(options)
+        self.root_dir = options.config.get('Directory-Section', 'save-file-dir')
+        with open(os.path.join(self.cache_directory, 'example_dict.json')) as f:
+            self.documents_dict = json.load(f)
+
+
 def main():
     config = create_config()
     modules_directory = config.get('Directory-Section', 'modules-directory')
@@ -645,6 +675,7 @@ def main():
         lint=args.lint,
         allinclusive=args.allinclusive,
         metadata=args.metadata,
+        save_compilation_results_to_db=False,
         config=config,
     )
     if args.rfc:

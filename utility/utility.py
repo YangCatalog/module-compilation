@@ -24,7 +24,7 @@ import shutil
 import time
 import typing as t
 from datetime import date
-from enum import Enum, auto
+from enum import Enum
 
 import dateutil.parser
 import jinja2
@@ -41,10 +41,10 @@ incomplete_db: t.Optional[RedisConnection] = None
 
 
 class IETF(Enum):
-    RFC = auto()
-    DRAFT = auto()
-    DRAFT_ARCHIVE = auto()
-    EXAMPLE = auto()
+    RFC = 1
+    DRAFT = 2
+    DRAFT_ARCHIVE = 3
+    EXAMPLE = 4
 
 
 def list_files_by_extensions(
@@ -217,7 +217,6 @@ def check_yangcatalog_data(
         incomplete_db = RedisConnection(modules_db=RedisDatabasesEnum.INCOMPLETE_MODULES_DB.value)
 
     yang_file_path = _path_in_dir(yang_file_pseudo_path)
-    is_rfc = ietf_type == IETF.RFC
     try:
         parsed_yang = yang_parser.parse(yang_file_path)
     except yang_parser.ParseException:
@@ -247,19 +246,14 @@ def check_yangcatalog_data(
     if compilation_status and module_data.get('compilation-status') != (
         comp_status := compilation_status.lower().replace(' ', '-')
     ):
-        # Module parsed with --ietf flag (= RFC) has higher priority
-        if is_rfc and ietf_type is None:
-            pass
-        else:
-            update = True
-            module_data['compilation-status'] = comp_status
+        update = True
+        module_data['compilation-status'] = comp_status
 
     if compilation_status is not None:
         file_url = _generate_compilation_result_file(
             module_data,
             compilation_results,
             result_html_dir,
-            is_rfc,
             validator_versions,
             ietf_type,
         )
@@ -340,7 +334,7 @@ def _resolve_maturity_level(ietf_type: t.Optional[IETF], document_name: t.Option
     return 'initial'
 
 
-def _resolve_working_group(name_revision: str, ietf_type: IETF, document_name: str):
+def _resolve_working_group(name_revision: str, ietf_type: IETF, document_name: str) -> t.Optional[str]:
     if ietf_type == IETF.RFC:
         return IETF_RFC_MAP.get(f'{name_revision}.yang')
     return document_name.split('-')[2]
@@ -362,7 +356,6 @@ def _generate_compilation_result_file(
     module_data: dict,
     compilation_results: dict,
     result_html_dir: str,
-    is_rfc: bool,
     versions: dict,
     ietf_type: t.Optional[IETF] = None,
 ) -> str:
@@ -382,12 +375,9 @@ def _generate_compilation_result_file(
         with open(result_html_file, 'r', encoding='utf-8') as f:
             existing_output = f.read()
         if existing_output != rendered_html:
-            if is_rfc and ietf_type is None:
-                pass
-            else:
-                with open(result_html_file, 'w', encoding='utf-8') as f:
-                    f.write(rendered_html)
-                os.chmod(result_html_file, 0o664)
+            with open(result_html_file, 'w', encoding='utf-8') as f:
+                f.write(rendered_html)
+            os.chmod(result_html_file, 0o664)
     else:
         with open(result_html_file, 'w', encoding='utf-8') as f:
             f.write(rendered_html)

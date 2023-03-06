@@ -223,7 +223,6 @@ class TestUtility(TestUtilityBase):
             module_data=module_data,
             compilation_results=compilation_results,
             result_html_dir=result_dir,
-            is_rfc=False,
             versions=validator_versions,
         )
         self.assertEqual(file_url, filename)
