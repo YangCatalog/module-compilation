@@ -1,5 +1,10 @@
 ## Module Compilation Release Notes
 
+* ##### v5.10.0 - 2023-03-07
+
+  * Extract and store code snippets from draft documents [#3](https://github.com/YangCatalog/module-compilation/issues/3)
+  * Code refactoring changes to compile_modules.py and private_page.py scripts [#262](https://github.com/YangCatalog/module-compilation/issues/262)
+
 * ##### v5.9.0 - 2023-01-26
 
   * YumaPro validator updated to version 21.10-12 [deployment #178](https://github.com/YangCatalog/deployment/issues/178)
