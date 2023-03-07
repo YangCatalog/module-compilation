@@ -41,6 +41,7 @@ class DraftMetadataGenerator(BaseMetadataGenerator):
         yang_model_url = '{}/YANG-modules/{}'.format(self.web_url, self.yang_file_name)
         yang_model_anchor = '<a href="{}">Download the YANG model</a>'.format(yang_model_url)
         return self.FileCompilationData(
+            yang_file_path=self.yang_file_path,
             compilation_metadata=(
                 self.draft_url_anchor,
                 self.email_anchor,

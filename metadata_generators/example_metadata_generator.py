@@ -7,6 +7,7 @@ class ExampleMetadataGenerator(DraftMetadataGenerator):
 
     def get_file_compilation(self) -> DraftMetadataGenerator.FileCompilationData:
         return self.FileCompilationData(
+            yang_file_path=self.yang_file_path,
             compilation_metadata=(
                 self.draft_url_anchor,
                 self.email_anchor,

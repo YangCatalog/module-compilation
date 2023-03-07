@@ -48,13 +48,12 @@ class FileHasher:
 
     def hash_file(self, path: str) -> str:
         """
-        Create hash from content of the given file and validators versions.
-        Each time either the content of the file or the validator version change,
+        Create hash from content of the given file. Each time the content of the file change,
         the resulting hash will be different.
 
-        :param path     (str) Path fo file to be hashed
-        :return         SHA256 hash of the content of the given file
-        :rtype          str
+        Arguments:
+            :param path (str) Path fo file to be hashed
+        :return (str) SHA256 hash of the content of the given file
         """
         file_hash = hashlib.sha256()
         with open(path, 'rb') as reader:

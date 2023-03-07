@@ -20,6 +20,7 @@ RUN echo "export PATH=$VIRTUAL_ENV:$PATH" >/etc/environment
 ENV GIT_PYTHON_GIT_EXECUTABLE=/usr/bin/git
 
 ENV VIRTUAL_ENV=/module-compilation
+ENV PYTHONPATH=$VIRTUAL_ENV
 ENV CONF=$VIRTUAL_ENV/conf
 ENV YANGVAR="get_config.py --section Directory-Section --key var"
 ENV BACKUPDIR="get_config.py --section Directory-Section --key backup"

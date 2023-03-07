@@ -71,6 +71,20 @@ class CompileModulesABC(abc.ABC):
         save_compilation_results_to_db: bool
         config: ConfigParser = create_config()
 
+    @dataclass
+    class ModuleInfoForCompilation:
+        yang_file_path: str
+        module_hash: str
+        module_hash_changed: bool
+        changed_validator_versions: t.Optional[list[str]]
+        yang_file_compilation_data: t.Optional[dict]
+        previous_compilation_results: t.Optional[dict]
+
+    class ModuleCachedCompilationResult(t.TypedDict):
+        yang_file_path: t.Optional[str]  # could be missing
+        compilation_metadata: tuple[str, ...]
+        compilation_results: dict[str, str]
+
     def __init__(self, options: Options):
         self.config = options.config
         self.yangcatalog_api_prefix = self.config.get('Web-Section', 'yangcatalog-api-prefix')
@@ -79,6 +93,7 @@ class CompileModulesABC(abc.ABC):
         self.modules_directory = self.config.get('Directory-Section', 'modules-directory')
         self.temp_dir = self.config.get('Directory-Section', 'temp')
         self.ietf_directory = self.config.get('Directory-Section', 'ietf-directory')
+        self.all_modules_dir = self.config.get('Directory-Section', 'save-file-dir')
         self.cached_compilation_results_path = os.path.join(self.web_private, f'{self.prefix}.json')
 
         self.debug_level = options.debug_level
@@ -114,6 +129,14 @@ class CompileModulesABC(abc.ABC):
             print(f'yang_list content:\n{self.yang_list}')
         self._custom_print(f'relevant files list built, {len(self.yang_list)} modules found in {self.root_dir}')
         self.modules = self._get_modules()
+        try:
+            with open(self.cached_compilation_results_path, 'r') as f:
+                self.cached_compilation_results: dict[
+                    str,
+                    CompileModulesABC.ModuleCachedCompilationResult,
+                ] = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            self.cached_compilation_results: dict[str, CompileModulesABC.ModuleCachedCompilationResult] = {}
         self.aggregated_results = self._compile_modules()
         self._custom_print('all modules compiled/validated')
         self._generate_compilation_files()
@@ -146,43 +169,22 @@ class CompileModulesABC(abc.ABC):
 
     def _compile_modules(self) -> dict:
         aggregated_results = {'all': {}, 'no_submodules': {}}
-        try:
-            with open(self.cached_compilation_results_path, 'r') as f:
-                cached_compilation_results = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            cached_compilation_results = {}
         for yang_file_path in self.yang_list:
-            yang_file_with_revision = self._get_name_with_revision(yang_file_path)
-            if not yang_file_with_revision:
+            file_name_and_revision = self._get_name_with_revision(yang_file_path)
+            if not file_name_and_revision:
                 continue
-            yang_file_compilation_data = cached_compilation_results.get(yang_file_with_revision)
-            yang_file_compilation_data = yang_file_compilation_data.get('original')
-            # yang_file_compilation_data.get('duplicates')
-            previous_compilation_results = (
-                yang_file_compilation_data.get('compilation_results')
-                if yang_file_compilation_data and isinstance(yang_file_compilation_data, dict)
-                else None
-            )
-            module_hash_info = self.file_hasher.should_parse(yang_file_path)
-            changed_validator_versions = module_hash_info.get_changed_validator_versions(self.validator_versions)
-            # if module_hash_info.hash_changed:
-            #     duplicated_paths = ...
-            #     hash_loaded_from_populated_script = ...
-            #     for path in duplicated_paths:
-            #         duplicate_module_hash_info = self.file_hasher.should_parse(path)
-            #         duplicate_changed_validator_versions = module_hash_info.get_changed_validator_versions(
-            #             self.validator_versions
-            #         )
-            #         if duplicate_module_hash_info.hash == hash_loaded_from_populated_script:
-            #             yang_file_path = path
-            #             module_hash_info = ...
-            #             changed_validator_versions = changed_validator_versions
-            # see what to do if hash not changed but duplicate has the same hash as populated module from populate.py
-            if not previous_compilation_results or module_hash_info.hash_changed or changed_validator_versions:
+            module_info_for_compilation = self._get_module_info_for_compilation(yang_file_path, file_name_and_revision)
+            yang_file_path = module_info_for_compilation.yang_file_path
+            yang_file_compilation_data = module_info_for_compilation.yang_file_compilation_data
+            if (
+                not module_info_for_compilation.previous_compilation_results
+                or module_info_for_compilation.module_hash_changed
+                or module_info_for_compilation.changed_validator_versions
+            ):
                 parsers_to_use, module_compilation_results = self._get_parsers_to_use_and_previous_compilation_results(
-                    previous_compilation_results,
-                    module_hash_info,
-                    changed_validator_versions,
+                    module_info_for_compilation.previous_compilation_results,
+                    module_info_for_compilation.module_hash_changed,
+                    module_info_for_compilation.changed_validator_versions,
                 )
                 compilation_status, module_compilation_results = self._parse_module(
                     parsers_to_use,
@@ -209,13 +211,56 @@ class CompileModulesABC(abc.ABC):
                 # Revert to previous hash if compilation status is 'UNKNOWN' -> try to parse model again next time
                 if compilation_status != 'UNKNOWN':
                     self.file_hasher.updated_hashes[yang_file_path] = {
-                        'hash': module_hash_info.hash,
+                        'hash': module_info_for_compilation.module_hash,
                         'validator_versions': self.validator_versions,
                     }
-            aggregated_results['all'][yang_file_with_revision] = yang_file_compilation_data
+            aggregated_results['all'][file_name_and_revision] = yang_file_compilation_data
             if module_or_submodule(yang_file_path) == 'module':
-                aggregated_results['no_submodules'][yang_file_with_revision] = yang_file_compilation_data
+                aggregated_results['no_submodules'][file_name_and_revision] = yang_file_compilation_data
         return aggregated_results
+
+    def _get_module_info_for_compilation(
+        self,
+        yang_file_path: str,
+        file_name_and_revision: str,
+    ) -> ModuleInfoForCompilation:
+        all_modules_dir_yang_file_path = os.path.join(self.all_modules_dir, file_name_and_revision)
+        all_modules_dir_yang_file_hash_info = (
+            self.file_hasher.should_parse(all_modules_dir_yang_file_path)
+            if os.path.exists(all_modules_dir_yang_file_path)
+            else None
+        )
+        yang_file_compilation_data = self.cached_compilation_results.get(file_name_and_revision, {})
+        module_hash_info = self.file_hasher.should_parse(yang_file_path)
+        if all_modules_dir_yang_file_hash_info:
+            if yang_file_compilation_data.get('yang_file_path') == all_modules_dir_yang_file_path:
+                # the file has been already re-compiled with the path in all_modules_dir
+                # so this path is the right one for this file compilation
+                yang_file_path = all_modules_dir_yang_file_path
+                module_hash_info = all_modules_dir_yang_file_hash_info
+            elif module_hash_info.hash != all_modules_dir_yang_file_hash_info.hash:
+                # the file in yang_file_path isn't the right one
+                # and should be re-compiled with the path in all_modules_dir
+                return self.ModuleInfoForCompilation(
+                    yang_file_path=all_modules_dir_yang_file_path,
+                    module_hash=all_modules_dir_yang_file_hash_info.hash,
+                    module_hash_changed=True,
+                    changed_validator_versions=None,
+                    yang_file_compilation_data=None,
+                    previous_compilation_results=None,
+                )
+        return self.ModuleInfoForCompilation(
+            yang_file_path=yang_file_path,
+            module_hash=module_hash_info.hash,
+            module_hash_changed=module_hash_info.hash_changed,
+            changed_validator_versions=module_hash_info.get_changed_validator_versions(self.validator_versions),
+            yang_file_compilation_data=yang_file_compilation_data,
+            previous_compilation_results=(
+                yang_file_compilation_data.get('compilation_results')
+                if yang_file_compilation_data and isinstance(yang_file_compilation_data, dict)
+                else None
+            ),
+        )
 
     def _get_name_with_revision(self, yang_file: str) -> str:
         yang_file_base = os.path.basename(yang_file)
@@ -275,11 +320,11 @@ class CompileModulesABC(abc.ABC):
 
     def _get_parsers_to_use_and_previous_compilation_results(
         self,
-        previous_compilation_results: dict,
-        module_hash_info: FileHasher.ModuleHashCheckForParsing,
-        changed_validator_versions: list[str],
+        previous_compilation_results: t.Optional[dict],
+        module_hash_changed: bool,
+        changed_validator_versions: t.Optional[list[str]],
     ) -> tuple[dict, dict]:
-        if previous_compilation_results and not module_hash_info.hash_changed and changed_validator_versions:
+        if previous_compilation_results and not module_hash_changed and changed_validator_versions:
             parsers_to_use = {
                 parser_name: parser_object
                 for parser_name, parser_object in self.parsers.items()
@@ -583,18 +628,6 @@ class CompileExampleModules(CompileModulesABC):
             f'{compilation_stats["example-drafts"]}',
             flush=True,
         )
-
-
-class CompileAllSavedModules(CompileModulesABC):
-    d = {
-        IETF.RFC: {},
-    }
-
-    def __init__(self, options: CompileModulesABC.Options):
-        super().__init__(options)
-        self.root_dir = options.config.get('Directory-Section', 'save-file-dir')
-        with open(os.path.join(self.cache_directory, 'example_dict.json')) as f:
-            self.documents_dict = json.load(f)
 
 
 def main():
