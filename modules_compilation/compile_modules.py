@@ -385,8 +385,6 @@ class CompileModulesABC(abc.ABC):
             self.metadata,
         )
 
-    # def _save_compilation_results_hash
-
     def _generate_statistics_page(self) -> dict:
         passed = number_that_passed_compilation(self.aggregated_results['all'], 0, 'PASSED')
         passed_with_warnings = number_that_passed_compilation(self.aggregated_results['all'], 0, 'PASSED WITH WARNINGS')
