@@ -1,5 +1,9 @@
 ## Module Compilation Release Notes
 
+* ##### v5.10.1 - 2023-03-20
+
+  * No changes - released with other [deployment submodules](https://github.com/YangCatalog/deployment)
+
 * ##### v5.10.0 - 2023-03-07
 
   * Extract and store code snippets from draft documents [#3](https://github.com/YangCatalog/module-compilation/issues/3)
