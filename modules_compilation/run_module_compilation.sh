@@ -16,6 +16,18 @@
 
 MAX_PROCESSES=4
 
+# make sure the compilation isn't disturbed by updates
+STATIC_COPIES="$TMP/module_compilation"
+rsync --links --recursive --include="*.yang" "$NONIETFDIR/*" "$STATIC_COPIES"
+
+cleanup() {
+   rm -rf $STATIC_COPIES >>$LOG 2>&1
+   rm -rf $TMP/bbf/ >>$LOG 2>&1
+   rm -rf $TMP/openroadm-public/ >>$LOG 2>&1
+}
+
+trap cleanup EXIT ERR
+
 wait_for_processes() {
    while [ "$(jobs -r | wc -l)" -ge $MAX_PROCESSES ]; do
       sleep 1s
@@ -32,7 +44,7 @@ source $CONFD_DIR/confdrc >>$LOG 2>&1
 # BBF, we need to flatten the directory structure
 mkdir -p $TMP/bbf >>$LOG 2>&1
 rm -f $TMP/bbf/* >>$LOG 2>&1
-find $NONIETFDIR/yangmodels/yang/standard/bbf -name "*.yang" -exec cp {} $TMP/bbf/ \; >>$LOG 2>&1
+find $STATIC_COPIES/yangmodels/yang/standard/bbf -name "*.yang" -exec cp {} $TMP/bbf/ \; >>$LOG 2>&1
 
 mkdir -p $MODULES >>$LOG 2>&1
 
@@ -64,41 +76,41 @@ compile_modules --example
 compile_modules --metadata "BBF Complete Report: YANG Data Models compilation from https://github.com/BroadbandForum/yang/tree/master" --lint --prefix BBF --rootdir "$TMP/bbf/"
 
 # Standard MEF
-compile_modules --metadata "MEF: Standard YANG Data Models compilation from https://github.com/MEF-GIT/YANG-public/tree/master/src/model/standard/" --lint --prefix MEFStandard --rootdir "$NONIETFDIR/mef/YANG-public/src/model/standard/"
+compile_modules --metadata "MEF: Standard YANG Data Models compilation from https://github.com/MEF-GIT/YANG-public/tree/master/src/model/standard/" --lint --prefix MEFStandard --rootdir "$STATIC_COPIES/mef/YANG-public/src/model/standard/"
 
 # Experimental MEF
-compile_modules --metadata "MEF: Draft YANG Data Models compilation from https://github.com/MEF-GIT/YANG-public/tree/master/src/model/draft/" --lint --prefix MEFExperimental --rootdir "$NONIETFDIR/mef/YANG-public/src/model/draft/"
+compile_modules --metadata "MEF: Draft YANG Data Models compilation from https://github.com/MEF-GIT/YANG-public/tree/master/src/model/draft/" --lint --prefix MEFExperimental --rootdir "$STATIC_COPIES/mef/YANG-public/src/model/draft/"
 
 # Standard IEEE published
-compile_modules --metadata "IEEE: YANG Data Models compilation from https://github.com/YangModels/yang/tree/master/standard/ieee/published: The 'standard/ieee/published' branch is intended for published standards modules (with approved PARs)." --lint --prefix IEEEStandard --rootdir "$NONIETFDIR/yangmodels/yang/standard/ieee/published/"
+compile_modules --metadata "IEEE: YANG Data Models compilation from https://github.com/YangModels/yang/tree/master/standard/ieee/published: The 'standard/ieee/published' branch is intended for published standards modules (with approved PARs)." --lint --prefix IEEEStandard --rootdir "$STATIC_COPIES/yangmodels/yang/standard/ieee/published/"
 
 # Standard IEEE drafts
-compile_modules --metadata "IEEE: YANG Data Models compilation from https://github.com/YangModels/yang/tree/master/standard/ieee/draft: The 'standard/ieee/draft' branch is intended for draft modules with an approved Project Authorization Request (PAR)." --lint --prefix IEEEStandardDraft --rootdir "$NONIETFDIR/yangmodels/yang/standard/ieee/draft/"
+compile_modules --metadata "IEEE: YANG Data Models compilation from https://github.com/YangModels/yang/tree/master/standard/ieee/draft: The 'standard/ieee/draft' branch is intended for draft modules with an approved Project Authorization Request (PAR)." --lint --prefix IEEEStandardDraft --rootdir "$STATIC_COPIES/yangmodels/yang/standard/ieee/draft/"
 
 # Experimental IEEE
-compile_modules --metadata "IEEE: Draft YANG Data Models compilation from https://github.com/YangModels/yang/tree/master/experimental/ieee: The 'experimental/ieee' branch is intended for IEEE work that does not yet have a Project Authorization Request (PAR)." --lint --prefix IEEEExperimental --rootdir "$NONIETFDIR/yangmodels/yang/experimental/ieee/"
+compile_modules --metadata "IEEE: Draft YANG Data Models compilation from https://github.com/YangModels/yang/tree/master/experimental/ieee: The 'experimental/ieee' branch is intended for IEEE work that does not yet have a Project Authorization Request (PAR)." --lint --prefix IEEEExperimental --rootdir "$STATIC_COPIES/yangmodels/yang/experimental/ieee/"
 
 # Standard IANA
-compile_modules --metadata "IANA: Standard YANG Data Models compilation from https://github.com/YangModels/yang/tree/master/standard/iana: The 'standard/iana' branch is intended for IANA-maintained YANG models." --lint --prefix IANAStandard --rootdir "$NONIETFDIR/yangmodels/yang/standard/iana/"
+compile_modules --metadata "IANA: Standard YANG Data Models compilation from https://github.com/YangModels/yang/tree/master/standard/iana: The 'standard/iana' branch is intended for IANA-maintained YANG models." --lint --prefix IANAStandard --rootdir "$STATIC_COPIES/yangmodels/yang/standard/iana/"
 
 # Openconfig
-compile_modules --metadata "Openconfig: YANG Data Models compilation from https://github.com/openconfig/public" --lint --prefix Openconfig --rootdir "$NONIETFDIR/openconfig/public/release/models/"
+compile_modules --metadata "Openconfig: YANG Data Models compilation from https://github.com/openconfig/public" --lint --prefix Openconfig --rootdir "$STATIC_COPIES/openconfig/public/release/models/"
 
 # ONF Open Transport
-compile_modules --metadata "ONF Open Transport: YANG Data Models compilation from https://github.com/OpenNetworkingFoundation/Snowmass-ONFOpenTransport" --lint --prefix ONFOpenTransport --rootdir "$NONIETFDIR/onf/Snowmass-ONFOpenTransport"
+compile_modules --metadata "ONF Open Transport: YANG Data Models compilation from https://github.com/OpenNetworkingFoundation/Snowmass-ONFOpenTransport" --lint --prefix ONFOpenTransport --rootdir "$STATIC_COPIES/onf/Snowmass-ONFOpenTransport"
 
 # sysrepo internal
-compile_modules --metadata "Sysrepo: internal YANG Data Models compilation from https://github.com/sysrepo/yang/tree/master/internal" --lint --prefix SysrepoInternal --rootdir "$NONIETFDIR/sysrepo/yang/internal/"
+compile_modules --metadata "Sysrepo: internal YANG Data Models compilation from https://github.com/sysrepo/yang/tree/master/internal" --lint --prefix SysrepoInternal --rootdir "$STATIC_COPIES/sysrepo/yang/internal/"
 
 # sysrepo applications
-compile_modules --metadata "Sysrepo: applications YANG Data Models compilation from https://github.com/sysrepo/yang/tree/master/applications" --lint --prefix SysrepoApplication --rootdir "$NONIETFDIR/sysrepo/yang/applications/"
+compile_modules --metadata "Sysrepo: applications YANG Data Models compilation from https://github.com/sysrepo/yang/tree/master/applications" --lint --prefix SysrepoApplication --rootdir "$STATIC_COPIES/sysrepo/yang/applications/"
 
 # ETSI
-for path in $(ls -d $NONIETFDIR/yangmodels/yang/standard/etsi/*); do
+for path in $(ls -d $STATIC_COPIES/yangmodels/yang/standard/etsi/*); do
    version=${path##*/etsi/NFV-SOL006-}
    version_number=${version##*v}
    version_alnum=$(echo $version_number | tr -cd '[:alnum:]')
-   compile_modules --metadata "ETSI Complete Report: YANG Data Models compilation from https://github.com/etsi-forge/nfv-sol006/tree/$version" --lint --prefix ETSI$version_alnum --rootdir "$NONIETFDIR/yangmodels/yang/standard/etsi/NFV-SOL006-$version/src/yang"
+   compile_modules --metadata "ETSI Complete Report: YANG Data Models compilation from https://github.com/etsi-forge/nfv-sol006/tree/$version" --lint --prefix ETSI$version_alnum --rootdir "$STATIC_COPIES/yangmodels/yang/standard/etsi/NFV-SOL006-$version/src/yang"
 done
 
 wait
@@ -110,7 +122,7 @@ if [ "$IS_PROD" = "True" ]; then
    # Each branch representing the version is copied to a separate folder
    # This allows to run the compile_modules.py script on multiple folders in parallel
    cur_dir=$(pwd)
-   cd $NONIETFDIR/openroadm/OpenROADM_MSA_Public
+   cd $STATIC_COPIES/openroadm/OpenROADM_MSA_Public
    branches=$(git branch --remotes)
    for branch in $branches; do
       version=${branch##*/}
@@ -119,7 +131,7 @@ if [ "$IS_PROD" = "True" ]; then
          git checkout $version >>$LOG 2>&1
          mkdir -p $TMP/openroadm-public/$version >>$LOG 2>&1
          rm -f $TMP/openroadm-public/$version/* >>$LOG 2>&1
-         find $NONIETFDIR/openroadm/OpenROADM_MSA_Public -name "*.yang" -exec cp {} $TMP/openroadm-public/$version/ \; >>$LOG 2>&1
+         find $STATIC_COPIES/openroadm/OpenROADM_MSA_Public -name "*.yang" -exec cp {} $TMP/openroadm-public/$version/ \; >>$LOG 2>&1
       fi
    done
 
@@ -136,7 +148,7 @@ if [ "$IS_PROD" = "True" ]; then
       local os_upper=$2
       local os_lower=${os_upper,,}
       date +"%c: processing all Cisco $os_upper modules " >>$LOG
-      for path in $(ls -d $NONIETFDIR/yangmodels/yang/vendor/cisco/$os_lower/*/); do
+      for path in $(ls -d $STATIC_COPIES/yangmodels/yang/vendor/cisco/$os_lower/*/); do
          git=${path##*/cisco/$os_lower/}
          slash_removed=${git%/}
          prefix=${slash_removed#*/}
@@ -155,7 +167,7 @@ if [ "$IS_PROD" = "True" ]; then
    date +"%c: processing Juniper modules " >>$LOG
 
    # Juniper/14.2 does not contain subdirectories
-   path=$NONIETFDIR/yangmodels/yang/vendor/juniper/14.2/
+   path=$STATIC_COPIES/yangmodels/yang/vendor/juniper/14.2/
    git=${path##*/juniper/}
    slash_removed=${git%/}
    prefix=${slash_removed#*/}
@@ -164,7 +176,7 @@ if [ "$IS_PROD" = "True" ]; then
 
    # Juniper/15* does not exist
    for i in {16..21}; do
-      for path in $(ls -d $NONIETFDIR/yangmodels/yang/vendor/juniper/$i*/*/); do
+      for path in $(ls -d $STATIC_COPIES/yangmodels/yang/vendor/juniper/$i*/*/); do
          git=${path##*/juniper/}
          slash_removed=${git%/}
          prefix=${slash_removed#*/}
@@ -175,7 +187,7 @@ if [ "$IS_PROD" = "True" ]; then
 
    # Huawei
    date +"%c: processing Huawei modules " >>$LOG
-   for path in $(ls -d $NONIETFDIR/yangmodels/yang/vendor/huawei/network-router/*/*/); do
+   for path in $(ls -d $STATIC_COPIES/yangmodels/yang/vendor/huawei/network-router/*/*/); do
       git=${path##*/network-router/}
       slash_removed=${git%/}
       version=${slash_removed%/*}
@@ -186,11 +198,11 @@ if [ "$IS_PROD" = "True" ]; then
 
    # Ciena
    date +"%c: processing Ciena modules " >>$LOG
-   compile_modules --allinclusive --metadata "Ciena https://github.com/YangModels/yang/tree/master/vendor/ciena" --lint --prefix CIENA --rootdir "$NONIETFDIR/yangmodels/yang/vendor/ciena"
+   compile_modules --allinclusive --metadata "Ciena https://github.com/YangModels/yang/tree/master/vendor/ciena" --lint --prefix CIENA --rootdir "$STATIC_COPIES/yangmodels/yang/vendor/ciena"
 
    # Fujitsu
    date +"%c: processing Fujitsu modules " >>$LOG
-   for path in $(find $NONIETFDIR/yangmodels/yang/vendor/fujitsu/FSS2-API-Yang -name "yang"); do
+   for path in $(find $STATIC_COPIES/yangmodels/yang/vendor/fujitsu/FSS2-API-Yang -name "yang"); do
       git=${path##*/fujitsu/}
       yang_removed=${git%/*}
       prefix=${yang_removed#*/}
@@ -200,7 +212,7 @@ if [ "$IS_PROD" = "True" ]; then
 
    # Nokia
    date +"%c: processing Nokia modules " >>$LOG
-   for path in $(ls -d $NONIETFDIR/yangmodels/yang/vendor/nokia/*/*/); do
+   for path in $(ls -d $STATIC_COPIES/yangmodels/yang/vendor/nokia/*/*/); do
       git=${path##*/7x50_YangModels/}
       slash_removed=${git%/}
       prefix=${slash_removed#*/}
@@ -214,14 +226,6 @@ fi
 wait
 
 date +"%c: all sub-process have ended" >>$LOG
-
-# Clean up of the .fxs files created by confdc
-date +"%c: cleaning up the now useless .fxs files" >>$LOG
-find $NONIETFDIR/ -name *.fxs ! -name fujitsu-optical-channel-interfaces.fxs -print | xargs -r rm >>$LOG 2>&1
-
-# Remove temp directory structure created for parsing OpenROADM and BBF yang modules
-rm -rf $TMP/bbf/ >>$LOG 2>&1
-rm -rf $TMP/openroadm-public/ >>$LOG 2>&1
 
 date +"%c: reloading cache" >>$LOG
 read -ra CRED <<<$(sed 's/\"//g' <<<"$CREDENTIALS")

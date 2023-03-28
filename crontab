@@ -9,5 +9,5 @@ CONF=<CONF>
 # m h  dom mon dow   command
 #
 
-5 1 * * * (cd /module-compilation/cronjobs ; ./cronjob)
+5 1 * * * (cd /module-compilation/cronjobs ; ./cronjob-daily)
 0 10 * * 3 (cd /module-compilation/cronjobs ; ./cronjob-drafts)
