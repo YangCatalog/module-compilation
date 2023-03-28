@@ -23,7 +23,7 @@
 | metadata\_generators/\_\_init\_\_.py                          |        4 |        0 |    100% |           |
 | metadata\_generators/extract\_emails.py                       |       49 |       16 |     67% |59, 64, 75, 86-103 |
 | modules\_compilation/\_\_init\_\_.py                          |        0 |        0 |    100% |           |
-| modules\_compilation/file\_hasher.py                          |       71 |        7 |     90% |93, 119-124 |
+| modules\_compilation/file\_hasher.py                          |       71 |        7 |     90% |92, 118-123 |
 | parsers/\_\_init\_\_.py                                       |        0 |        0 |    100% |           |
 | parsers/yang\_parser.py                                       |       85 |       29 |     66% |82, 90-98, 160-161, 165-168, 175-188, 228 |
 | redis\_connections/\_\_init\_\_.py                            |        0 |        0 |    100% |           |
@@ -44,9 +44,9 @@
 | tests/test\_yang\_version\_1\_1.py                            |       37 |        1 |     97% |        67 |
 | utility/\_\_init\_\_.py                                       |        0 |        0 |    100% |           |
 | utility/static\_variables.py                                  |        3 |        0 |    100% |           |
-| utility/utility.py                                            |      276 |       41 |     85% |79, 82, 112, 192, 194, 197-199, 216-217, 223-225, 228, 252, 267, 275-278, 283, 300, 305-306, 314, 316-327, 386, 392-394, 403 |
+| utility/utility.py                                            |      271 |       39 |     86% |79, 82, 112, 192, 194, 197-199, 216-217, 222-224, 227, 261, 269-272, 277, 294, 299-300, 308, 310-321, 382-384, 393 |
 | versions.py                                                   |       28 |        0 |    100% |           |
-|                                                     **TOTAL** | **2202** |  **364** | **83%** |           |
+|                                                     **TOTAL** | **2197** |  **362** | **84%** |           |
 
 
 ## Setup coverage badge
