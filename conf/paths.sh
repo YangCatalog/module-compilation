@@ -32,6 +32,8 @@ IS_PROD=$(python "$VIRTUAL_ENV"/get_config.py --section General-Section --key is
 export IS_PROD
 GIT_TOKEN=$(python "$VIRTUAL_ENV"/get_config.py --section Secrets-Section --key yang-catalog-token)
 export GIT_TOKEN
+LATEST_XYM_VERSION_FILE=$(python "$VIRTUAL_ENV"/get_config.py --section Directory-Section --key modules-extraction-latest-xym-version)
+export LATEST_XYM_VERSION_FILE
 
 #
 # Repositories

@@ -103,8 +103,21 @@ ln -f -s "$NONIETFDIR"/yangmodels/yang/standard/iana/ "$MODULES"/iana
 
 # Extract all YANG models from RFC and I-D
 date +"%c: Starting to extract all YANG modules from IETF documents" >>"$LOG"
-# Using --draftpath "$IETFDIR"/my-id-archive-mirror/ means much longer process as all expired drafts will also be analyzed...
-if [ "$(date +%u)" -eq 6 ]; then
+if [ -f "$LATEST_XYM_VERSION_FILE" ] && [ -s "$LATEST_XYM_VERSION_FILE" ]; then
+  if ! grep -Fxq "$XYM_VERSION" "$LATEST_XYM_VERSION_FILE"; then
+    truncate -s 0 "$LATEST_XYM_VERSION_FILE"
+    echo "$XYM_VERSION" > "$LATEST_XYM_VERSION_FILE"
+    XYM_VERSION_IS_UPDATED=true
+  else
+    XYM_VERSION_IS_UPDATED=false
+  fi
+else
+  # this situation can only happen during the PROD update at the first time with these changes
+  echo "$XYM_VERSION" > "$LATEST_XYM_VERSION_FILE"
+  XYM_VERSION_IS_UPDATED=false
+fi
+if [ "$XYM_VERSION_IS_UPDATED" = true ] && [ "$IS_PROD" = "True" ]; then
+  # Using --archived  means much longer process as all expired drafts will also be analyzed...
 	python "$VIRTUAL_ENV"/ietf_modules_extraction/extract_ietf_modules.py --archived >>"$LOG" 2>&1
 fi
 python "$VIRTUAL_ENV"/ietf_modules_extraction/extract_ietf_modules.py >>"$LOG" 2>&1
