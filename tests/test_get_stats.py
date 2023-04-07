@@ -62,7 +62,7 @@ class TestGetStats(unittest.TestCase):
     def setUp(self):
         args = argparse.Namespace()
         setattr(args, 'days', -1)
-        setattr(args, 'debug', 0)
+        setattr(args, 'debug', 1)
         self.get_stats_instance: GetStats = GetStats(args=args, config=self.config)
 
     def tearDown(self):
