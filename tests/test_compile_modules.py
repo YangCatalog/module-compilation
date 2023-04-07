@@ -29,6 +29,7 @@ from versions import validator_versions
 
 
 class TestCompileModules(unittest.TestCase):
+    virtual_env = os.environ['VIRTUAL_ENV']
     resources_path = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/compile_modules')
     validator_versions = {
         'pyang': validator_versions['pyang_version'],
@@ -40,13 +41,19 @@ class TestCompileModules(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.config = create_config()
-        cls.cache_directory = cls.config.get('Directory-Section', 'cache')
+        cls.cache_directory = os.path.join(cls.virtual_env, cls.config.get('Directory-Section', 'cache'))
+        cls.config.set('Directory-Section', 'cache', cls.cache_directory)
+        temp_directory = os.path.join(cls.virtual_env, cls.config.get('Directory-Section', 'temp'))
+        cls.config.set('Directory-Section', 'temp', temp_directory)
+        ietf_drafts_directory = os.path.join(cls.virtual_env, cls.config.get('Directory-Section', 'ietf-drafts'))
+        cls.config.set('Directory-Section', 'ietf-drafts', ietf_drafts_directory)
         cls.ietf_directory = cls.resource('ietf')
         cls.config.set('Directory-Section', 'ietf-directory', cls.ietf_directory)
         cls.all_modules_dir = cls.resource('all_modules')
         cls.config.set('Directory-Section', 'save-file-dir', cls.all_modules_dir)
         cls.web_private = cls.resource('html/private')
         cls.config.set('Web-Section', 'private-directory', cls.web_private)
+        cls.config.set('Directory-Section', 'modules-directory', cls.resource('modules-directory'))
 
     def setUp(self):
         self.basic_compile_modules_options = compile_modules.CompileModulesABC.Options(
@@ -187,7 +194,7 @@ class TestCompileModules(unittest.TestCase):
         self.add_modules_to_file_hasher(modules_compilation_instance, root_dir, self.all_modules_dir)
         root_dir_files = os.listdir(root_dir)
         for i, filename in enumerate(os.listdir((test_dir := os.path.join(self.ietf_directory, 'YANG')))):
-            if i > modules_count:
+            if i >= modules_count:
                 break
             root_dir_file = root_dir_files[i]
             shutil.copy(os.path.join(test_dir, filename), root_dir_file)
