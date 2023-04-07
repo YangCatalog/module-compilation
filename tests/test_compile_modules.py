@@ -29,14 +29,8 @@ from versions import validator_versions
 
 
 class TestCompileModules(unittest.TestCase):
-    virtual_env = os.environ['VIRTUAL_ENV']
-    resources_path = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/compile_modules')
-    validator_versions = {
-        'pyang': validator_versions['pyang_version'],
-        'confdc': validator_versions['confd_version'],
-        'yangdumppro': validator_versions['yangdump_version'],
-        'yanglint': validator_versions['yanglint_version'],
-    }
+    virtual_env: str = os.environ['VIRTUAL_ENV']
+    resources_path: str = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/compile_modules')
 
     @classmethod
     def setUpClass(cls):
@@ -54,6 +48,12 @@ class TestCompileModules(unittest.TestCase):
         cls.web_private = cls.resource('html/private')
         cls.config.set('Web-Section', 'private-directory', cls.web_private)
         cls.config.set('Directory-Section', 'modules-directory', cls.resource('modules-directory'))
+        cls.validator_versions: dict[str, str] = {
+            'pyang': validator_versions['pyang_version'],
+            'confdc': validator_versions['confd_version'],
+            'yangdumppro': validator_versions['yangdump_version'],
+            'yanglint': validator_versions['yanglint_version'],
+        }
 
     def setUp(self):
         self.basic_compile_modules_options = compile_modules.CompileModulesABC.Options(

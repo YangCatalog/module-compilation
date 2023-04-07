@@ -32,6 +32,7 @@ from utility.utility import list_files_by_extensions
 
 
 class TestGetStats(unittest.TestCase):
+    virtual_env: str = os.environ['VIRTUAL_ENV']
     config: ConfigParser
     backup_directory: str
     web_private_directory: str
@@ -40,11 +41,18 @@ class TestGetStats(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.config = create_config()
-        cls.config.set('Directory-Section', 'backup', 'tests/resources/yang_get_stats/backup')
-        cls.config.set('Directory-Section', 'ietf-directory', 'tests/resources/yang_get_stats/ietf')
-        cls.config.set('Web-Section', 'private-directory', 'tests/resources/yang_get_stats/private')
-        cls.backup_directory = os.path.join(os.environ['VIRTUAL_ENV'], cls.config.get('Directory-Section', 'backup'))
+        cls.backup_directory = os.path.join(cls.virtual_env, 'tests/resources/yang_get_stats/backup')
         cls.config.set('Directory-Section', 'backup', cls.backup_directory)
+        cls.config.set(
+            'Directory-Section',
+            'ietf-directory',
+            os.path.join(cls.virtual_env, 'tests/resources/yang_get_stats/ietf'),
+        )
+        cls.config.set(
+            'Web-Section',
+            'private-directory',
+            os.path.join(cls.virtual_env, 'tests/resources/yang_get_stats/private'),
+        )
         cls.web_private_directory = cls.config.get('Web-Section', 'private-directory')
         cls.directory_to_store_backup_files = os.path.join('tests/resources/yang_get_stats', uuid4().hex)
         cls.stats_directory = os.path.join(cls.web_private_directory, 'stats')
