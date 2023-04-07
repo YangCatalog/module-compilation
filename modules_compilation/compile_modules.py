@@ -22,7 +22,6 @@ from configparser import ConfigParser
 from dataclasses import dataclass
 
 import requests
-from compilation_status import combined_compilation, pyang_compilation_status
 from filelock import FileLock
 
 from create_config import create_config
@@ -30,6 +29,7 @@ from metadata_generators.base_metadata_generator import BaseMetadataGenerator
 from metadata_generators.draft_metadata_generator import ArchivedMetadataGenerator, DraftMetadataGenerator
 from metadata_generators.example_metadata_generator import ExampleMetadataGenerator
 from metadata_generators.rfc_metadata_generator import RfcMetadataGenerator
+from modules_compilation.compilation_status import combined_compilation, pyang_compilation_status
 from modules_compilation.file_hasher import FileHasher
 from modules_compilation.files_generator import FilesGenerator
 from parsers.confdc_parser import ConfdcParser
@@ -68,7 +68,6 @@ class CompileModulesABC(abc.ABC):
         lint: bool
         allinclusive: bool
         metadata: str
-        save_compilation_results_to_db: bool
         config: ConfigParser = create_config()
 
     @dataclass
@@ -706,7 +705,6 @@ def main():
         lint=args.lint,
         allinclusive=args.allinclusive,
         metadata=args.metadata,
-        save_compilation_results_to_db=False,
         config=config,
     )
     if args.rfc:

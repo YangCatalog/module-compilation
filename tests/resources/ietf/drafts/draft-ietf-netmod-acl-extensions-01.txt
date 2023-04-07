@@ -1,0 +1,2800 @@
+
+
+
+
+netmod                                                     O. G. D. Dios
+Internet-Draft                                                S. Barguil
+Intended status: Standards Track                              Telefonica
+Expires: 11 September 2023                                  M. Boucadair
+                                                                  Orange
+                                                                   Q. Wu
+                                                                  Huawei
+                                                           10 March 2023
+
+
+        Extensions to the Access Control Lists (ACLs) YANG Model
+                  draft-ietf-netmod-acl-extensions-01
+
+Abstract
+
+   RFC 8519 defines a YANG data model for Access Control Lists (ACLs).
+   This document discusses a set of extensions that fix many of the
+   limitations of the ACL model as initially defined in RFC 8519.
+
+   The document also defines an IANA-maintained module for ICMP types.
+
+Discussion Venues
+
+   This note is to be removed before publishing as an RFC.
+
+   Discussion of this document takes place on the Network Modeling
+   Working Group mailing list (netmod@ietf.org), which is archived at
+   https://mailarchive.ietf.org/arch/browse/netmod/.
+
+   Source for this draft and an issue tracker can be found at
+   https://github.com/boucadair/enhanced-acl-netmod.
+
+Status of This Memo
+
+   This Internet-Draft is submitted in full conformance with the
+   provisions of BCP 78 and BCP 79.
+
+   Internet-Drafts are working documents of the Internet Engineering
+   Task Force (IETF).  Note that other groups may also distribute
+   working documents as Internet-Drafts.  The list of current Internet-
+   Drafts is at https://datatracker.ietf.org/drafts/current/.
+
+   Internet-Drafts are draft documents valid for a maximum of six months
+   and may be updated, replaced, or obsoleted by other documents at any
+   time.  It is inappropriate to use Internet-Drafts as reference
+   material or to cite them other than as "work in progress."
+
+   This Internet-Draft will expire on 11 September 2023.
+
+
+
+Dios, et al.            Expires 11 September 2023               [Page 1]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+Copyright Notice
+
+   Copyright (c) 2023 IETF Trust and the persons identified as the
+   document authors.  All rights reserved.
+
+   This document is subject to BCP 78 and the IETF Trust's Legal
+   Provisions Relating to IETF Documents (https://trustee.ietf.org/
+   license-info) in effect on the date of publication of this document.
+   Please review these documents carefully, as they describe your rights
+   and restrictions with respect to this document.  Code Components
+   extracted from this document must include Revised BSD License text as
+   described in Section 4.e of the Trust Legal Provisions and are
+   provided without warranty as described in the Revised BSD License.
+
+Table of Contents
+
+   1.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . .   3
+   2.  Terminology . . . . . . . . . . . . . . . . . . . . . . . . .   4
+   3.  Problem Statement & Gap Analysis  . . . . . . . . . . . . . .   4
+     3.1.  Suboptimal Configuration: Lack of Support for Lists of
+           Prefixes  . . . . . . . . . . . . . . . . . . . . . . . .   4
+     3.2.  Manageability: Impossibility to Use Aliases or Defined
+           Sets  . . . . . . . . . . . . . . . . . . . . . . . . . .   8
+     3.3.  Bind ACLs to Devices, Not Only Interfaces . . . . . . . .   9
+     3.4.  Partial or Lack of IPv4/IPv6 Fragment Handling  . . . . .   9
+     3.5.  Suboptimal TCP Flags Handling . . . . . . . . . . . . . .   9
+     3.6.  Rate-Limit Action . . . . . . . . . . . . . . . . . . . .  10
+     3.7.  Payload-based Filtering . . . . . . . . . . . . . . . . .  10
+     3.8.  Reuse the ACLs Content Across Several Devices . . . . . .  10
+   4.  Overall Module Structure  . . . . . . . . . . . . . . . . . .  10
+     4.1.  Enhanced ACL  . . . . . . . . . . . . . . . . . . . . . .  11
+     4.2.  Defined sets  . . . . . . . . . . . . . . . . . . . . . .  13
+     4.3.  TCP Flags Handling  . . . . . . . . . . . . . . . . . . .  14
+     4.4.  Fragments Handling  . . . . . . . . . . . . . . . . . . .  14
+     4.5.  Rate-Limit Traffic  . . . . . . . . . . . . . . . . . . .  19
+     4.6.  ISID Filter . . . . . . . . . . . . . . . . . . . . . . .  19
+     4.7.  VLAN Filter . . . . . . . . . . . . . . . . . . . . . . .  20
+   5.  YANG Modules  . . . . . . . . . . . . . . . . . . . . . . . .  21
+     5.1.  Enhanced ACL  . . . . . . . . . . . . . . . . . . . . . .  21
+   6.  Security Considerations . . . . . . . . . . . . . . . . . . .  38
+   7.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .  39
+     7.1.  URI Registration  . . . . . . . . . . . . . . . . . . . .  39
+     7.2.  YANG Module Name Registration . . . . . . . . . . . . . .  39
+   8.  References  . . . . . . . . . . . . . . . . . . . . . . . . .  40
+     8.1.  Normative References  . . . . . . . . . . . . . . . . . .  40
+     8.2.  Informative References  . . . . . . . . . . . . . . . . .  41
+   Appendix A.  XLTS Template to Generate The ICMP Type
+           IANA-Maintained Module  . . . . . . . . . . . . . . . . .  41
+
+
+
+Dios, et al.            Expires 11 September 2023               [Page 2]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+   Appendix B.  Initial Version of the The ICMP Type IANA-Maintained
+           Module  . . . . . . . . . . . . . . . . . . . . . . . . .  43
+   Appendix C.  Acknowledgements . . . . . . . . . . . . . . . . . .  50
+   Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  50
+
+1.  Introduction
+
+   [RFC8519] defines Access Control Lists (ACLs) as a user-ordered set
+   of filtering rules.  The model targets the configuration of the
+   filtering behavior of a device.  However, the model structure, as
+   defined in [RFC8519], suffers from a set of limitations.  This
+   document describes these limitations and proposes an enhanced ACL
+   structure.  The YANG module in this document is solely based on
+   augmentations to the ACL YANG module defined in [RFC8519].
+
+   The motivation of such enhanced ACL structure is discussed in detail
+   in Section 3.
+
+   When managing ACLs, it is common for network operators to group match
+   elements in pre-defined sets.  The consolidation into group matches
+   allows for reducing the number of rules, especially in large scale
+   networks.  If, for example, it is needed to find a match against 100
+   IP addresses (or prefixes), a single rule will suffice rather than
+   creating individual Access Control Entries (ACEs) for each IP address
+   (or prefix).  In doing so, implementations would optimize the
+   performance of matching lists vs multiple rules matching.
+
+   The enhanced ACL structure is also meant to facilitate the management
+   of network operators.  Instead of entering the IP address or port
+   number literals, using user-named lists decouples the creation of the
+   rule from the management of the sets.  Hence, it is possible to
+   remove/add entries to the list without redefining the (parent) ACL
+   rule.
+
+   In addition, the notion of Access Control List (ACL) and defined sets
+   is generalized so that it is not device-specific as per [RFC8519].
+   ACLs and defined sets may be defined at network / administrative
+   domain level and associated to devices.  This approach facilitates
+   the reusability across multiple network elements.  For example,
+   managing the IP prefix sets from a network level makes it easier to
+   maintain by the security groups.
+
+   Network operators maintain sets of IP prefixes that are related to
+   each other, e.g., deny-lists or accept-lists that are associated with
+   those provided by a VPN customer.  These lists are maintained and
+   manipulated by security expert teams.
+
+
+
+
+
+Dios, et al.            Expires 11 September 2023               [Page 3]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+   Note that ACLs are used locally in devices but are triggered by other
+   tools such as DDoS mitigation [RFC9132] or BGP Flow Spec [RFC8955]
+   [RFC8956].  Therefore, supporting means to easily map to the
+   filtering rules conveyed in messages triggered by these tools is
+   valuable from a network operation standpoint.
+
+   The document also defines an IANA-maintained module for ICMP types.
+   The design of the module adheres with the recommendations in
+   [I-D.boucadair-netmod-iana-registries].  A template to generate the
+   module is available at Appendix A.  Readers should refer to the IANA
+   website [REF_TBC] to retrieve the latest version of the module.  The
+   module is provided in Appendix B for the users convenience, but that
+   appendix will be removed from the final RFC.
+
+2.  Terminology
+
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and
+   "OPTIONAL" in this document are to be interpreted as described in
+   BCP 14 [RFC2119] [RFC8174] when, and only when, they appear in all
+   capitals, as shown here.
+
+   The terminology for describing YANG modules is defined in [RFC7950].
+   The meaning of the symbols in the tree diagrams is defined in
+   [RFC8340].
+
+   In addition to the terms defined in [RFC8519], this document makes
+   use of the following term:
+
+   Defined set: :Refers to reusable description of one or multiple
+   information elements (e.g., IP address, IP prefix, port number, or
+   ICMP type).
+
+3.  Problem Statement & Gap Analysis
+
+3.1.  Suboptimal Configuration: Lack of Support for Lists of Prefixes
+
+   IP prefix-related data nodes, e.g., "destination-ipv4-network" or
+   "destination-ipv6-network", do not support handling a list of IP
+   prefixes, which may then lead to having to support large numbers of
+   ACL entries in a configuration file.
+
+   The same issue is encountered when ACLs have to be in place to
+   mitigate DDoS attacks that involve a set of sources (e.g.,
+   [RFC9132]).  The situation is even worse when both a list of sources
+   and destination prefixes are involved in the filtering.
+
+
+
+
+
+Dios, et al.            Expires 11 September 2023               [Page 4]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+   Figure 1 shows an example of the required ACL configuration for
+   filtering traffic from two prefixes.
+
+   {
+     "ietf-access-control-list:acls": {
+       "acl": [
+         {
+           "name": "first-prefix",
+           "type": "ipv6-acl-type",
+           "aces": {
+             "ace": [
+               {
+                 "name": "my-test-ace",
+                 "matches": {
+                   "ipv6": {
+                     "destination-ipv6-network":
+                       "2001:db8:6401:1::/64",
+                     "source-ipv6-network":
+                       "2001:db8:1234::/96",
+                     "protocol": 17,
+                     "flow-label": 10000
+                   },
+                   "udp": {
+                     "source-port": {
+                       "operator": "lte",
+                       "port": 80
+                     },
+                     "destination-port": {
+                       "operator": "neq",
+                       "port": 1010
+                     }
+                   }
+                 },
+                 "actions": {
+                   "forwarding": "accept"
+                 }
+               }
+             ]
+           }
+         },
+         {
+           "name": "second-prefix",
+           "type": "ipv6-acl-type",
+           "aces": {
+             "ace": [
+               {
+                 "name": "my-test-ace",
+                 "matches": {
+
+
+
+Dios, et al.            Expires 11 September 2023               [Page 5]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+                   "ipv6": {
+                     "destination-ipv6-network":
+                       "2001:db8:6401:c::/64",
+                     "source-ipv6-network":
+                       "2001:db8:1234::/96",
+                     "protocol": 17,
+                     "flow-label": 10000
+                   },
+                   "udp": {
+                     "source-port": {
+                       "operator": "lte",
+                       "port": 80
+                     },
+                     "destination-port": {
+                       "operator": "neq",
+                       "port": 1010
+                     }
+                   }
+                 },
+                 "actions": {
+                   "forwarding": "accept"
+                 }
+               }
+             ]
+           }
+         }
+       ]
+     }
+   }
+
+      Figure 1: Example Illustrating Sub-optimal Use of the ACL Model
+                     with a Prefix List (Message Body)
+
+   Such a configuration is suboptimal for both:
+
+   *  Network controllers that need to manipulate large files.  All or a
+      subset for this configuration will need to be passed to the
+      underlying network devices.
+
+   *  Devices may receive such a configuration and thus will need to
+      maintain it locally.
+
+   Figure 2 depicts an example of an optimized structure:
+
+
+
+
+
+
+
+
+Dios, et al.            Expires 11 September 2023               [Page 6]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+   {
+     "ietf-access-control-list:acls": {
+       "acl": [
+         {
+           "name": "prefix-list-support",
+           "type": "ipv6-acl-type",
+           "aces": {
+             "ace": [
+               {
+                 "name": "my-test-ace",
+                 "matches": {
+                   "ipv6": {
+                     "destination-ipv6-network": [
+                       "2001:db8:6401:1::/64",
+                       "2001:db8:6401:c::/64"
+                     ],
+                     "source-ipv6-network":
+                       "2001:db8:1234::/96",
+                     "protocol": 17,
+                     "flow-label": 10000
+                   },
+                   "udp": {
+                     "source-port": {
+                       "operator": "lte",
+                       "port": 80
+                     },
+                     "destination-port": {
+                       "operator": "neq",
+                       "port": 1010
+                     }
+                   }
+                 },
+                 "actions": {
+                   "forwarding": "accept"
+                 }
+               }
+             ]
+           }
+         }
+       ]
+     }
+   }
+
+      Figure 2: Example Illustrating Optimal Use of the ACL Model in a
+                       Network Context (Message Body)
+
+
+
+
+
+
+Dios, et al.            Expires 11 September 2023               [Page 7]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+3.2.  Manageability: Impossibility to Use Aliases or Defined Sets
+
+   The same approach as the one discussed for IP prefixes can be
+   generalized by introducing the concept of "aliases" or "defined
+   sets".
+
+   The defined sets are reusable definitions across several ACLs.  Each
+   category is modelled in YANG as a list of parameters related to the
+   class it represents.  The following sets can be considered:
+
+   *  Prefix sets: Used to create lists of IPv4 or IPv6 prefixes.
+
+   *  Protocol sets: Used to create a list of protocols.
+
+   *  Port number sets: Used to create lists of TCP or UDP port values
+      (or any other transport protocol that makes uses of port numbers).
+      The identity of the protocols is identified by the protocol set,
+      if present.  Otherwise, a set applies to any protocol.
+
+   *  ICMP sets: Uses to create lists of ICMP-based filters.  This
+      applies only when the protocol is set to ICMP or ICMPv6.
+
+   A candidate structure is shown in Figure 3:
+
+        +--rw defined-sets
+        |  +--rw prefix-sets
+        |  |  +--rw prefix-set* [name]
+        |  |     +--rw name        string
+        |  |     +--rw ip-prefix*   inet:ip-prefix
+        |  +--rw port-sets
+        |  |  +--rw port-set* [name]
+        |  |     +--rw name    string
+        |  |     +--rw port*   inet:port-number
+        |  +--rw protocol-sets
+        |  |  +--rw protocol-set* [name]
+        |  |     +--rw name             string
+        |  |     +--rw protocol-name*   identityref
+        |  +--rw icmp-type-sets
+        |     +--rw icmp-type-set* [name]
+        |        +--rw name     string
+        |        +--rw types* [type]
+        |           +--rw type              uint8
+        |           +--rw code?             uint8
+        |           +--rw rest-of-header?   binary
+
+                     Figure 3: Examples of Defined Sets
+
+
+
+
+
+Dios, et al.            Expires 11 September 2023               [Page 8]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+   Aliases may also be considered to manage resources that are
+   identified by a combination of various parameters as shown in the
+   candidate tree in Figure 4.  Note that some aliases can be provided
+   by decomposing them into separate sets.
+
+           |  +--rw aliases
+           |  |  +--rw alias* [name]
+           |  |     +--rw name                 string
+           |  |     +--rw prefix*       inet:ip-prefix
+           |  |     +--rw port-range* [lower-port]
+           |  |     |  +--rw lower-port    inet:port-number
+           |  |     |  +--rw upper-port?   inet:port-number
+           |  |     +--rw protocol*     uint8
+           |  |     +--rw fqdn*         inet:domain-name
+           |  |     +--rw uri*          inet:uri
+
+                       Figure 4: Examples of Aliases
+
+3.3.  Bind ACLs to Devices, Not Only Interfaces
+
+   In the context of network management, an ACL may be enforced in many
+   network locations.  As such, the ACL module should allow for binding
+   an ACL to multiple devices, not only (abstract) interfaces.
+
+   The ACL name must, thus, be unique at the scale of the network, but
+   the same name may be used in many devices when enforcing node-
+   specific ACLs.
+
+3.4.  Partial or Lack of IPv4/IPv6 Fragment Handling
+
+   [RFC8519] does not support fragment handling for IPv6 but offers a
+   partial support for IPv4 through the use of 'flags'.  Nevertheless,
+   the use of 'flags' is problematic since it does not allow a bitmask
+   to be defined.  For example, setting other bits not covered by the
+   'flags' filtering clause in a packet will allow that packet to get
+   through (because it won't match the ACE).
+
+   Defining a new IPv4/IPv6 matching field called 'fragment' is thus
+   required to efficiently handle fragment-related filtering rules.
+
+3.5.  Suboptimal TCP Flags Handling
+
+   [RFC8519] supports including flags in the TCP match fields, however
+   that structure does not support matching operations as those
+   supported in BGP Flow Spec.  Defining this field to be defined as a
+   flag bitmask together with a set of operations is meant to
+   efficiently handle TCP flags filtering rules.
+
+
+
+
+Dios, et al.            Expires 11 September 2023               [Page 9]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+3.6.  Rate-Limit Action
+
+   [RFC8519] specifies that forwarding actions can be 'accept' (i.e.,
+   accept matching traffic), 'drop' (i.e., drop matching traffic without
+   sending any ICMP error message), or 'reject' (i.e., drop matching
+   traffic and send an ICMP error message to the source).  However,
+   there are situations where the matching traffic can be accepted, but
+   with a rate-limit policy.  This capability is not supported by
+   [RFC8519].
+
+3.7.  Payload-based Filtering
+
+   Some transport protocols use existing protocols (e.g., TCP or UDP) as
+   substrate.  The match criteria for such protocols may rely upon the
+   'protocol' under 'l3', TCP/UDP match criteria, part of the TCP/UDP
+   payload, or a combination thereof.  [RFC8519] does not support
+   matching based on the payload.
+
+   Likewise, the current version of the ACL model does not support
+   filtering of encapsulated traffic.
+
+3.8.  Reuse the ACLs Content Across Several Devices
+
+   Having a global network view of the ACLs is highly valuable for
+   service providers.  An ACL could be defined and applied based on the
+   network topology hierarchy.  So, an ACL can be defined at the network
+   level and, then, that same ACL can be used (or referenced to) in
+   several devices (including termination points) within the same
+   network.
+
+   This network/device ACLs differentiation introduces several new
+   requirements, e.g.:
+
+   *  An ACL name can be used at both network and device levels.
+
+   *  An ACL content updated at the network level should imply a
+      transaction that updates the relevant content in all the nodes
+      using this ACL.
+
+   *  ACLs defined at the device level have a local meaning for the
+      specific node.
+
+   *  A device can be associated with a router, a VRF, a logical system,
+      or a virtual node.  ACLs can be applied in physical and logical
+      infrastructure.
+
+4.  Overall Module Structure
+
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 10]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+4.1.  Enhanced ACL
+
+   Figure 5 shows the full enhanced ACL tree:
+
+   module: ietf-acl-enh
+     +--rw defined-sets
+     |  +--rw ipv4-prefix-sets
+     |  |  +--rw prefix-set* [name]
+     |  |     +--rw name           string
+     |  |     +--rw description?   string
+     |  |     +--rw prefix*        inet:ipv4-prefix
+     |  +--rw ipv6-prefix-sets
+     |  |  +--rw prefix-set* [name]
+     |  |     +--rw name           string
+     |  |     +--rw description?   string
+     |  |     +--rw prefix*        inet:ipv6-prefix
+     |  +--rw port-sets
+     |  |  +--rw port-set* [name]
+     |  |     +--rw name    string
+     |  |     +--rw port* [id]
+     |  |        +--rw id                              string
+     |  |        +--rw (port)?
+     |  |           +--:(port-range-or-operator)
+     |  |              +--rw port-range-or-operator
+     |  |                 +--rw (port-range-or-operator)?
+     |  |                    +--:(range)
+     |  |                    |  +--rw lower-port    inet:port-number
+     |  |                    |  +--rw upper-port    inet:port-number
+     |  |                    +--:(operator)
+     |  |                       +--rw operator?     operator
+     |  |                       +--rw port          inet:port-number
+     |  +--rw protocol-sets
+     |  |  +--rw protocol-set* [name]
+     |  |     +--rw name        string
+     |  |     +--rw protocol*   union
+     |  +--rw icmp-type-sets
+     |     +--rw icmp-type-set* [name]
+     |        +--rw name     string
+     |        +--rw types* [type]
+     |           +--rw type              uint8
+     |           +--rw code?             uint8
+     |           +--rw rest-of-header?   binary
+     +--rw aliases
+        +--rw alias* [name]
+           +--rw name          string
+           +--rw prefix*       inet:ip-prefix
+           +--rw port-range* [lower-port]
+           |  +--rw lower-port    inet:port-number
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 11]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+           |  +--rw upper-port?   inet:port-number
+           +--rw protocol*     uint8
+           +--rw fqdn*         inet:domain-name
+           +--rw uri*          inet:uri
+
+     augment /acl:acls/acl:acl/acl:aces/acl:ace/acl:matches:
+       +--rw (payload)?
+          +--:(prefix-pattern)
+             +--rw prefix-pattern {match-on-payload}?
+                +--rw offset?       identityref
+                +--rw offset-end?   uint64
+                +--rw operator?     operator
+                +--rw prefix?       binary
+     augment /acl:acls/acl:acl/acl:aces/acl:ace/acl:matches/acl:l2:
+       +--rw vlan-filter {match-on-vlan-filter}?
+          +--rw frame-type?         string
+          +--rw (vlan-type)?
+             +--:(range)
+             |  +--rw lower-vlan    uint16
+             |  +--rw upper-vlan    uint16
+             +--:(operator)
+                +--rw operator?     packet-fields:operator
+                +--rw vlan*         uint16
+     augment /acl:acls/acl:acl/acl:aces/acl:ace/acl:matches/acl:l2:
+       +--rw isid-filter {match-on-isid-filter}?
+          +--rw (isid-type)?
+             +--:(range)
+             |  +--rw lower-isid    uint16
+             |  +--rw upper-isid    uint16
+             +--:(operator)
+                +--rw operator?     packet-fields:operator
+                +--rw isid*         uint16
+     augment /acl:acls/acl:acl/acl:aces/acl:ace/acl:matches/acl:l3
+               /acl:ipv4:
+       +--rw ipv4-fragment
+       |  +--rw operator?   operator
+       |  +--rw type?       fragment-type
+       +--rw source-ipv4-prefix-list?        ipv4-prefix-set-ref
+       +--rw destination-ipv4-prefix-list?   ipv4-prefix-set-ref
+       +--rw next-header-set?                protocol-set-ref
+     augment /acl:acls/acl:acl/acl:aces/acl:ace/acl:matches/acl:l3
+               /acl:ipv6:
+       +--rw ipv6-fragment
+       |  +--rw operator?   operator
+       |  +--rw type?       fragment-type
+       +--rw source-ipv6-prefix-list?        ipv6-prefix-set-ref
+       +--rw destination-ipv6-prefix-list?   ipv6-prefix-set-ref
+       +--rw protocol-set?                   protocol-set-ref
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 12]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+     augment /acl:acls/acl:acl/acl:aces/acl:ace/acl:matches/acl:l4
+               /acl:tcp:
+       +--rw flags-bitmask
+       |  +--rw (mode)?
+       |     +--:(explicit)
+       |     |  +--rw operator?            operator
+       |     |  +--rw explicit-tcp-flag*   identityref
+       |     +--:(builtin)
+       |        +--rw bitmask?             uint16
+       +--rw source-tcp-port-set?        port-set-ref
+       +--rw destination-tcp-port-set?   port-set-ref
+     augment /acl:acls/acl:acl/acl:aces/acl:ace/acl:matches/acl:l4
+               /acl:udp:
+       +--rw source-udp-port-set?        port-set-ref
+       +--rw destination-udp-port-set?   port-set-ref
+     augment /acl:acls/acl:acl/acl:aces/acl:ace/acl:matches/acl:l4
+               /acl:icmp:
+       +--rw icmp-set?   icmp-type-set-ref
+     augment /acl:acls/acl:acl/acl:aces/acl:ace/acl:actions:
+       +--rw rate-limit?   decimal64
+
+                        Figure 5: Enhanced ACL tree
+
+4.2.  Defined sets
+
+   The augmented ACL structure includes several containers to manage
+   reusable sets of elements that can be matched in an ACL entry.  Each
+   set is uniquely identified by a name, and can be called from the
+   relevant entry.  The following sets are defined:
+
+   *  IPv4 prefix set: It contains a list of IPv4 prefixes.  A match
+      will be considered if the IP address (source or destination,
+      depending on the ACL entry) is contained in any of the prefixes.
+
+   *  IPv6 prefix set: It contains a list of IPv6 prefixes.  A match
+      will be considered if the IP address (source or destination,
+      depending on the ACL entry) is contained in any of the prefixes.
+
+   *  Port sets: It contains a list of port numbers to be used in TCP /
+      UDP entries.  The ports can be individual port numbers, a range of
+      ports, and an operation.
+
+   *  Protocol sets: It contains a list of protocol values.  Each
+      protocol can be identified either by a number (e.g., 17) or a name
+      (e.g., UDP).
+
+
+
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 13]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+   *  ICMP sets: It contains a list of ICMP types, each of them
+      identified by a type value, optionally the code and the rest of
+      the header.
+
+4.3.  TCP Flags Handling
+
+   The augmented ACL structure includes a new leaf 'flags-bitmask' to
+   better handle flags.
+
+   Clients that support both 'flags-bitmask' and 'flags' matching fields
+   MUST NOT set these fields in the same request.
+
+   Figure 6 shows an example of a request to install a filter to discard
+   incoming TCP messages having all flags unset.
+
+     {
+        "ietf-access-control-list:acls": {
+          "acl": [{
+            "name": "tcp-flags-example",
+            "aces": {
+              "ace": [{
+                "name": "null-attack",
+                "matches": {
+                  "tcp": {
+                    "acl-enh:flags-bitmask": {
+                      "operator": "not any",
+                      "bitmask": 4095
+                    }
+                  }
+                },
+                "actions": {
+                  "forwarding": "drop"
+                }
+              }]
+            }
+          }]
+        }
+      }
+
+     Figure 6: Example to Deny TCP Null Attack Messages (Request Body)
+
+4.4.  Fragments Handling
+
+   The augmented ACL structure includes a new leaf 'fragment' to better
+   handle fragments.
+
+   Clients that support both 'fragment' and 'flags' matching fields MUST
+   NOT set these fields in the same request.
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 14]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+   Figure 7 shows the content of a POST request to allow the traffic
+   destined to 198.51.100.0/24 and UDP port number 53, but to drop all
+   fragmented packets.  The following ACEs are defined (in this order):
+
+   *  "drop-all-fragments" ACE: discards all fragments.
+
+   *  "allow-dns-packets" ACE: accepts DNS packets destined to
+      198.51.100.0/24.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 15]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+   {
+        "ietf-access-control-list:acls": {
+          "acl": [
+            {
+              "name": "dns-fragments",
+              "type": "ipv4-acl-type",
+              "aces": {
+                "ace": [
+                  {
+                    "name": "drop-all-fragments",
+                    "matches": {
+                      "ipv4": {
+                        "acl-enh:ipv4-fragment": {
+                          "operator": "match",
+                          "type": "isf"
+                        }
+                      }
+                    },
+                    "actions": {
+                      "forwarding": "drop"
+                    }
+                  },
+                  {
+                    "name": "allow-dns-packets",
+                    "matches": {
+                      "ipv4": {
+                        "destination-ipv4-network": "198.51.100.0/24"
+                      },
+                      "udp": {
+                        "destination-port": {
+                          "operator": "eq",
+                          "port": 53
+                        }
+                      },
+                      "actions": {
+                        "forwarding": "accept"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+
+         Figure 7: Example Illustrating Candidate Filtering of IPv4
+                     Fragmented Packets (Message Body)
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 16]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+   Figure 8 shows an example of the body of a POST request to allow the
+   traffic destined to 2001:db8::/32 and UDP port number 53, but to drop
+   all fragmented packets.  The following ACEs are defined (in this
+   order):
+
+   *  "drop-all-fragments" ACE: discards all fragments (including atomic
+      fragments).  That is, IPv6 packets that include a Fragment header
+      (44) are dropped.
+
+   *  "allow-dns-packets" ACE: accepts DNS packets destined to
+      2001:db8::/32.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 17]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+       {
+        "ietf-access-control-list:acls": {
+          "acl": [
+            {
+              "name": "dns-fragments",
+              "type": "ipv6-acl-type",
+              "aces": {
+                "ace": [
+                  {
+                    "name": "drop-all-fragments",
+                    "matches": {
+                      "ipv6": {
+                        "acl-enh:ipv6-fragment": {
+                          "operator": "match",
+                          "type": "isf"
+                        }
+                      }
+                    },
+                    "actions": {
+                      "forwarding": "drop"
+                    }
+                  },
+                  {
+                    "name": "allow-dns-packets",
+                    "matches": {
+                      "ipv6": {
+                        "destination-ipv6-network": "2001:db8::/32"
+                      },
+                      "udp": {
+                        "destination-port": {
+                          "operator": "eq",
+                          "port": 53
+                        }
+                      }
+                    },
+                    "actions": {
+                      "forwarding": "accept"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+
+         Figure 8: Example Illustrating Candidate Filtering of IPv6
+                     Fragmented Packets (Message Body)
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 18]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+4.5.  Rate-Limit Traffic
+
+   In order to support rate-limiting (see Section 3.6), a new action
+   called "rate-limit" is defined.  Figure 9 shows an ACL example to
+   rate-limit incoming SYNs during a SYN flood attack.
+
+     {
+        "ietf-access-control-list:acls": {
+          "acl": [{
+            "name": "tcp-flags-example-with-rate-limit",
+            "aces": {
+              "ace": [{
+                "name": "rate-limit-syn",
+                "matches": {
+                  "tcp": {
+                    "acl-enh:flags-bitmask": {
+                      "operator": "match",
+                      "bitmask": 2
+                    }
+                  }
+                },
+                "actions": {
+                  "forwarding": "accept",
+                  "acl-enh:rate-limit": "20.00"
+                }
+              }]
+            }
+          }]
+        }
+      }
+
+       Figure 9: Example Rate-Limit Incoming TCP SYNs (Message Body).
+
+4.6.  ISID Filter
+
+   Provider backbone bridging (PBB) was originally defined as Virtual
+   Bridged Local Area Networks [IEEE802.1ah] standard.  However, instead
+   of multiplexing VLANs, PBB duplicates the MAC layer of the customer
+   frame and separates it from the provider domain, by encapsulating it
+   in a 24 bit instance service identifier (I-SID).  This provides for
+   more transparency between the customer network and the provider
+   network.
+
+   The I-component forms the customer or access facing interface or
+   routing instance.  The I-component is responsible for mapping
+   customer Ethernet traffic to the appropriate I-SID.  In the network
+   is mandatory to configure the default service identifier.
+
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 19]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+   Being able to filter by I-component Service identifier is a feature
+   of the EVNP-PBB configuration.
+
+   Figure 10 shows an ACL example to illustrate the ISID range
+   filtering.
+
+     {
+       "ietf-acces-control-list:acls": {
+             "acl": [
+               {
+                 "name": "test",
+                 "aces": {
+                   "ace": [
+                     {
+                       "name": "1",
+                       "matches": {
+                         "ietf-acl-enh:isid-filter": {
+                           "lower-isid": 100,
+                           "upper-isid": 200
+                         }
+                       },
+                       "actions": {
+                         "forwarding": "ietf-acces-control-list:accept"
+                       }
+                     }
+                   ]
+                 }
+               }
+             ]
+           }
+         }
+       }
+      }
+
+               Figure 10: Example ISID Filter (Message Body)
+
+4.7.  VLAN Filter
+
+   Being able to filter all packets that are bridged within a VLAN or
+   that are routed into or out of a bridge domain is part of the VPN
+   control requirements derived of the EVPN definition done in
+   [RFC7209].  So, all packets that are bridged within a VLAN or that
+   are routed into or out of a VLAN can be captured, forwarded,
+   translated or discarded based on the network policy applied.
+
+   Figure 11 shows an ACL example to illustrate how to apply a VLAN
+   range filter.
+
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 20]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+     {
+       "ietf-acces-control-list:acls": {
+         "acl": [
+           {
+             "name": "VLAN_FILTER",
+             "aces": {
+               "ace": [
+                 {
+                   "name": "1",
+                   "matches": {
+                     "ietf-acl-enh:vlan-filter": {
+                       "lower-vlan": 10,
+                       "upper-vlan": 20
+                     }
+                   },
+                   "actions": {
+                     "forwarding": "ietf-acces-control-list:accept"
+                   }
+                 }
+               ]
+             }
+           }
+         ]
+       }
+      }
+
+              Figure 11: Example of VLAN Filter (Message Body)
+
+5.  YANG Modules
+
+5.1.  Enhanced ACL
+
+   <CODE BEGINS>
+    file ietf-acl-enh@2022-10-24.yang
+
+   module ietf-acl-enh {
+     yang-version 1.1;
+     namespace "urn:ietf:params:xml:ns:yang:ietf-acl-enh";
+     prefix acl-enh;
+
+     import ietf-inet-types {
+       prefix inet;
+       reference
+         "RFC 6991: Common YANG Data Types";
+     }
+     import ietf-access-control-list {
+       prefix acl;
+       reference
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 21]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+         "RFC 8519: YANG Data Model for Network Access
+                    Control Lists (ACLs), Section 4.1";
+     }
+     import ietf-packet-fields {
+       prefix packet-fields;
+       reference
+         "RFC 8519: YANG Data Model for Network Access
+                    Control Lists (ACLs), Section 4.2";
+     }
+
+     organization
+       "IETF NETMOD Working Group";
+     contact
+       "WG Web:   https://datatracker.ietf.org/wg/netmod/
+        WG List:  mailto:netmod@ietf.org
+
+        Author:    Mohamed Boucadair
+                  mailto:mohamed.boucadair@orange.com
+        Author:    Samier Barguil
+                  mailto:samier.barguilgiraldo.ext@telefonica.com
+        Author:    Oscar Gonzalez de Dios
+                  mailto:oscar.gonzalezdedios@telefonica.com";
+     description
+       "This module contains YANG definitions for enhanced ACLs.
+
+        Copyright (c) 2023 IETF Trust and the persons identified as
+        authors of the code. All rights reserved.
+
+        Redistribution and use in source and binary forms, with or
+        without modification, is permitted pursuant to, and subject
+        to the license terms contained in, the Revised BSD License
+        set forth in Section 4.c of the IETF Trust's Legal Provisions
+        Relating to IETF Documents
+        (http://trustee.ietf.org/license-info).
+
+        This version of this YANG module is part of RFC XXXX; see
+        the RFC itself for full legal notices.";
+
+     revision 2022-10-24 {
+       description
+         "Initial revision.";
+       reference
+         "RFC XXXX: Extensions to the Access Control Lists (ACLs)
+                    YANG Model";
+     }
+
+     feature match-on-payload {
+       description
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 22]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+         "Match based on a pattern is supported.";
+     }
+
+     feature match-on-vlan-filter {
+       description
+         "Match based on a VLAN range of vlan list is supported.";
+     }
+
+     feature match-on-isid-filter {
+       description
+         "Match based on a ISID range of vlan list is supported.";
+     }
+
+     identity offset-type {
+       description
+         "Base identity for payload offset type.";
+     }
+
+     identity layer3 {
+       base offset-type;
+       description
+         "The offset starts at the beginning of the IP header.";
+     }
+
+     identity layer4 {
+       base offset-type;
+       description
+         "The offset start right after the IP header. This can be
+          typically the beginning of transport header (e.g., TCP
+          or UDP).";
+     }
+
+     identity payload {
+       base offset-type;
+       description
+         "The offset start right after the end of the transport
+          payload. For example, this represents the beginning of the
+          TCP data right after any TCP options or the beginning of
+          the UDP payload right after the UDP header.";
+     }
+
+     identity tcp-flag {
+       description
+         "Base Identity for the TCP Flags.";
+       reference
+         "RFC 9293: Transmission Control Protocol (TCP), Section 3.1";
+     }
+
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 23]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+     identity ack {
+       base tcp-flag;
+       description
+         "Acknowledgment TCP flag bit.";
+       reference
+         "RFC 9293: Transmission Control Protocol (TCP), Section 3.1";
+     }
+
+     identity syn {
+       base tcp-flag;
+       description
+         "Synchronize sequence numbers.";
+       reference
+         "RFC 9293: Transmission Control Protocol (TCP), Section 3.1";
+     }
+
+     identity fin {
+       base tcp-flag;
+       description
+         "No more data from the sender.";
+       reference
+         "RFC 9293: Transmission Control Protocol (TCP), Section 3.1";
+     }
+
+     identity urg {
+       base tcp-flag;
+       description
+         "Urgent pointer TCP flag bit.";
+       reference
+         "RFC 9293: Transmission Control Protocol (TCP), Section 3.1";
+     }
+
+     identity psh {
+       base tcp-flag;
+       description
+         "The Push function flag is similar to the URG flag and tells
+          the receiver to process these packets as they are received
+          instead of buffering them.";
+       reference
+         "RFC 9293: Transmission Control Protocol (TCP), Section 3.1";
+     }
+
+     identity rst {
+       base tcp-flag;
+       description
+         "Reset TCP flag bit.";
+       reference
+         "RFC 9293: Transmission Control Protocol (TCP), Section 3.1";
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 24]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+     }
+
+     identity ece {
+       base tcp-flag;
+       description
+         "ECN-Echo TCP flag bit.";
+       reference
+         "RFC 9293: Transmission Control Protocol (TCP), Section 3.1";
+     }
+
+     identity cwr {
+       base tcp-flag;
+       description
+         "Congestion Window Reduced flag bit";
+       reference
+         "RFC 9293: Transmission Control Protocol (TCP), Section 3.1";
+     }
+
+     typedef operator {
+       type bits {
+         bit not {
+           position 0;
+           description
+             "If set, logical negation of operation.";
+         }
+         bit match {
+           position 1;
+           description
+             "Match bit.  This is a bitwise match operation defined as
+              '(data & value) == value'.";
+         }
+         bit any {
+           position 2;
+           description
+             "Any bit.  This is a match on any of the bits in  bitmask.
+              It evaluates to 'true' if any of the bits in the value mask
+              are set in the data,  i.e., '(data & value) != 0'.";
+         }
+       }
+       description
+         "Specifies how to apply the defined bitmask.
+          'any' and 'match' bits must not be set simultaneously.";
+     }
+
+     typedef fragment-type {
+       type bits {
+         bit df {
+           position 0;
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 25]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+           description
+             "Don't fragment bit for IPv4.
+              Must be set to 0 when it appears in an IPv6 filter.";
+         }
+         bit isf {
+           position 1;
+           description
+             "Is a fragment.";
+         }
+         bit ff {
+           position 2;
+           description
+             "First fragment.";
+         }
+         bit lf {
+           position 3;
+           description
+             "Last fragment.";
+         }
+       }
+       description
+         "Different fragment types to match against.";
+     }
+
+     typedef ipv4-prefix-set-ref {
+       type leafref {
+         path "/acl-enh:defined-sets/acl-enh:ipv4-prefix-sets"
+            + "/acl-enh:prefix-set/acl-enh:name";
+       }
+       description
+         "Defines a reference to an IPv4 prefix set.";
+     }
+
+     typedef ipv6-prefix-set-ref {
+       type leafref {
+         path "/acl-enh:defined-sets/acl-enh:ipv6-prefix-sets"
+            + "/acl-enh:prefix-set/acl-enh:name";
+       }
+       description
+         "Defines a reference to an IPv6 prefix set.";
+     }
+
+     typedef port-set-ref {
+       type leafref {
+         path "/acl-enh:defined-sets/acl-enh:port-sets"
+            + "/acl-enh:port-set/acl-enh:name";
+       }
+       description
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 26]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+         "Defines a reference to a port set.";
+     }
+
+     typedef protocol-set-ref {
+       type leafref {
+         path "/acl-enh:defined-sets/acl-enh:protocol-sets"
+            + "/acl-enh:protocol-set/acl-enh:name";
+       }
+       description
+         "Defines a reference to a protocol set.";
+     }
+
+     typedef icmp-type-set-ref {
+       type leafref {
+         path "/acl-enh:defined-sets/acl-enh:icmp-type-sets"
+            + "/acl-enh:icmp-type-set/acl-enh:name";
+       }
+       description
+         "Defines a reference to an ICMP type set.";
+     }
+
+     grouping tcp-flags {
+       description
+         "Operations on TCP flags.";
+       choice mode {
+         description
+           "Choice of how flags are indicated.";
+         case explicit {
+           leaf operator {
+             type operator;
+             default "match";
+             description
+               "How to interpret the TCP flags.";
+           }
+           leaf-list explicit-tcp-flag {
+             type identityref {
+               base tcp-flag;
+             }
+             description
+               "An explicit list of the TCP flags that are to be
+                matched.";
+           }
+         }
+         case builtin {
+           leaf bitmask {
+             type uint16;
+             description
+               "The bitmask matches the last 4 bits of byte 12 and 13 of
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 27]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+                the TCP header.  For clarity, the 4 bits of byte 12
+                corresponding to the TCP data offset field are not
+                included in any matching.";
+           }
+         }
+       }
+     }
+
+     grouping fragment-fields {
+       description
+         "Operations on fragment types.";
+       leaf operator {
+         type operator;
+         default "match";
+         description
+           "How to interpret the fragment type.";
+       }
+       leaf type {
+         type fragment-type;
+         description
+           "What fragment type to look for.";
+       }
+     }
+
+     grouping payload {
+       description
+         "Operations on payload match.";
+       leaf offset {
+         type identityref {
+           base offset-type;
+         }
+         description
+           "Indicates the payload offset. This will indicate the position
+            of the data in packet to use for the match.";
+       }
+       leaf offset-end {
+         type uint64;
+         units "bytes";
+         description
+           "Indicates the number of bytes, starting from the offset to
+            cover when performing the prefix match.";
+       }
+       leaf operator {
+         type operator;
+         default "match";
+         description
+           "How to interpret the prefix match.";
+       }
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 28]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+       leaf prefix {
+         type binary;
+         description
+           "The binary pattern to match against.";
+       }
+     }
+
+     grouping alias {
+       description
+         "Specifies an alias.";
+       leaf-list prefix {
+         type inet:ip-prefix;
+         description
+           "IPv4 or IPv6 prefix of the alias.";
+       }
+       list port-range {
+         key "lower-port";
+         description
+           "Port range.  When only lower-port is
+            present, it represents a single port number.";
+         leaf lower-port {
+           type inet:port-number;
+           mandatory true;
+           description
+             "Lower port number of the port range.";
+         }
+         leaf upper-port {
+           type inet:port-number;
+           must '. >= ../lower-port' {
+             error-message
+               "The upper-port number must be greater than
+                or equal to the lower-port number.";
+           }
+           description
+             "Upper port number of the port range.";
+         }
+       }
+       leaf-list protocol {
+         type uint8;
+         description
+           "Identifies the target protocol number.
+
+            Values are taken from the IANA protocol registry:
+            https://www.iana.org/assignments/protocol-numbers/
+
+            For example, 6 for TCP or 17 for UDP.";
+       }
+       leaf-list fqdn {
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 29]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+         type inet:domain-name;
+         description
+           "FQDN identifying the target.";
+       }
+       leaf-list uri {
+         type inet:uri;
+         description
+           "URI identifying the target.";
+       }
+     }
+
+     augment "/acl:acls/acl:acl/acl:aces/acl:ace"
+           + "/acl:matches" {
+       description
+         "Add a new match types.";
+       choice payload {
+         description
+           "Match a prefix pattern.";
+         container prefix-pattern {
+           if-feature "match-on-payload";
+           description
+             "Rule to perform payload-based match.";
+           uses payload;
+         }
+       }
+     }
+
+     augment "/acl:acls/acl:acl/acl:aces"
+           + "/acl:ace/acl:matches/acl:l2" {
+       description
+         "Handle the augmentation of MAC VLAN Filter.";
+       container vlan-filter {
+         if-feature "match-on-vlan-filter";
+         description
+           "Indicates how to handle MAC VLANs.";
+         leaf frame-type {
+           type string;
+           description
+             "Entering the frame type allows the
+              filter to match a specific type of frame format";
+         }
+         choice vlan-type {
+           description
+             "vlan definition from range or operator.";
+           case range {
+             leaf lower-vlan {
+               type uint16;
+               must '. <= ../upper-vlan' {
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 30]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+                 error-message
+                   "The lower-vlan must be less than or equal to
+                    the upper-vlan.";
+               }
+               mandatory true;
+               description
+                 "Lower boundary for a vlan.";
+             }
+             leaf upper-vlan {
+               type uint16;
+               mandatory true;
+               description
+                 "Upper boundary for a vlan.";
+             }
+           }
+           case operator {
+             leaf operator {
+               type packet-fields:operator;
+               default "eq";
+               description
+                 "Operator to be applied on the vlan below.";
+             }
+             leaf-list vlan {
+               type uint16;
+               description
+                 "vlan number along with the operator on which to
+                  match.";
+             }
+           }
+         }
+       }
+     }
+
+     augment "/acl:acls/acl:acl/acl:aces"
+           + "/acl:ace/acl:matches/acl:l2" {
+       description
+         "Handle the augmentation of ISID Filter.";
+       container isid-filter {
+         if-feature "match-on-isid-filter";
+         description
+           "Indicates how to handle ISID filters.
+            The I-component is responsible for mapping customer
+            Ethernet traffic to the appropriate ISID.";
+         choice isid-type {
+           description
+             "ISID definition from range or operator.";
+           case range {
+             leaf lower-isid {
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 31]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+               type uint16;
+               must '. <= ../upper-isid' {
+                 error-message
+                   "The lower-vlan must be less than or equal to
+                    the upper-isid.";
+               }
+               mandatory true;
+               description
+                 "Lower boundary for a ISID.";
+             }
+             leaf upper-isid {
+               type uint16;
+               mandatory true;
+               description
+                 "Upper boundary for a ISID.";
+             }
+           }
+           case operator {
+             leaf operator {
+               type packet-fields:operator;
+               default "eq";
+               description
+                 "Operator to be applied on the ISID below.";
+             }
+             leaf-list isid {
+               type uint16;
+               description
+                 "ISID number along with the operator on which to
+                  match.";
+             }
+           }
+         }
+       }
+     }
+
+     augment "/acl:acls/acl:acl/acl:aces"
+           + "/acl:ace/acl:matches/acl:l3/acl:ipv4" {
+       description
+         "Handle non-initial and initial fragments for IPv4 packets.";
+       container ipv4-fragment {
+         description
+           "Indicates how to handle IPv4 fragments.";
+         uses fragment-fields;
+       }
+       leaf source-ipv4-prefix-list {
+         type ipv4-prefix-set-ref;
+         description
+           "A reference to an IPv4 prefix list to match the source
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 32]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+            address.";
+       }
+       leaf destination-ipv4-prefix-list {
+         type ipv4-prefix-set-ref;
+         description
+           "A reference to a prefix list to match the destination
+            address.";
+       }
+       leaf next-header-set {
+         type protocol-set-ref;
+         description
+           "A reference to a protocol set to match the next-header
+            field.";
+       }
+     }
+
+     augment "/acl:acls/acl:acl/acl:aces"
+           + "/acl:ace/acl:matches/acl:l3/acl:ipv6" {
+       description
+         "Handles non-initial and initial fragments for IPv6 packets.";
+       container ipv6-fragment {
+         description
+           "Indicates how to handle IPv6 fragments.";
+         uses fragment-fields;
+       }
+       leaf source-ipv6-prefix-list {
+         type ipv6-prefix-set-ref;
+         description
+           "A reference to a prefix list to match the source address.";
+       }
+       leaf destination-ipv6-prefix-list {
+         type ipv6-prefix-set-ref;
+         description
+           "A reference to a prefix list to match the destination
+            address.";
+       }
+       leaf protocol-set {
+         type protocol-set-ref;
+         description
+           "A reference to a protocol set to match the protocol field.";
+       }
+     }
+
+     augment "/acl:acls/acl:acl/acl:aces"
+           + "/acl:ace/acl:matches/acl:l4/acl:tcp" {
+       description
+         "Handles TCP flags and port sets.";
+       container flags-bitmask {
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 33]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+         description
+           "Indicates how to handle TCP flags.";
+         uses tcp-flags;
+       }
+       leaf source-tcp-port-set {
+         type port-set-ref;
+         description
+           "A reference to a port set to match the source port.";
+       }
+       leaf destination-tcp-port-set {
+         type port-set-ref;
+         description
+           "A reference to a port set to match the destination port.";
+       }
+     }
+
+     augment "/acl:acls/acl:acl/acl:aces"
+           + "/acl:ace/acl:matches/acl:l4/acl:udp" {
+       description
+         "Handle UDP port sets.";
+       leaf source-udp-port-set {
+         type port-set-ref;
+         description
+           "A reference to a port set to match the source port.";
+       }
+       leaf destination-udp-port-set {
+         type port-set-ref;
+         description
+           "A reference to a port set to match the destination port.";
+       }
+     }
+
+     augment "/acl:acls/acl:acl/acl:aces"
+           + "/acl:ace/acl:matches/acl:l4/acl:icmp" {
+       description
+         "Handle ICMP type sets.";
+       leaf icmp-set {
+         type icmp-type-set-ref;
+         description
+           "A reference to an ICMP type set to match the ICMP type
+            field.";
+       }
+     }
+
+     augment "/acl:acls/acl:acl/acl:aces"
+           + "/acl:ace/acl:actions" {
+       description
+         "Rate-limit action.";
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 34]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+       leaf rate-limit {
+         when "../acl:forwarding = 'acl:accept'" {
+           description
+             "Rate-limit valid only when accept action is used.";
+         }
+         type decimal64 {
+           fraction-digits 2;
+         }
+         units "bytes per second";
+         description
+           "Indicates a rate-limit for the matched traffic.";
+       }
+     }
+
+     container defined-sets {
+       description
+         "Predefined sets of attributes used in policy match
+          statements.";
+       container ipv4-prefix-sets {
+         description
+           "Data definitions for a list of IPv4 or IPv6
+            prefixes which are matched as part of a policy.";
+         list prefix-set {
+           key "name";
+           description
+             "List of the defined prefix sets.";
+           leaf name {
+             type string;
+             description
+               "Name of the prefix set -- this is used as a label to
+                reference the set in match conditions.";
+           }
+           leaf description {
+             type string;
+             description
+               "Defined Set description.";
+           }
+           leaf-list prefix {
+             type inet:ipv4-prefix;
+             description
+               "List of IPv4 prefixes to be used in match
+                conditions.";
+           }
+         }
+       }
+       container ipv6-prefix-sets {
+         description
+           "Data definitions for a list of IPv6 prefixes which are
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 35]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+            matched as part of a policy.";
+         list prefix-set {
+           key "name";
+           description
+             "List of the defined prefix sets.";
+           leaf name {
+             type string;
+             description
+               "Name of the prefix set -- this is used as a label to
+                reference the set in match conditions.";
+           }
+           leaf description {
+             type string;
+             description
+               "A textual description of the prefix list.";
+           }
+           leaf-list prefix {
+             type inet:ipv6-prefix;
+             description
+               "List of IPv6 prefixes to be used in match conditions.";
+           }
+         }
+       }
+       container port-sets {
+         description
+           "Data definitions for a list of ports which can
+            be matched in policies.";
+         list port-set {
+           key "name";
+           description
+             "List of port set definitions.";
+           leaf name {
+             type string;
+             description
+               "Name of the port set -- this is used as a label to
+                reference the set in match conditions.";
+           }
+           list port {
+             key "id";
+             description
+               "Port numbers along with the operator on which to
+                match.";
+             leaf id {
+               type string;
+               description
+                 "Identifier of the list of port numbers.";
+             }
+             choice port {
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 36]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+               description
+                 "Choice of specifying the port number or referring to a
+                  group of port numbers.";
+               container port-range-or-operator {
+                 description
+                   "Indicates a set of ports.";
+                 uses packet-fields:port-range-or-operator;
+               }
+             }
+           }
+         }
+       }
+       container protocol-sets {
+         description
+           "Data definitions for a list of protocols which can be matched
+            in policies.";
+         list protocol-set {
+           key "name";
+           description
+             "List of protocol set definitions.";
+           leaf name {
+             type string;
+             description
+               "Name of the protocols set -- this is used as a label to
+                reference the set in match conditions.";
+           }
+           leaf-list protocol {
+             type union {
+               type uint8;
+               type string;
+             }
+             description
+               "Value of the protocol set.";
+             //Check if we can reuse an IANA-maintained module
+           }
+         }
+       }
+       container icmp-type-sets {
+         description
+           "Data definitions for a list of ICMP types which can be
+            matched in policies.";
+         list icmp-type-set {
+           key "name";
+           description
+             "List of ICMP type set definitions.";
+           leaf name {
+             type string;
+             description
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 37]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+               "Name of the ICMP type set -- this is used as a label to
+                reference the set in match conditions.";
+           }
+           list types {
+             key "type";
+             description
+               "Includes a list of ICMP types.";
+             uses packet-fields:acl-icmp-header-fields;
+           }
+         }
+       }
+     }
+     container aliases {
+       description
+         "Top-levl container for aliases.";
+       list alias {
+         key "name";
+         description
+           "List of aliases.";
+         leaf name {
+           type string;
+           description
+             "The name of the alias.";
+         }
+         uses alias;
+       }
+     }
+   }
+   <CODE ENDS>
+
+6.  Security Considerations
+
+   The YANG modules specified in this document define a schema for data
+   that is designed to be accessed via network management protocol such
+   as NETCONF [RFC6241] or RESTCONF [RFC8040].  The lowest NETCONF layer
+   is the secure transport layer, and the mandatory-to-implement secure
+   transport is Secure Shell (SSH) [RFC6242].  The lowest RESTCONF layer
+   is HTTPS, and the mandatory-to-implement secure transport is TLS
+   [RFC8446].
+
+   The Network Configuration Access Control Model (NACM) [RFC8341]
+   provides the means to restrict access for particular NETCONF or
+   RESTCONF users to a preconfigured subset of all available NETCONF or
+   RESTCONF protocol operations and content.
+
+   There are a number of data nodes defined in this YANG module that are
+   writable/creatable/deletable (i.e., config true, which is the
+   default).  These data nodes may be considered sensitive or vulnerable
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 38]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+   in some network environments.  Write operations (e.g., edit-config)
+   to these data nodes without proper protection can have a negative
+   effect on network operations.  These are the subtrees and data nodes
+   and their sensitivity/vulnerability:
+
+   *  TBC
+
+   Some of the readable data nodes in this YANG module may be considered
+   sensitive or vulnerable in some network environments.  It is thus
+   important to control read access (e.g., via get, get-config, or
+   notification) to these data nodes.  These are the subtrees and data
+   nodes and their sensitivity/vulnerability:
+
+   *  TBC
+
+7.  IANA Considerations
+
+7.1.  URI Registration
+
+   This document requests IANA to register the following URIs in the
+   "ns" subregistry within the "IETF XML Registry" [RFC3688]:
+
+            URI: urn:ietf:params:xml:ns:yang:ietf-acl-enh
+            Registrant Contact: The IESG.
+            XML: N/A; the requested URI is an XML namespace.
+
+            URI: urn:ietf:params:xml:ns:yang:iana-icmp-types
+            Registrant Contact: The IESG.
+            XML: N/A; the requested URI is an XML namespace.
+
+7.2.  YANG Module Name Registration
+
+   This document requests IANA to register the following YANG modules in
+   the "YANG Module Names" subregistry [RFC6020] within the "YANG
+   Parameters" registry.
+
+            name: ietf-acl-enh
+            namespace: urn:ietf:params:xml:ns:yang:ietf-acl-enh
+            maintained by IANA: N
+            prefix: acl-enh
+            reference: RFC XXXX
+
+            name: ietf-icmp-types
+            namespace: urn:ietf:params:xml:ns:yang:iana-icmp-types
+            maintained by IANA: Y
+            prefix: iana-icmp-types
+            reference: RFC XXXX
+
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 39]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+8.  References
+
+8.1.  Normative References
+
+   [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
+              Requirement Levels", BCP 14, RFC 2119,
+              DOI 10.17487/RFC2119, March 1997,
+              <https://www.rfc-editor.org/rfc/rfc2119>.
+
+   [RFC3688]  Mealling, M., "The IETF XML Registry", BCP 81, RFC 3688,
+              DOI 10.17487/RFC3688, January 2004,
+              <https://www.rfc-editor.org/rfc/rfc3688>.
+
+   [RFC6020]  Bjorklund, M., Ed., "YANG - A Data Modeling Language for
+              the Network Configuration Protocol (NETCONF)", RFC 6020,
+              DOI 10.17487/RFC6020, October 2010,
+              <https://www.rfc-editor.org/rfc/rfc6020>.
+
+   [RFC6241]  Enns, R., Ed., Bjorklund, M., Ed., Schoenwaelder, J., Ed.,
+              and A. Bierman, Ed., "Network Configuration Protocol
+              (NETCONF)", RFC 6241, DOI 10.17487/RFC6241, June 2011,
+              <https://www.rfc-editor.org/rfc/rfc6241>.
+
+   [RFC6242]  Wasserman, M., "Using the NETCONF Protocol over Secure
+              Shell (SSH)", RFC 6242, DOI 10.17487/RFC6242, June 2011,
+              <https://www.rfc-editor.org/rfc/rfc6242>.
+
+   [RFC7209]  Sajassi, A., Aggarwal, R., Uttaro, J., Bitar, N.,
+              Henderickx, W., and A. Isaac, "Requirements for Ethernet
+              VPN (EVPN)", RFC 7209, DOI 10.17487/RFC7209, May 2014,
+              <https://www.rfc-editor.org/rfc/rfc7209>.
+
+   [RFC7950]  Bjorklund, M., Ed., "The YANG 1.1 Data Modeling Language",
+              RFC 7950, DOI 10.17487/RFC7950, August 2016,
+              <https://www.rfc-editor.org/rfc/rfc7950>.
+
+   [RFC8040]  Bierman, A., Bjorklund, M., and K. Watsen, "RESTCONF
+              Protocol", RFC 8040, DOI 10.17487/RFC8040, January 2017,
+              <https://www.rfc-editor.org/rfc/rfc8040>.
+
+   [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
+              2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
+              May 2017, <https://www.rfc-editor.org/rfc/rfc8174>.
+
+   [RFC8341]  Bierman, A. and M. Bjorklund, "Network Configuration
+              Access Control Model", STD 91, RFC 8341,
+              DOI 10.17487/RFC8341, March 2018,
+              <https://www.rfc-editor.org/rfc/rfc8341>.
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 40]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+   [RFC8446]  Rescorla, E., "The Transport Layer Security (TLS) Protocol
+              Version 1.3", RFC 8446, DOI 10.17487/RFC8446, August 2018,
+              <https://www.rfc-editor.org/rfc/rfc8446>.
+
+   [RFC8519]  Jethanandani, M., Agarwal, S., Huang, L., and D. Blair,
+              "YANG Data Model for Network Access Control Lists (ACLs)",
+              RFC 8519, DOI 10.17487/RFC8519, March 2019,
+              <https://www.rfc-editor.org/rfc/rfc8519>.
+
+   [RFC8956]  Loibl, C., Ed., Raszuk, R., Ed., and S. Hares, Ed.,
+              "Dissemination of Flow Specification Rules for IPv6",
+              RFC 8956, DOI 10.17487/RFC8956, December 2020,
+              <https://www.rfc-editor.org/rfc/rfc8956>.
+
+8.2.  Informative References
+
+   [I-D.boucadair-netmod-iana-registries]
+              Boucadair, M., "Recommendations for Creating IANA-
+              Maintained YANG Modules", Work in Progress, Internet-
+              Draft, draft-boucadair-netmod-iana-registries-07, 20
+              January 2023, <https://datatracker.ietf.org/doc/html/
+              draft-boucadair-netmod-iana-registries-07>.
+
+   [RFC8340]  Bjorklund, M. and L. Berger, Ed., "YANG Tree Diagrams",
+              BCP 215, RFC 8340, DOI 10.17487/RFC8340, March 2018,
+              <https://www.rfc-editor.org/rfc/rfc8340>.
+
+   [RFC8955]  Loibl, C., Hares, S., Raszuk, R., McPherson, D., and M.
+              Bacher, "Dissemination of Flow Specification Rules",
+              RFC 8955, DOI 10.17487/RFC8955, December 2020,
+              <https://www.rfc-editor.org/rfc/rfc8955>.
+
+   [RFC9132]  Boucadair, M., Ed., Shallow, J., and T. Reddy.K,
+              "Distributed Denial-of-Service Open Threat Signaling
+              (DOTS) Signal Channel Specification", RFC 9132,
+              DOI 10.17487/RFC9132, September 2021,
+              <https://www.rfc-editor.org/rfc/rfc9132>.
+
+Appendix A.  XLTS Template to Generate The ICMP Type IANA-Maintained
+             Module
+
+   <CODE BEGINS>
+   <?xml version="1.0" encoding="utf-8"?>
+   <stylesheet
+       xmlns="http://www.w3.org/1999/XSL/Transform"
+       xmlns:html="http://www.w3.org/1999/xhtml"
+       xmlns:iana="http://www.iana.org/assignments"
+       xmlns:yin="urn:ietf:params:xml:ns:yang:yin:1"
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 41]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+       version="1.0">
+     <import href="../../../xslt/iana-yinx.xsl"/>
+     <output method="xml" encoding="utf-8"/>
+     <strip-space elements="*"/>
+
+     <template match="iana:registry[@id='icmp-parameters-types']">
+       <element name="yin:typedef">
+         <attribute name="name">icmp-type-name</attribute>
+         <element name="yin:type">
+           <attribute name="name">enumeration</attribute>
+           <apply-templates
+               select="iana:record[not(iana:description = 'Unassigned' or
+                       starts-with(iana:description, 'Reserved') or
+                       starts-with(iana:description, 'RFC3692')) or
+                       contains(iana:description, 'experimental')]"/>
+         </element>
+         <element name="yin:description">
+           <element name="yin:text">
+             This enumeration type defines mnemonic names and
+             corresponding numeric values of ICMP types.
+           </element>
+         </element>
+         <element name="yin:reference">
+           <element name="yin:text">
+             RFC 2708: IANA Allocation Guidelines For Values In
+                       the Internet Protocol and Related Headers
+           </element>
+         </element>
+       </element>
+       <element name="yin:typedef">
+         <attribute name="name">icmp-type</attribute>
+         <element name="yin:type">
+           <attribute name="name">union</attribute>
+           <element name="yin:type">
+             <attribute name="name">uint8/</attribute>
+           </element>
+           <element name="yin:type">
+             <attribute name="name">icmp-type-name</attribute>
+           </element>
+         </element>
+         <element name="yin:description">
+           <element name="yin:text">
+             This type allows reference to an ICMP type using either
+             the assigned mnemonic name or numeric value.
+           </element>
+         </element>
+       </element>
+     </template>
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 42]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+     <template match="iana:record">
+       <call-template name="enum">
+         <with-param name="id">
+           <choose>
+             <when test="contains(iana:description, '(Deprecated)')">
+               <value-of select="translate(normalize-space(substring-before(iana:description,
+                     '(Deprecated)')),' ','')"/>
+             </when>
+             <otherwise>
+               <value-of select="translate(normalize-space(iana:description),' ','')"/>
+             </otherwise>
+           </choose>
+         </with-param>
+         <with-param name="deprecated"
+                     select="contains(iana:description, '(Deprecated)')"/>
+       </call-template>
+     </template>
+
+   </stylesheet>
+   <CODE ENDS>
+
+Appendix B.  Initial Version of the The ICMP Type IANA-Maintained Module
+
+   <CODE BEGINS>
+    file iana-icmp-types@2020-09-25.yang
+
+   module iana-icmp-types {
+     yang-version 1.1;
+     namespace "urn:ietf:params:xml:ns:yang:iana-icmp-types";
+     prefix iana-icmp-types;
+
+     organization
+       "Internet Assigned Numbers Authority (IANA)";
+
+     contact
+       "Internet Assigned Numbers Authority
+
+        ICANN
+        12025 Waterfront Drive, Suite 300
+        Los Angeles, CA 90094
+
+
+        Tel: +1 424 254 5300
+
+        <mailto:iana@iana.org>";
+
+     description
+       "This YANG module translates IANA registry 'ICMP Type Numbers' to
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 43]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+        YANG derived types.
+
+        Copyright (c) 2023 IETF Trust and the persons identified as
+        authors of the code. All rights reserved.
+
+        Redistribution and use in source and binary forms, with or
+        without modification, is permitted pursuant to, and subject to
+        the license terms contained in, the Revised BSD License set
+        forth in Section 4.c of the IETF Trust's Legal Provisions
+        Relating to IETF Documents
+        (https://trustee.ietf.org/license-info).
+
+        This version of this YANG module was generated from the
+        corresponding IANA registry using an XSLT stylesheet from the
+        'iana-yang' project (https://github.com/llhotka/iana-yang).";
+
+     reference
+       "Internet Control Message Protocol (ICMP) Parameters
+        (https://www.iana.org/assignments/icmp-parameters/)";
+
+     revision 2020-09-25 {
+       description
+         "Current revision as of the revision date specified in the XML
+          representation of the registry page.";
+       reference
+         "https://www.iana.org/assignments/icmp-parameters/icmp-parameters.xml";
+     }
+
+     /* Typedefs */
+
+     typedef icmp-type-name {
+       type enumeration {
+         enum EchoReply {
+           value 0;
+           description
+             "Echo Reply";
+           reference
+             "RFC 792";
+         }
+         enum DestinationUnreachable {
+           value 3;
+           description
+             "Destination Unreachable";
+           reference
+             "RFC 792";
+         }
+         enum SourceQuench {
+           value 4;
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 44]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+           status deprecated;
+           description
+             "Source Quench (Deprecated)";
+           reference
+             "- RFC 792
+              - RFC 6633";
+         }
+         enum Redirect {
+           value 5;
+           description
+             "Redirect";
+           reference
+             "RFC 792";
+         }
+         enum AlternateHostAddress {
+           value 6;
+           status deprecated;
+           description
+             "Alternate Host Address (Deprecated)";
+           reference
+             "RFC 6918";
+         }
+         enum Echo {
+           value 8;
+           description
+             "Echo";
+           reference
+             "RFC 792";
+         }
+         enum RouterAdvertisement {
+           value 9;
+           description
+             "Router Advertisement";
+           reference
+             "RFC 1256";
+         }
+         enum RouterSolicitation {
+           value 10;
+           description
+             "Router Solicitation";
+           reference
+             "RFC 1256";
+         }
+         enum TimeExceeded {
+           value 11;
+           description
+             "Time Exceeded";
+           reference
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 45]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+             "RFC 792";
+         }
+         enum ParameterProblem {
+           value 12;
+           description
+             "Parameter Problem";
+           reference
+             "RFC 792";
+         }
+         enum Timestamp {
+           value 13;
+           description
+             "Timestamp";
+           reference
+             "RFC 792";
+         }
+         enum TimestampReply {
+           value 14;
+           description
+             "Timestamp Reply";
+           reference
+             "RFC 792";
+         }
+         enum InformationRequest {
+           value 15;
+           status deprecated;
+           description
+             "Information Request (Deprecated)";
+           reference
+             "- RFC 792
+              - RFC 6918";
+         }
+         enum InformationReply {
+           value 16;
+           status deprecated;
+           description
+             "Information Reply (Deprecated)";
+           reference
+             "- RFC 792
+              - RFC 6918";
+         }
+         enum AddressMaskRequest {
+           value 17;
+           status deprecated;
+           description
+             "Address Mask Request (Deprecated)";
+           reference
+             "- RFC 950
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 46]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+              - RFC 6918";
+         }
+         enum AddressMaskReply {
+           value 18;
+           status deprecated;
+           description
+             "Address Mask Reply (Deprecated)";
+           reference
+             "- RFC 950
+              - RFC 6918";
+         }
+         enum Traceroute {
+           value 30;
+           status deprecated;
+           description
+             "Traceroute (Deprecated)";
+           reference
+             "- RFC 1393
+              - RFC 6918";
+         }
+         enum DatagramConversionError {
+           value 31;
+           status deprecated;
+           description
+             "Datagram Conversion Error (Deprecated)";
+           reference
+             "- RFC 1475
+              - RFC 6918";
+         }
+         enum MobileHostRedirect {
+           value 32;
+           status deprecated;
+           description
+             "Mobile Host Redirect (Deprecated)";
+           reference
+             "- David Johnson <>
+              - RFC 6918";
+         }
+         enum IPv6Where-Are-You {
+           value 33;
+           status deprecated;
+           description
+             "IPv6 Where-Are-You (Deprecated)";
+           reference
+             "- Bill Simpson <mailto:Bill.Simpson&um.cc.umich.edu>
+              - RFC 6918";
+         }
+         enum IPv6I-Am-Here {
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 47]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+           value 34;
+           status deprecated;
+           description
+             "IPv6 I-Am-Here (Deprecated)";
+           reference
+             "- Bill Simpson <mailto:Bill.Simpson&um.cc.umich.edu>
+              - RFC 6918";
+         }
+         enum MobileRegistrationRequest {
+           value 35;
+           status deprecated;
+           description
+             "Mobile Registration Request (Deprecated)";
+           reference
+             "- Bill Simpson <mailto:Bill.Simpson&um.cc.umich.edu>
+              - RFC 6918";
+         }
+         enum MobileRegistrationReply {
+           value 36;
+           status deprecated;
+           description
+             "Mobile Registration Reply (Deprecated)";
+           reference
+             "- Bill Simpson <mailto:Bill.Simpson&um.cc.umich.edu>
+              - RFC 6918";
+         }
+         enum DomainNameRequest {
+           value 37;
+           status deprecated;
+           description
+             "Domain Name Request (Deprecated)";
+           reference
+             "- RFC 1788
+              - RFC 6918";
+         }
+         enum DomainNameReply {
+           value 38;
+           status deprecated;
+           description
+             "Domain Name Reply (Deprecated)";
+           reference
+             "- RFC 1788
+              - RFC 6918";
+         }
+         enum SKIP {
+           value 39;
+           status deprecated;
+           description
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 48]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+             "SKIP (Deprecated)";
+           reference
+             "- Tom Markson <mailto:markson&osmosys.incog.com>
+              - RFC 6918";
+         }
+         enum Photuris {
+           value 40;
+           description
+             "Photuris";
+           reference
+             "RFC 2521";
+         }
+         enum ICMPmessagesutilizedbyexperimentalmobilityprotocolssuchasSeamoby {
+           value 41;
+           description
+             "ICMP messages utilized by experimental mobility protocols
+              such as Seamoby";
+           reference
+             "RFC 4065";
+         }
+         enum ExtendedEchoRequest {
+           value 42;
+           description
+             "Extended Echo Request";
+           reference
+             "RFC 8335";
+         }
+         enum ExtendedEchoReply {
+           value 43;
+           description
+             "Extended Echo Reply";
+           reference
+             "RFC 8335";
+         }
+       }
+       description
+         "This enumeration type defines mnemonic names and corresponding
+          numeric values of ICMP types.";
+       reference
+         "RFC 2708: IANA Allocation Guidelines For Values In the
+          Internet Protocol and Related Headers";
+     }
+
+     typedef icmp-type {
+       type union {
+         type uint8;
+         type icmp-type-name;
+       }
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 49]
+
+Internet-Draft                Enhanced ACLs                   March 2023
+
+
+       description
+         "This type allows reference to an ICMP type using either the
+          assigned mnemonic name or numeric value.";
+     }
+   }
+   <CODE ENDS>
+
+Appendix C.  Acknowledgements
+
+   Many thanks to Jon Shallow and Miguel Cros for the review and
+   comments to the document, including prior to publishing the document.
+
+   Thanks to Qiufang Ma and Victor Lopez for the comments and
+   suggestions.
+
+   The IANA-maintained model was generated using an XSLT stylesheet from
+   the 'iana-yang' project (https://github.com/llhotka/iana-yang).
+
+   This work is partially supported by the European Commission under
+   Horizon 2020 Secured autonomic traffic management for a Tera of SDN
+   flows (Teraflow) project (grant agreement number 101015857).
+
+Authors' Addresses
+
+   Oscar Gonzalez de Dios
+   Telefonica
+   Email: oscar.gonzalezdedios@telefonica.com
+
+
+   Samier Barguil
+   Telefonica
+   Email: samier.barguilgiraldo.ext@telefonica.com
+
+
+   Mohamed Boucadair
+   Orange
+   Email: mohamed.boucadair@orange.com
+
+
+   Qin Wu
+   Huawei
+   Email: bill.wu@huawei.com
+
+
+
+
+
+
+
+
+
+Dios, et al.            Expires 11 September 2023              [Page 50]
