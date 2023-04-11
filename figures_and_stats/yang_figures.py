@@ -17,7 +17,6 @@ import json
 import matplotlib as mpl
 from matplotlib.dates import DateFormatter, MonthLocator
 from pylab import *
-from PIL import Image
 
 from create_config import create_config
 
@@ -120,7 +119,7 @@ try:
     savefig(web_directory + '/figures/IETFCiscoAuthorsYANGPageCompilation.png', bbox_inches='tight')
 except ValueError:
     for text in text_ls:  # image can become very big when coordinates for text is much bigger than dataset
-        text.remove()     # this can only happen locally, so this code is added for debug purposes
+        text.remove()  # this can only happen locally, so this code is added for debug purposes
     savefig(web_directory + '/figures/IETFCiscoAuthorsYANGPageCompilation.png', bbox_inches='tight')
 
 # generate stats for the IETF
