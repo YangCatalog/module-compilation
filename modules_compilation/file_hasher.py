@@ -29,6 +29,7 @@ __email__ = 'slavomir.mazur@pantheon.tech'
 import hashlib
 import json
 import os.path
+import typing as t
 from configparser import ConfigParser
 from dataclasses import dataclass
 
@@ -41,6 +42,7 @@ BLOCK_SIZE = 65536  # The size of each read from the file
 
 class FileHasher:
     def __init__(self, dst_dir: str = '', force_compilation: bool = False, config: ConfigParser = create_config()):
+        self.config = config
         self.cache_dir = config.get('Directory-Section', 'cache')
         self.force_compilation = force_compilation
         self.files_hashes = self._load_hashed_files_list(dst_dir)
@@ -48,7 +50,7 @@ class FileHasher:
 
     def hash_file(self, path: str) -> str:
         """
-        Create hash from content of the given file. Each time the content of the file change,
+        Create hash from content of the given file. Each time the content of the file changes,
         the resulting hash will be different.
 
         Arguments:
@@ -111,8 +113,10 @@ class FileHasher:
     @dataclass
     class ModuleHashCheckForParsing:
         hash_changed: bool
+        only_formatting_changed: bool
         hash: str
         validator_versions: dict
+        normalized_file_hash: str
 
         def get_changed_validator_versions(self, validators_to_check: dict) -> list[str]:
             changed_validators = []
@@ -122,20 +126,61 @@ class FileHasher:
                 changed_validators.append(validator)
             return changed_validators
 
-    def should_parse(self, path: str) -> ModuleHashCheckForParsing:
+    def should_parse(self, path: str, already_calculated_hash: t.Optional[str] = None) -> ModuleHashCheckForParsing:
         """
         Decide whether module at the given path should be parsed or not.
         Check whether file content hash has changed and keep it for the future use.
 
         Argument:
-            :param path     (str) Full path to the file to be hashed
+            :param path (str) Full path to the file to check hash.
+            :param already_calculated_hash (Optional[str]) Already calculated hash of the path, can be used if the hash
+            has been calculated before calling this method in order to not re-calculate the hash to improve performance,
+            be careful passing this argument, to not pass an incorrect hash.
         """
-        file_hash = self.hash_file(path)
+        file_hash = already_calculated_hash if already_calculated_hash else self.hash_file(path)
         old_file_hash_info = self.files_hashes.get(path)
         if not old_file_hash_info or not isinstance(old_file_hash_info, dict):
-            return self.ModuleHashCheckForParsing(hash_changed=True, hash=file_hash, validator_versions={})
+            return self.ModuleHashCheckForParsing(
+                hash_changed=True,
+                only_formatting_changed=False,
+                hash=file_hash,
+                validator_versions={},
+                normalized_file_hash=self.get_normalized_file_hash(path),
+            )
+        hash_changed = old_file_hash_info['hash'] != file_hash
+        old_normalized_file_hash = old_file_hash_info.get('normalized_file_hash')
+        new_normalized_file_hash = None
+        only_formatting_changed = not hash_changed
+        if (
+            hash_changed
+            and old_normalized_file_hash
+            and (new_normalized_file_hash := self.get_normalized_file_hash(path)) == old_normalized_file_hash
+        ):
+            only_formatting_changed = True
         return self.ModuleHashCheckForParsing(
-            hash_changed=self.force_compilation or old_file_hash_info['hash'] != file_hash,
+            hash_changed=self.force_compilation or hash_changed,
+            only_formatting_changed=False if self.force_compilation else only_formatting_changed,
             hash=file_hash,
             validator_versions=old_file_hash_info['validator_versions'],
+            normalized_file_hash=(
+                old_normalized_file_hash
+                if (not hash_changed and old_normalized_file_hash) or (hash_changed and only_formatting_changed)
+                else new_normalized_file_hash
+                if new_normalized_file_hash
+                else self.get_normalized_file_hash(path)
+            ),
         )
+
+    def get_normalized_file_hash(self, path: str) -> str:
+        tmp_file_path = os.path.join(self.config.get('Directory-Section', 'temp'), os.path.basename(path))
+        with os.popen(
+            (
+                f'pyang -f yang -p {os.path.dirname(path)} --yang-canonical --yang-remove-comments '
+                f'--yang-join-substrings {path}'
+            ),
+        ) as normalized_file, open(tmp_file_path, 'w') as tmp_file:
+            tmp_file.write(normalized_file.read())
+        del normalized_file
+        normalized_file_hash = self.hash_file(tmp_file_path)
+        os.remove(tmp_file_path)
+        return normalized_file_hash
