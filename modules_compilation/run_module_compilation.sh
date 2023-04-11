@@ -18,7 +18,7 @@ MAX_PROCESSES=4
 
 # make sure the compilation isn't disturbed by updates
 STATIC_COPIES="$TMP/module_compilation"
-rsync --links --recursive --include="*.yang" "$NONIETFDIR/*" "$STATIC_COPIES"
+rsync --links --recursive --include="*.yang" "$NONIETFDIR"/* "$STATIC_COPIES"
 
 cleanup() {
    rm -rf $STATIC_COPIES >>$LOG 2>&1

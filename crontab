@@ -3,6 +3,7 @@ SHELL=/bin/bash
 YANGCATALOG_CONFIG_PATH=<YANGCATALOG_CONFIG_PATH>
 VIRTUAL_ENV=<VIRTUAL_ENV>
 CONF=<CONF>
+XYM_VERSION=<XYM_VERSION>
 #
 # For more information see the manual pages of crontab(5) and cron(8)
 #

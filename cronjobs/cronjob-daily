@@ -13,7 +13,7 @@
 # either express or implied.
 #
 
-exec > /var/yang/logs/cronjob-daily.log
+exec >> /var/yang/logs/cronjob-daily.log
 
 check_success_message () {
   # $1 - message to log in case if there's no success message
@@ -38,7 +38,7 @@ date +"%c: Downloading from GitHub YangModels"
   DOWNLOAD_GITHUB_STATUS="$SUCCESS_MESSAGE"
   echo "$DOWNLOAD_GITHUB_STATUS"
 } || {
-  check_success_message "GitHub download failed"
+  check_success_message "GitHub  fadownloadiled"
 }
 
 (

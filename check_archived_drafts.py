@@ -77,7 +77,7 @@ class CheckArchivedDrafts:
         )
 
         self.all_modules_keys: list[str] = []
-        self.modules_to_skip: tuple[str] = ()
+        self.modules_to_skip: tuple[str, ...] = ()
         self.missing_modules: list[str] = []
         self.incorrect_revision_modules: list[str] = []
 
