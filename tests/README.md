@@ -4,7 +4,7 @@
 
 ## HOW TO RUN
 - Attach to the ```yc-module-compilation``` container
-- Set all the needed environment variables using: ```export YANGCATALOG_CONFIG_PATH=$PWD/tests/resources/test.conf && export PYTHONPATH=$PWD/bin:$PYTHONPATH && export VIRTUAL_ENV=$PWD```
+- Set all the needed environment variables using: ```export PYTHONPATH="$PWD":$PYTHONPATH && export VIRTUAL_ENV="$PWD" && export TESTS_RESOURCES_DIR="$PWD"/tests/resources && export YANGCATALOG_CONFIG_PATH="$TESTS_RESOURCES_DIR"/test.conf && sed -i "s|<TESTS_RESOURCES_DIR>|${TESTS_RESOURCES_DIR}|g" "$YANGCATALOG_CONFIG_PATH"```
 - Now you're able to run all the tests locally:
   - To run all the tests: ```pytest```
   - To run the tests in a particular file: ```pytest tests/test_file_name.py```
