@@ -34,7 +34,7 @@ class TestGatherIetfDependentModules(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         config = create_config()
-        cls.resource_path = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/gather_ietf_dependent_modules')
+        cls.resource_path = os.path.join(os.environ['TESTS_RESOURCES_DIR'], 'gather_ietf_dependent_modules')
         cls.yangcatalog_api_prefix = config.get('Web-Section', 'yangcatalog-api-prefix')
         cls.ietf_dependencies_dir = os.path.join(cls.resource_path, 'dependencies')
         payloads_file = os.path.join(cls.resource_path, 'payloads.json')

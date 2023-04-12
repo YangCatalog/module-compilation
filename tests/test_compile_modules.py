@@ -29,18 +29,11 @@ from versions import validator_versions
 
 
 class TestCompileModules(unittest.TestCase):
-    virtual_env: str = os.environ['VIRTUAL_ENV']
-    resources_path: str = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/compile_modules')
-
     @classmethod
     def setUpClass(cls):
+        cls.resources_path = os.path.join(os.environ['TESTS_RESOURCES_DIR'], 'compile_modules')
         cls.config = create_config()
-        cls.cache_directory = os.path.join(cls.virtual_env, cls.config.get('Directory-Section', 'cache'))
-        cls.config.set('Directory-Section', 'cache', cls.cache_directory)
-        temp_directory = os.path.join(cls.virtual_env, cls.config.get('Directory-Section', 'temp'))
-        cls.config.set('Directory-Section', 'temp', temp_directory)
-        ietf_drafts_directory = os.path.join(cls.virtual_env, cls.config.get('Directory-Section', 'ietf-drafts'))
-        cls.config.set('Directory-Section', 'ietf-drafts', ietf_drafts_directory)
+        cls.cache_directory = cls.config.get('Directory-Section', 'cache')
         cls.ietf_directory = cls.resource('ietf')
         cls.config.set('Directory-Section', 'ietf-directory', cls.ietf_directory)
         cls.all_modules_dir = cls.resource('all_modules')

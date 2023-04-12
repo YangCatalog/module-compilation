@@ -35,7 +35,7 @@ class MessageFactoryMock(MagicMock):
 class TestCheckArchivedDrafts(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        resources_path = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/check_archived_drafts')
+        resources_path = os.path.join(os.environ['TESTS_RESOURCES_DIR'], 'check_archived_drafts')
         cls.config = create_config()
         cls.cronjob_result_path = os.path.join(cls.config.get('Directory-Section', 'temp'), 'cronjob.json')
         cls.config.set('Directory-Section', 'var', os.path.join(resources_path, 'var'))

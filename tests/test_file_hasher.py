@@ -32,7 +32,7 @@ class TestFileHasher(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.resource_path = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/file_hasher')
+        cls.resource_path = os.path.join(os.environ['TESTS_RESOURCES_DIR'], 'file_hasher')
         cls.hash_file_paths = (
             cls.resource('sdo_files_modification_hashes.json'),
             cls.resource('sdo_files_modification_hashes.json.lock'),

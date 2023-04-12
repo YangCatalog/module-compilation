@@ -27,7 +27,7 @@ import metadata_generators.extract_emails as ee
 class TestExtractElem(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.resource_path = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/extract_emails')
+        cls.resource_path = os.path.join(os.environ['TESTS_RESOURCES_DIR'], 'extract_emails')
 
     def test_extract_emails(self):
         result = ee.extract_email_string(os.path.join(self.resource_path, 'emails.txt'), 'foo.com')

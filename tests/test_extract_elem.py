@@ -28,7 +28,7 @@ import extractors.extract_elem as ee
 class TestExtractElem(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.resource_path = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/extract_elem')
+        cls.resource_path = os.path.join(os.environ['TESTS_RESOURCES_DIR'], 'extract_elem')
 
     def test_extract_elem_grouping(self):
         groupings = [
