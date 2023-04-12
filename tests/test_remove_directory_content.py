@@ -28,7 +28,7 @@ from utility.utility import remove_directory_content
 class TestRemoveDirectoryContent(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.resource_path = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/remove_directory_content')
+        cls.resource_path = os.path.join(os.environ['TESTS_RESOURCES_DIR'], 'remove_directory_content')
         cls.script_path = os.path.join(os.environ['VIRTUAL_ENV'], 'remove_directory_content.py')
         cls.subdir_path = os.path.join(cls.resource_path, 'subdir')
         cls.file_path = os.path.join(cls.resource_path, 'test_file.json')
@@ -58,8 +58,8 @@ class TestRemoveDirectoryContent(unittest.TestCase):
 class TestRemoveDirectoryContentEmpty(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.resource_path = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/remove_directory_content')
-        cls.non_existing_path = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/non_existing')
+        cls.resource_path = os.path.join(os.environ['TESTS_RESOURCES_DIR'], 'remove_directory_content')
+        cls.non_existing_path = os.path.join(os.environ['TESTS_RESOURCES_DIR'], 'non_existing')
 
     def setUp(self):
         os.makedirs(self.resource_path, exist_ok=True)

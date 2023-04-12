@@ -17,11 +17,11 @@ class DraftMetadataGenerator(BaseMetadataGenerator):
         self.document_name = self.document_dict[self.yang_file_name]
         draft_name = self.document_name.split('.')[0]
         version_number = draft_name.split('-')[-1]
-        self.mailto = '{}@ietf.org'.format(draft_name)
+        self.mailto = f'{draft_name}@ietf.org'
         draft_name = draft_name.rstrip('-0123456789')
-        self.datatracker_url = 'https://datatracker.ietf.org/doc/{}/{}'.format(draft_name, version_number)
-        self.draft_url_anchor = '<a href="{}">{}</a>'.format(self.datatracker_url, self.document_name)
-        self.email_anchor = '<a href="mailto:{}">Email Authors</a>'.format(self.mailto)
+        self.datatracker_url = f'https://datatracker.ietf.org/doc/{draft_name}/{version_number}'
+        self.draft_url_anchor = f'<a href="{self.datatracker_url}">{self.document_name}</a>'
+        self.email_anchor = f'<a href="mailto:{self.mailto}">Email Authors</a>'
 
     def get_confd_metadata(self) -> dict:
         return {
@@ -36,10 +36,10 @@ class DraftMetadataGenerator(BaseMetadataGenerator):
         cisco_email = extract_email_string(draft_file_path, '@cisco.com')
         tailf_email = extract_email_string(draft_file_path, '@tail-f.com')
 
-        draft_emails = ','.join(filter(None, [cisco_email, tailf_email]))
-        cisco_email_anchor = '<a href="mailto:{}">Email Cisco Authors Only</a>'.format(draft_emails)
-        yang_model_url = '{}/YANG-modules/{}'.format(self.web_url, self.yang_file_name)
-        yang_model_anchor = '<a href="{}">Download the YANG model</a>'.format(yang_model_url)
+        draft_emails = f'{cisco_email},{tailf_email}'
+        cisco_email_anchor = f'<a href="mailto:{draft_emails}">Email Cisco Authors Only</a>'
+        yang_model_url = f'{self.web_url}/YANG-modules/{self.yang_file_name}'
+        yang_model_anchor = f'<a href="{yang_model_url}">Download the YANG model</a>'
         return self.FileCompilationData(
             yang_file_path=self.yang_file_path,
             compilation_metadata=(

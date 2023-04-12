@@ -39,11 +39,12 @@ class TestGetStats(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls.resources_path = os.path.join(os.environ['TESTS_RESOURCES_DIR'], 'yang_get_stats')
         cls.config = create_config()
-        cls.config.set('Directory-Section', 'backup', 'tests/resources/yang_get_stats/backup')
-        cls.config.set('Directory-Section', 'ietf-directory', 'tests/resources/yang_get_stats/ietf')
-        cls.config.set('Web-Section', 'private-directory', 'tests/resources/yang_get_stats/private')
-        cls.backup_directory = cls.config.get('Directory-Section', 'backup')
+        cls.backup_directory = cls.resource('backup')
+        cls.config.set('Directory-Section', 'backup', cls.backup_directory)
+        cls.config.set('Directory-Section', 'ietf-directory', cls.resource('ietf'))
+        cls.config.set('Web-Section', 'private-directory', cls.resource('private'))
         cls.web_private_directory = cls.config.get('Web-Section', 'private-directory')
         cls.directory_to_store_backup_files = os.path.join('tests/resources/yang_get_stats', uuid4().hex)
         cls.stats_directory = os.path.join(cls.web_private_directory, 'stats')
@@ -62,7 +63,7 @@ class TestGetStats(unittest.TestCase):
     def setUp(self):
         args = argparse.Namespace()
         setattr(args, 'days', -1)
-        setattr(args, 'debug', 0)
+        setattr(args, 'debug', 1)
         self.get_stats_instance: GetStats = GetStats(args=args, config=self.config)
 
     def tearDown(self):
@@ -76,6 +77,10 @@ class TestGetStats(unittest.TestCase):
                 continue
             with open(os.path.join(self.stats_directory, filename), 'w') as f:
                 json.dump({}, f)
+
+    @classmethod
+    def resource(cls, path: str) -> str:
+        return os.path.join(cls.resources_path, path)
 
     @classmethod
     def _check_filename_contains_prefix(cls, filename: str) -> bool:

@@ -1,0 +1,7 @@
+{
+  "example-application.yang": "test_rfc_document_name.txt",
+  "example-compb-diffserv-filter-policy@2023-03-10.yang": "test_rfc_document_name.txt",
+  "example-compb-queue-policy@2023-03-10.yang": "test_rfc_document_name.txt",
+  "example-custom-module@2022-11-03.yang": "test_rfc_document_name.txt",
+  "example-module@2019-06-01.yang": "test_rfc_document_name.txt"
+}

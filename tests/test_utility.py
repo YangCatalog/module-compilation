@@ -37,7 +37,7 @@ class TestUtilityBase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.resource_path = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/utility')
+        cls.resource_path = os.path.join(os.environ['TESTS_RESOURCES_DIR'], 'utility')
         cls.config = create_config(os.path.join(os.path.dirname(cls.resource_path), 'test.conf'))
 
 

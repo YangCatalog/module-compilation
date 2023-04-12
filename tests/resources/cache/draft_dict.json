@@ -1,0 +1,7 @@
+{
+  "iana-bgp-notification@2023-03-02.yang": "draft-ietf-idr-bgp-model-16.txt",
+  "iana-hardware@2018-03-13.yang": "draft-palmero-opsawg-dmlmo-09.txt",
+  "iana-icmp-types@2020-09-25.yang": "draft-ietf-netmod-acl-extensions-01.txt",
+  "iana-qos-types@2023-03-10.yang": "draft-ietf-rtgwg-qos-model-10.txt",
+  "iana-ssh-key-exchange-algs@2022-06-16.yang": "draft-ietf-netconf-ssh-client-server-32.txt"
+}

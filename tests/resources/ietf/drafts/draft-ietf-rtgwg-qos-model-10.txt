@@ -1,0 +1,5376 @@
+
+
+
+
+Network Working Group                                       A. Choudhary
+Internet-Draft                                          Aviatrix Systems
+Intended status: Standards Track                         M. Jethanandani
+Expires: 11 September 2023                                Kloud Services
+                                                                E. Aries
+                                                        Juniper Networks
+                                                                 I. Chen
+                                                   The MITRE Corporation
+                                                           10 March 2023
+
+
+                YANG Models for Quality of Service (QoS)
+                     draft-ietf-rtgwg-qos-model-10
+
+Abstract
+
+   This document describes a YANG model for configuration and
+   operational data of Quality of Service (QoS) in network devices.
+
+Status of This Memo
+
+   This Internet-Draft is submitted in full conformance with the
+   provisions of BCP 78 and BCP 79.
+
+   Internet-Drafts are working documents of the Internet Engineering
+   Task Force (IETF).  Note that other groups may also distribute
+   working documents as Internet-Drafts.  The list of current Internet-
+   Drafts is at https://datatracker.ietf.org/drafts/current/.
+
+   Internet-Drafts are draft documents valid for a maximum of six months
+   and may be updated, replaced, or obsoleted by other documents at any
+   time.  It is inappropriate to use Internet-Drafts as reference
+   material or to cite them other than as "work in progress."
+
+   This Internet-Draft will expire on 11 September 2023.
+
+Copyright Notice
+
+   Copyright (c) 2023 IETF Trust and the persons identified as the
+   document authors.  All rights reserved.
+
+
+
+
+
+
+
+
+
+
+
+Choudhary, et al.       Expires 11 September 2023               [Page 1]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+   This document is subject to BCP 78 and the IETF Trust's Legal
+   Provisions Relating to IETF Documents (https://trustee.ietf.org/
+   license-info) in effect on the date of publication of this document.
+   Please review these documents carefully, as they describe your rights
+   and restrictions with respect to this document.  Code Components
+   extracted from this document must include Revised BSD License text as
+   described in Section 4.e of the Trust Legal Provisions and are
+   provided without warranty as described in the Revised BSD License.
+
+Table of Contents
+
+   1.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . .   3
+     1.1.  Note to RFC Editor  . . . . . . . . . . . . . . . . . . .   3
+     1.2.  Terminology . . . . . . . . . . . . . . . . . . . . . . .   3
+     1.3.  Definitions and Acronyms  . . . . . . . . . . . . . . . .   4
+   2.  QoS Model Design  . . . . . . . . . . . . . . . . . . . . . .   5
+   3.  DiffServ Model Design . . . . . . . . . . . . . . . . . . . .   6
+     3.1.  A Single Rate Three Color Marker  . . . . . . . . . . . .   7
+     3.2.  A Two Rate Three Color Marker . . . . . . . . . . . . . .   7
+   4.  Modules Tree Structure  . . . . . . . . . . . . . . . . . . .   7
+   5.  Modules . . . . . . . . . . . . . . . . . . . . . . . . . . .  13
+     5.1.  ietf-traffic-policy . . . . . . . . . . . . . . . . . . .  14
+     5.2.  ietf-qos-action . . . . . . . . . . . . . . . . . . . . .  18
+     5.3.  ietf-diffserv . . . . . . . . . . . . . . . . . . . . . .  32
+     5.4.  ietf-queue-policy . . . . . . . . . . . . . . . . . . . .  41
+     5.5.  ietf-scheduler-policy . . . . . . . . . . . . . . . . . .  43
+     5.6.  ietf-qos-oper . . . . . . . . . . . . . . . . . . . . . .  46
+     5.7.  iana-qos-types  . . . . . . . . . . . . . . . . . . . . .  54
+   6.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .  64
+     6.1.  URI Registration  . . . . . . . . . . . . . . . . . . . .  64
+     6.2.  YANG Module Name Registration . . . . . . . . . . . . . .  64
+   7.  Security Considerations . . . . . . . . . . . . . . . . . . .  65
+   8.  Acknowledgement . . . . . . . . . . . . . . . . . . . . . . .  66
+   9.  Contributors  . . . . . . . . . . . . . . . . . . . . . . . .  67
+   10. References  . . . . . . . . . . . . . . . . . . . . . . . . .  67
+     10.1.  Normative References . . . . . . . . . . . . . . . . . .  67
+     10.2.  Informative References . . . . . . . . . . . . . . . . .  67
+   Appendix A.  Company A and Company B examples . . . . . . . . . .  69
+     A.1.  Example of Company A Diffserv Model . . . . . . . . . . .  69
+     A.2.  Example of Company B Diffserv Model . . . . . . . . . . .  78
+   Appendix B.  Configuration examples . . . . . . . . . . . . . . .  92
+     B.1.  Configuration example for QoS Classifier  . . . . . . . .  92
+     B.2.  Configuration example for QoS Policy  . . . . . . . . . .  93
+     B.3.  Configuration example for QoS Policing  . . . . . . . . .  94
+   Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  96
+
+
+
+
+
+
+Choudhary, et al.       Expires 11 September 2023               [Page 2]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+1.  Introduction
+
+   This document defines a YANG [RFC6020] [RFC7950] model for Quality of
+   Service (QoS) configuration and statistics parameters.  Traffic
+   Policy module defines the basic building blocks to define a
+   classifier, policy and target.  QoS Action module defines QoS action
+   related parameters.  Traffic policy is augmented to include packet
+   match and action parameters to define the Diffrentiated Services
+   (DiffServ) policy, Queues policy and Scheduler policy.  Each of these
+   policies are defined as separate modules.  The Diffserv module is
+   based on DiffServ architecture, and various references have been made
+   to available standard architecture documents.  QoS statistics
+   counters are defined in QoS Operational module.
+
+   DiffServ is a preferred approach for network service providers to
+   offer services to different customers based on their network Quality-
+   of-Service (QoS) objectives.  The traffic streams are differentiated
+   based on DiffServ Code Points (DSCP) carried in the IP header of each
+   packet.  The DSCP markings are applied by upstream node or by the
+   edge router on entry to the DiffServ network.
+
+   The YANG modules in this document conform to the Network Management
+   Datastore Architecture (NMDA) [RFC8342].
+
+   Tree diagrams used in this document follow the notation defined in
+   [RFC8340]
+
+1.1.  Note to RFC Editor
+
+   Editorial Note: (To be removed by RFC Editor)
+
+   This draft contains several placeholder values that need to be
+   replaced with finalized values at the time of publication.  Please
+   apply the following replacements:
+
+   *  "XXXX" --> the assigned RFC value for this draft both in this
+      draft and in the yang modules under the revision statement.
+
+   *  The "revision" date in model, in the format XXXX-XX-XX, needs to
+      be updated with the date the draft gets approved.
+
+1.2.  Terminology
+
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and
+   "OPTIONAL" in this document are to be interpreted as described in BCP
+   14 [RFC2119] [RFC8174] when, and only when, they appear in all
+   capitals, as shown here.
+
+
+
+Choudhary, et al.       Expires 11 September 2023               [Page 3]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+1.3.  Definitions and Acronyms
+
+   This document uses definitions and acronyms defined in Definitions of
+   the Differentiated Services Field (DS Field) in the IPv4 and IPv6
+   Headers [RFC2474], An Architecture for Differentiated Services
+   [RFC2475], and other documents.  Here are some of them.
+
+   *  Behavior Aggregate (BA): A DS behavior aggregate.
+
+   *  Classifier: an entity which selects packets based on the content
+      of packet headers according to defined rules.
+
+   *  DS behavior aggregate: A collection of packets with the same DS
+      codepoint crossing a link in a particular direction.
+
+   *  DS code point: A specific value of the DSCP portion of the DS
+      field, used to select a PHB.
+
+   *  DiffServ: Differentiated Services enhancements to the Internet
+      protocol are intended to enable scalable service discrimination in
+      the Internet without the need for per-flow state and signaling at
+      every hop.  A variety of services may be built from a small, well-
+      defined set of building blocks which are deployed in network
+      nodes.
+
+   *  DSCP: Differentiated Services Code Point
+
+   *  ECN: Explicit Congestion Notification
+
+   *  Marking: the process of setting the DS codepoint in a packet based
+      on defined rules; pre-marking, re-marking.
+
+   *  Metering: the process of measuring the temporal properties (e.g.,
+      rate) of a traffic stream selected by a classifier.  The
+      instantaneous state of this process may be used to affect the
+      operation of a marker, shaper, or dropper, and/or may be used for
+      accounting and measurement purposes.
+
+   *  MF Classifier: A multi-field (MF) classifier which selects packets
+      based on the content of some arbitrary number of header fields;
+      typically some combination of source address, destination address,
+      DS field, protocol ID, source port and destination port.
+
+   *  Per-Hop-Behavior (PHB): The externally observable forwarding
+      behavior applied at a DS-compliant node to a DS behavior
+      aggregate.
+
+
+
+
+
+Choudhary, et al.       Expires 11 September 2023               [Page 4]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+   *  Policing: the process of discarding packets (by a dropper) within
+      a traffic stream in accordance with the state of a corresponding
+      meter enforcing a traffic profile.
+
+   *  RED: Random Early Detection
+
+   *  Shaping: the process of delaying packets within a traffic stream
+      to cause it to conform to some defined traffic profile.
+
+   *  WRED: Weighted Random Early Detection
+
+2.  QoS Model Design
+
+            -------------   ------------   ------------   ------------
+           |             | |            | |            | |            |
+           | Diffserv    | | Queue      | | Scheduling | | QoS        |
+           | Policy      | | Policy     | | Policy     | | Oper       |
+           |             | |            | |            | |            |
+            -------------   ------------   ------------   ------------
+            -------------   ------------------------------------------
+           |             | |                                          |
+           | QoS Action  | |  Traffic Policy                          |
+           |             | | (Base Policy, Classifier, Target)        |
+           |             | |                                          |
+            -------------   ------------------------------------------
+
+                     Figure 1: QoS Yang Modules Layout
+
+   The above diagram depicts the design of the QoS model.  It uses
+   Traffic Policy and QoS Action as base modules at the bottom, which
+   are augmented by the remaining modules on the top to define different
+   aspects of QoS.  This structure allows other models such as Policy
+   Based Routing (PBR) to augment the base modules and define PBR.
+
+   A classifier consists of set of filters and an operation that is
+   performed on those filters.  Each filter defines a rule on a
+   particular packet header or packet metadata field that dictate how
+   the packet will be classified based on that particular field, e.g.
+   whether it will be classified based on DSCP, or will be classified
+   based on source IPv4 address prefix.  The operation defines whether
+   these filters are logically AND or OR.  The filters may be based on a
+   combination of values or range of values of different packet header
+   fields or packet metadata fields.  The QoS classifier is defined in
+   the Traffic Policy module.
+
+
+
+
+
+
+
+Choudhary, et al.       Expires 11 September 2023               [Page 5]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+   One or more packet conditioning functions may be applied to a
+   classifier which may drop, mark, or delay packets These are defined
+   in the QoS Action module.  A set of classifiers with corresponding
+   conditioning functions when arranged in order of priority represent a
+   QoS policy.  These policies are defined in Traffic Policy module.
+
+   QoS actions are configured in line or referred in a Policy module.
+   These include marking, metering or queuing.  Actions are defined in
+   the QoS Action module.
+
+   Meter meters each packet and passes the packet and the metering
+   result to the Marker.  Meter is modeled based on commonly used
+   alogrithms in industry, A Single Rate Three Color Marker (srTCM)
+   [RFC2697] meter, A Two Rate Three Color Marker (trTCM) [RFC2698]
+   meter, and A Single Rate Two Color Marker meter.  Different vendors
+   can extend it with other types of meters as well.  Meter is defined
+   in QoS Action module
+
+   Queue Policy module allows Queues to be referred in a policy.  The
+   match is based on Traffic-Group and action parameters are used as
+   defined in QoS Action module.
+
+   Scheduling Policy module defines a set of scheduling parameters and
+   associates Queue Policy with it.
+
+   QoS counters are defined in QoS Oper module.  It includes counters
+   for Classifiers, Meters and Queues associated with a QoS policy
+   applied in each direction of traffic.  To modularize and for
+   reusability, grouping have been defined for various counters of
+   Classifier, Meters and Queues.  The target is assumed to be interface
+   but the groupings can be used for any other target type where QoS
+   policy is applied.
+
+3.  DiffServ Model Design
+
+   DiffServ architecture [RFC2475] describes the architecture as a
+   simple model where traffic entering a network is classified and
+   possibly conditioned at the boundary of the network and assigned a
+   different Behavior Aggregate (BA).  Each BA is identified by a
+   specific value of DSCP, and is used to select a Per Hop Behavior
+   (PHB).
+
+
+
+
+
+
+
+
+
+
+Choudhary, et al.       Expires 11 September 2023               [Page 6]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+   The packet classification policy identifies the subset of traffic
+   which may receive a DiffServ by being conditioned or mapped.  Packet
+   classifiers select packets within a stream based on the content of
+   some portion of the packet header.  There are two types of
+   classifiers, the BA classifier, and the Multi-Field (MF) classifier
+   which selects packets based on a value which is combination of one or
+   more header fields.  In the Diffserv Policy module, this is realized
+   by augmenting the classifier in Traffic Policy module.
+
+   Traffic conditioning includes metering, shaping and/or marking.  A
+   meter is used to measure the traffic against a given traffic profile.
+   The traffic profile specifies the temporal property of the traffic.
+   A packet that arrives is first determined to be in or out of the
+   profile, which will result in the action of marked, dropped or
+   shaped.  This is realized in vendor specific modules based on the
+   parameters defined in action module.  The metering parameters are
+   augmented to the QoS policy module when metering is defined inline,
+   and to the metering template when metering profile is referred in
+   policy module.
+
+3.1.  A Single Rate Three Color Marker
+
+   This document defines support for A Single Rate Three Color Marker
+   (srTCM) [RFC2697], which is one of the components in a An
+   Architecture for Differentiated Services [RFC2475].  The srTCM meters
+   a traffic stream and marks its packets according to three traffic
+   parameters, Committed Information Rate (CIR), Committed Burst Size
+   (CBS), and Excess Burst Size (EBS), to be either green, yellow, or
+   red.  A packet is marked green if it doesn't exceed the CBS, yellow
+   if it does exceed the CBS, but not the EBS, and red otherwise.
+
+3.2.  A Two Rate Three Color Marker
+
+   This document defines support for A Two Rate Three Color Marker
+   (trTCM) [RFC2698], which is one of the components in a An
+   Architecture for Differentiated Services [RFC2475].  The trTCM meters
+   a traffic stream and marks its packets according to two rates, Peak
+   Information Rate (PIR), the Committed Information Rate (CIR), and
+   their associated burst sizes to either green, yellow, or red.  A
+   packet is marked red if it exceeds the PIR.  Otherwise, it is marked
+   yellow or green dependeing on whether it exceeds or does not exceed
+   the CIR.
+
+4.  Modules Tree Structure
+
+   This document defines a base Traffic Policy module, a QoS specific
+   Action module, separate policy modules for Scheduler, Queuing and
+   DiffServ policies and operational module for QoS counters.
+
+
+
+Choudhary, et al.       Expires 11 September 2023               [Page 7]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+   Traffic Policy module contains list of classifiers identified by a
+   classifier name.  Each classifier MAY contain a list of filters.
+   When no filter is present in a classifier, it matches all traffic.
+
+   This module also contains list of policy objects identified by a
+   policy name and policy type which MUST be provided.  With different
+   values of policy types, each vendor MAY define their own construct of
+   policy for different QoS functionalities.  Each vendor MAY augment
+   classifier entry in a policy definition with a set of actions.
+
+   module: ietf-traffic-policy
+     +--rw classifiers
+     |  +--rw classifier* [name]
+     |     +--rw name                string
+     |     +--rw description?        string
+     |     +--rw filter-operation?   qos-types:match-operation-type
+     |     +--rw filter* [type logical-not]
+     |           ...
+     +--rw policies
+        +--rw policy* [name type]
+           +--rw name           string
+           +--rw type           identityref
+           +--rw description?   string
+           +--rw classifier* [name]
+                 ...
+
+     augment /if:interfaces/if:interface:
+       +--rw qos-target-policy* [direction type]
+          +--rw direction    identityref
+          +--rw type         identityref
+          +--rw name         string
+
+
+                 Figure 2: ietf-traffic-policy tree diagram
+
+   QoS Action module contains grouping of set of QoS actions.  These
+   include metering, marking, dropping and shaping.  Marking sets
+   DiffServ codepoint value in the classified packet.  Color-aware and
+   Color-blind meters are augmented by vendor specific modules based on
+   the parameters defined in action module.
+
+
+
+
+
+
+
+
+
+
+
+Choudhary, et al.       Expires 11 September 2023               [Page 8]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+   module: ietf-qos-action
+     +--rw meters
+     |  +--rw meter* [name]
+     |     +--rw name                                   string
+     |     +--rw (meter-types)?
+     |           ...
+     +--rw queues
+        +--rw queue* [name]
+           +--rw name     string
+           +--rw queue
+                 ...
+
+                  Figure 3: ietf-qos-actions tree diagram
+
+   Traffic Policy module contains reference of qos-policy and augments
+   ietf-interfaces [RFC8343] module.  A single policy of a particular
+   policy-type can be applied on an interface in each direction of
+   traffic.  Policy-type is of type identity and is populated in a
+   vendor specific manner.  This way it provides greater flexibility for
+   each vendor to define different policy types each with its own
+   capabilities and restrictions.
+
+   Classifier, metering and queuing counters are associated with a
+   target.
+
+   Diffserv module augments QoS classifier module.  Many of the YANG
+   types defined in [RFC6991] are represented as leafs in the classifier
+   module.
+
+   Metering and marking actions are realized by augmenting the QoS
+   policy-module.  Any queuing, AQM and scheduling actions are part of
+   vendor specific augmentation.  Statistics are realized by augmenting
+   the QoS target module.
+
+   Classifier statistics consist of list of classifier entries
+   identified by a classifier entry name.  Classifier counters include
+   matched packets and bytes, and average rate of traffic matching a
+   particular classifier.
+
+   Metering statistics consist of meters identified by an identifier.
+   Metering counters include conform, exceed, violate, drop packets, and
+   bytes.
+
+   Queuing counters include instantaneous, peak, average queue length,
+   as well as output conform, exceed, tail drop packets and bytes.
+
+
+
+
+
+
+Choudhary, et al.       Expires 11 September 2023               [Page 9]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+   Named statistics is defined as statistics which is tagged by a name.
+   This could be aggregated or non-aggregated.  Aggregated named
+   statistics is defined as counters which are aggregated across
+   classifier entries in a policy applied to an interface in a
+   particular direction.  Non-aggregated named statistics are counters
+   of classifier, metering or queuing which have the same tag name but
+   maintained separately.
+
+   module: ietf-diffserv
+
+     augment /policy:classifiers/policy:classifier/policy:filter:
+       +--rw (filter-param)?
+          +--:(dscp)
+          |  +--rw dscp* [min max]
+          |        ...
+          +--:(source-ipv4-prefix)
+          |  +--rw source-ipv4-prefix* [prefix]
+          |        ...
+          +--:(destination-ipv4-prefix)
+          |  +--rw destination-ipv4-prefix* [prefix]
+          |        ...
+          +--:(source-ipv6-prefix)
+          |  +--rw source-ipv6-prefix* [prefix]
+          |        ...
+          +--:(destination-ipv6-prefix)
+          |  +--rw destination-ipv6-prefix* [prefix]
+          |        ...
+          +--:(source-port)
+          |  +--rw source-port* [min max]
+          |        ...
+          +--:(destination-port)
+          |  +--rw destination-port* [min max]
+          |        ...
+          +--:(protocol)
+          |  +--rw protocol* [min max]
+          |        ...
+          +--:(traffic-group)
+             +--rw traffic-group
+                   ...
+     augment /policy:policies/policy:policy/policy:classifier
+               /policy:inline/policy:filter:
+       +--rw (filter-params)?
+          +--:(dscp)
+          |  +--rw dscp* [min max]
+          |        ...
+          +--:(source-ipv4-prefix)
+          |  +--rw source-ipv4-prefix* [prefix]
+          |        ...
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 10]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+          +--:(destination-ipv4-prefix)
+          |  +--rw destination-ipv4-prefix* [prefix]
+          |        ...
+          +--:(source-ipv6-prefix)
+          |  +--rw source-ipv6-prefix* [prefix]
+          |        ...
+          +--:(destination-ipv6-prefix)
+          |  +--rw destination-ipv6-prefix* [prefix]
+          |        ...
+          +--:(source-port)
+          |  +--rw source-port* [min max]
+          |        ...
+          +--:(destination-port)
+          |  +--rw destination-port* [min max]
+          |        ...
+          +--:(protocol)
+          |  +--rw protocol* [min max]
+          |        ...
+          +--:(traffic-group)
+             +--rw traffic-group
+                   ...
+     augment /policy:policies/policy:policy/policy:classifier
+               /policy:action/policy:action-params:
+       +--:(dscp-marking)
+       |  +--rw dscp
+       |     +--rw dscp?   inet:dscp
+       +--:(meter-inline)
+       |  +--rw (meter-types)?
+       |     +--:(single-rate-two-color-meter-type)
+       |     |     ...
+       |     +--:(single-rate-three-color-meter-type)
+       |     |     ...
+       |     +--:(two-rate-three-color-meter-type)
+       |           ...
+       +--:(meter-reference)
+       |  +--rw meter
+       |     +--rw name    string
+       |     +--rw type    identityref
+       +--:(traffic-group-marking)
+       |  +--rw traffic-group
+       |     +--rw traffic-group?   string
+       +--:(child-policy) {qos-types:child-policy}?
+       |  +--rw child-policy {qos-types:child-policy}?
+       |     +--rw name?   string
+       +--:(count) {qos-types:count}?
+       |  +--rw count {qos-types:count}?
+       |     +--rw count-action?   empty
+       +--:(named-count) {qos-types:named-counter}?
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 11]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+       |  +--rw named-counter {qos-types:named-counter}?
+       |     +--rw count-name-action?   string
+       +--:(queue-inline)
+       |  +--rw queue
+       |     +--rw priority
+       |     |     ...
+       |     +--rw min-rate
+       |     |     ...
+       |     +--rw max-rate
+       |     |     ...
+       |     +--rw algorithmic-drop
+       |           ...
+       +--:(scheduler-inline)
+          +--rw scheduler
+             +--rw min-rate
+             |     ...
+             +--rw max-rate
+                   ...
+
+                    Figure 4: ietf-diffserv tree diagram
+
+   module: ietf-queue-policy
+
+     augment /policy:policies/policy:policy/policy:classifier
+               /policy:inline/policy:filter:
+       +--rw (filter-params)?
+          +--:(traffic-group-name)
+             +--rw traffic-group
+                   ...
+     augment /policy:policies/policy:policy/policy:classifier
+               /policy:action/policy:action-params:
+       +--:(queue-template-name)
+       |  +--rw queue-reference
+       |     +--rw queue-name    string
+       +--:(queue-inline)
+          +--rw queue
+             +--rw priority
+             |     ...
+             +--rw min-rate
+             |     ...
+             +--rw max-rate
+             |     ...
+             +--rw algorithmic-drop
+                   ...
+
+                  Figure 5: ietf-queue-policy tree diagram
+
+
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 12]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+   module: ietf-scheduler-policy
+
+     augment /policy:policies/policy:policy/policy:classifier
+               /policy:inline/policy:filter:
+       +--rw (filter-params)?
+          +--:(filter-match-all)
+             +--rw match-all
+                   ...
+     augment /policy:policies/policy:policy/policy:classifier
+               /policy:action/policy:action-params:
+       +--:(scheduler)
+       |  +--rw scheduler
+       |     +--rw min-rate
+       |     |     ...
+       |     +--rw max-rate
+       |           ...
+       +--:(queue-policy-name)
+          +--rw queue-policy-name
+             +--rw queue-policy    string
+
+                Figure 6: ietf-scheduler-policy tree diagram
+
+   module: ietf-qos-oper
+
+     augment /if:interfaces/if:interface:
+       +--ro qos-interface-statistics
+          +--ro stats-per-direction* []
+          |  +--ro direction?     identityref
+          |  +--ro policy-name?   string
+          |  +--ro classifier* []
+          |  |     ...
+          |  +--ro named* []
+          |  |     ...
+          |  +--ro metering* []
+          |  |     ...
+          |  +--ro queueing* []
+          |        ...
+          +---x clear
+             +---w input
+                   ...
+
+                    Figure 7: ietf-qos-oper tree diagram
+
+5.  Modules
+
+   Modules defined in this draft import definitions from "Common YANG
+   Data Types" [RFC6991] and "A YANG Data Model for Interface
+   Management" [RFC8343].
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 13]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+5.1.  ietf-traffic-policy
+
+   <CODE BEGINS> file "ietf-traffic-policy@2023-03-10.yang"
+   module ietf-traffic-policy {
+     yang-version 1.1;
+     namespace "urn:ietf:params:xml:ns:yang:ietf-traffic-policy";
+     prefix policy;
+
+     import ietf-interfaces {
+       prefix if;
+     }
+     import iana-qos-types {
+       prefix qos-types;
+       reference
+         "RFC XXXX: YANG Data Models for Quality of Service (QoS).";
+     }
+
+     organization
+       "IETF Routing Area Working Group";
+
+     contact
+       "WG Web:   <https://datatracker.ietf.org/wg/rtgwg/>
+        WG List:  <mailto:rtgwg@ietf.org>
+
+        Editor:   Aseem Choudhary
+                  <mailto:achoudhary@aviatrix.com>
+        Editor:   Mahesh Jethanandani
+                  <mailto:mjethanandani@gmail.com>";
+
+     description
+       "This module contains a collection of YANG definitions for
+        configuring qos specification implementations.
+
+        Copyright (c) 2021 IETF Trust and the persons identified as
+        authors of the code.  All rights reserved.
+
+        Redistribution and use in source and binary forms, with or
+        without modification, is permitted pursuant to, and subject
+        to the license terms contained in, the Revised BSD License
+        set forth in Section 4.c of the IETF Trust's Legal Provisions
+        Relating to IETF Documents
+        (http://trustee.ietf.org/license-info).
+
+        This version of this YANG module is part of RFC XXXX; see
+        the RFC itself for full legal notices.";
+
+     revision 2023-03-10 {
+       description
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 14]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+         "Initial version";
+       reference
+         "RFC XXXX: YANG Models for Quality of Service (QoS).";
+     }
+
+     grouping filters {
+       description
+         "Filters types in a Classifier entry";
+       leaf type {
+         type identityref {
+           base qos-types:filter-type;
+         }
+         description
+           "This leaf defines type of the filter";
+       }
+       leaf logical-not {
+         type boolean;
+         description
+           "This is logical-not operator for filter values and/or value
+            ranges. When true, it indicates filter looks for absence
+            of values and/or value ranges defined by the filter.";
+       }
+     }
+     grouping generic-classifier-attr {
+       description
+         "
+          Classifier generic attributes like name,
+          description, operation type
+         ";
+       leaf name {
+         type string;
+         description
+           "classifier entry name";
+       }
+       leaf description {
+         type string;
+         description
+           "classifier entry description statement";
+       }
+       leaf filter-operation {
+         type qos-types:match-operation-type;
+         description
+           "Filters are applicable as match-any or match-all filters";
+       }
+     }
+     grouping inline-attr {
+       description
+         "attributes of inline classifier in a policy";
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 15]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+       leaf filter-operation {
+         type qos-types:match-operation-type;
+         description
+           "Filters are applicable as match-any or match-all filters";
+       }
+       list filter{
+         key "type logical-not";
+         uses filters;
+         description
+           "Filters configured inline in a policy";
+       }
+     }
+
+     grouping classifier-action-entry {
+       description
+         "List of Configuration of classifier & associated actions";
+       list action {
+         key "type";
+         ordered-by user;
+         description
+           "Configuration of classifier & associated actions";
+         leaf type {
+           type identityref {
+             base qos-types:action-type;
+           }
+           description
+             "This defines action type ";
+         }
+         choice action-params {
+           description
+             "Choice of action types";
+         }
+       }
+     }
+     container classifiers {
+       description
+         "list of classifier entry";
+       list classifier{
+         key "name";
+         description
+           "each classifier entry contains a list of filters";
+         uses generic-classifier-attr;
+         list filter {
+           key "type logical-not";
+           uses filters;
+           description
+             "Filter entry configuration";
+         }
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 16]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+       }
+     }
+     container policies{
+       description
+         "list of policy templates";
+       list policy{
+         key "name type";
+         description
+           "policy template";
+
+         leaf name {
+           type string;
+           description
+             "policy name";
+         }
+
+         leaf type {
+           type identityref {
+             base qos-types:policy-type;
+           }
+           description
+             "policy type";
+         }
+         leaf description {
+           type string;
+           description
+             "policy description";
+         }
+
+         list classifier{
+           key "name";
+           ordered-by user;
+           description
+             "Classifier entry configuration in a policy";
+           leaf name {
+             type string;
+             description
+               "classifier entry name";
+           }
+           container inline {
+             presence "This container is present for when the device
+                       is configured for inline classification";
+             uses inline-attr;
+             description
+               "Container for when an inline classification
+                is desired.";
+           }
+           uses classifier-action-entry;
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 17]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+         }
+       }
+     }
+     augment "/if:interfaces/if:interface" {
+       description
+         "Augments Diffserv Target Entry to Interface module";
+       list qos-target-policy {
+         key "direction type";
+         description
+           "policy target for inbound or outbound direction";
+         leaf direction {
+           type identityref {
+             base qos-types:direction;
+           }
+           description
+             "Direction of the traffic flow either inbound or outbound";
+         }
+         leaf type {
+           type identityref {
+             base qos-types:policy-type;
+           }
+           description
+             "Policy entry type";
+         }
+         leaf name {
+           type string;
+           mandatory true;
+           description
+             "Policy name";
+         }
+       }
+     }
+   }
+   <CODE ENDS>
+
+                    Figure 8: ietf-traffic-policy module
+
+5.2.  ietf-qos-action
+
+   <CODE BEGINS>
+   file "ietf-qos-action@2023-03-10.yang"
+   module ietf-qos-action {
+     yang-version 1.1;
+     namespace "urn:ietf:params:xml:ns:yang:ietf-qos-action";
+     prefix action;
+
+     import ietf-inet-types {
+       prefix inet;
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 18]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+       reference
+         "RFC 6991: Common YANG Data Types";
+     }
+     import iana-qos-types {
+       prefix qos-types;
+       reference
+         "RFC XXXX: YANG Model for QoS";
+     }
+
+     organization
+       "IETF Routing Area Working Group";
+
+     contact
+       "WG Web:   <https://datatracker.ietf.org/wg/rtgwg/>
+        WG List:  <mailto:rtgwg@ietf.org>
+
+        Editor:   Aseem Choudhary
+                  <mailto:achoudhary@aviatrix.com>
+        Editor:   Mahesh Jethanandani
+                  <mailto:mjethanandani@gmail.com>";
+
+     description
+       "This module contains a collection of YANG definitions for
+        configuring qos specification implementations.
+
+        Copyright (c) 2021 IETF Trust and the persons identified as
+        authors of the code.  All rights reserved.
+
+        Redistribution and use in source and binary forms, with or
+        without modification, is permitted pursuant to, and subject
+        to the license terms contained in, the Revised BSD License
+        set forth in Section 4.c of the IETF Trust's Legal Provisions
+        Relating to IETF Documents
+        (http://trustee.ietf.org/license-info).
+
+        This version of this YANG module is part of RFC XXXX; see
+        the RFC itself for full legal notices.";
+
+     revision 2023-03-10 {
+       description
+         "Initial version";
+       reference
+         "RFC XXXX: YANG Models for Quality of Service (QoS).";
+     }
+
+     grouping rate-value-unit {
+       leaf value {
+         type uint64;
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 19]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+         description
+           "rate value";
+       }
+       leaf unit {
+         type identityref {
+           base qos-types:rate-unit-type;
+         }
+         description
+           "rate unit";
+       }
+       description
+         "rate value and unit grouping";
+     }
+
+     grouping meter-action-params {
+       description
+         "meter action parameters";
+
+       list action {
+         key "action-type";
+         ordered-by user;
+         description
+           "Configuration of basic-meter & associated actions";
+
+         leaf action-type {
+           type identityref {
+             base qos-types:meter-action-type;
+           }
+           description
+             "meter action type";
+         }
+
+         choice action-val {
+           description
+             "Meter action based on choice of meter action type";
+         }
+       }
+     }
+
+
+     grouping single-rate-two-color-meter {
+       container single-rate-two-color-meter {
+         description
+           "A container for Basic Single Rate Two Color Marker.";
+
+         leaf committed-information-rate {
+           type uint64;
+           units "bytes-per-second";
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 20]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+           description
+             "The value for Committed Information Rate (CIR).";
+         }
+
+         leaf committed-burst-size {
+           type uint64;
+           units "bytes";
+           description
+             "The value for Committed Burst Size (CBS).";
+         }
+
+         container conform-action {
+           uses meter-action-params;
+           description
+             "A packet is marked conforming, or green if it does not
+              exceed CIR.";
+         }
+
+         container exceed-action {
+           uses meter-action-params;
+           description
+             "A packet is marked exceeding, or yellow if it does
+              exceed CIR.";
+         }
+       }
+       description
+         "A grouping for Single Rate Two Color Meter attributes.";
+     }
+
+     grouping single-rate-three-color-meter {
+       container single-rate-three-color-meter {
+         description
+           "Grouping that defines the Single Rate Three Color Meter
+           (srTCM).";
+
+         leaf committed-information-rate {
+           type uint64;
+           units "bytes-per-second";
+           description
+             "The value for Committed Information Rate (CIR).";
+           reference
+             "RFC 2697: A Single Rate Three Color Marker.";
+         }
+
+         leaf committed-burst-size {
+           type uint64;
+           units "bytes";
+           description
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 21]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+             "The value for Committed Burst Size (CBS).";
+           reference
+             "RFC 2697: A Single Rate Three Color Marker.";
+         }
+
+         leaf excess-burst-size {
+           type uint64;
+           units "bytes";
+           description
+             "The value for Excess Burst Size (EBS).";
+           reference
+             "RFC 2697: A Single Rate Three Color Marker.";
+         }
+
+         container conform-action {
+           uses meter-action-params;
+           description
+             "A packet is marked conforming, or green if it does not
+              exceed CBS.";
+           reference
+             "RFC 2697: A Single Rate Three Color Marker.";
+         }
+
+         container exceed-action {
+           uses meter-action-params;
+           description
+             "A packet is marked exceeding, or yellow if it does exceed
+              CBS, but not the EBS.";
+           reference
+             "RFC 2697: A Single Rate Three Color Marker.";
+         }
+
+         container violate-action {
+           uses meter-action-params;
+           description
+             "A packet is marked violating, or red if it is exceeds
+              both CBS and EBS.";
+           reference
+             "RFC 2697: A Single Rate Three Color Marker.";
+         }
+       }
+       description
+         "Single Rate Three Color Marker attributes";
+     }
+
+     grouping two-rate-three-color-meter {
+       description
+         "A grouping that defines A Two Rate Three Color Meter
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 22]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+          (trTCM).";
+       container two-rate-three-color-meter {
+         description
+           "A container that defines A Two Rate Three Color Meter
+            (trTCM).";
+
+         leaf committed-information-rate {
+           type uint64;
+           units "bytes-per-second";
+           description
+             "The value for Committed Information Rate (CIR).";
+           reference
+             "RFC 2698: A Two Rate Three Color Marker.";
+         }
+
+         leaf committed-burst-size {
+         type uint64;
+           units "bytes";
+           description
+             "The value for Commited Burst Size (CBS).";
+           reference
+             "RFC 2698: A Two Rate Three Color Marker.";
+         }
+
+         leaf peak-information-rate {
+           type uint64;
+           units "bytes-per-second";
+           description
+             "The value for Peak Information Rate (PIR).";
+           reference
+             "RFC 2698: A Two Rate Three Color Marker.";
+         }
+
+         leaf peak-burst-size {
+           type uint64;
+           units "bytes";
+           description
+             "The value for Peak Burst Size (PBS).";
+           reference
+             "RFC 2698: A Two Rate Three Color Marker.";
+         }
+
+         container conform-action {
+           uses meter-action-params;
+           description
+             "A packet is marked conforming, or green, if it does not
+              exceed CIR.";
+           reference
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 23]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+             "RFC 2698: A Two Rate Three Color Marker.";
+         }
+
+         container exceed-action {
+           uses meter-action-params;
+           description
+             "A packet is marked exceeding, or yellow, if it exceeds
+              CIR but not PIR.";
+           reference
+             "RFC 2698: A Two Rate Three Color Marker.";
+         }
+
+         container violate-action {
+           uses meter-action-params;
+           description
+             "A packet is marked as violating, or red, if it exceeds
+              both CIR and PIR.";
+           reference
+             "RFC 2698: A Two Rate Three Color Marker.";
+         }
+       }
+     }
+
+     grouping meter {
+       choice meter-types {
+         case single-rate-two-color-meter-type {
+           uses single-rate-two-color-meter;
+           description
+             "A Basic Single Rate Two Color Meter.";
+         }
+
+         case single-rate-three-color-meter-type {
+           uses single-rate-three-color-meter;
+           description
+             "Singe Rate Three Color Meter (srTCM).";
+           reference
+             "RFC 2697: A Single Rate Three Color Marker.";
+         }
+
+         case two-rate-three-color-meter-type {
+           uses two-rate-three-color-meter;
+           description
+             "A Two Rate Three Color Marker.";
+         }
+         description
+           "A meter action based on choice of meter action type.";
+       }
+       description
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 24]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+         "Meter attributes.";
+     }
+
+     container meters {
+       description
+         "list of meter templates";
+
+       list meter {
+         key "name";
+         description
+           "meter entry template";
+
+         leaf name {
+           type string;
+           description
+             "meter identifier";
+         }
+         uses meter;
+       }
+     }
+
+     grouping meter-reference {
+       container meter {
+         leaf name {
+           type string ;
+           mandatory true;
+           description
+             "This leaf defines name of the meter referenced";
+         }
+         leaf type {
+           type identityref {
+             base qos-types:meter-type;
+           }
+           mandatory true;
+           description
+             "This leaf defines type of the meter";
+         }
+         description
+           "meter reference name";
+       }
+       description
+         "meter reference";
+     }
+
+     grouping count {
+       container count {
+       if-feature qos-types:count;
+         leaf count-action {
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 25]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+           type empty;
+           description
+             "count action";
+         }
+         description
+           "the count action";
+       }
+       description
+         "the count action grouping";
+     }
+
+     grouping named-counter {
+       container named-counter {
+       if-feature qos-types:named-counter;
+         leaf count-name-action {
+           type string;
+           description
+             "count action";
+         }
+         description
+           "the count action";
+       }
+       description
+         "the count action grouping";
+     }
+
+     grouping discard {
+       container discard {
+         leaf discard {
+           type empty;
+           description
+             "discard action";
+         }
+         description
+           "discard action";
+       }
+       description
+         "discard grouping";
+     }
+
+     grouping priority {
+       container priority {
+         leaf level {
+           type uint8;
+           description
+             "priority level";
+         }
+         description
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 26]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+           "priority attributes";
+       }
+       description
+         "priority attributes grouping";
+     }
+     grouping min-rate {
+       container min-rate {
+         uses rate-value-unit;
+         description
+           "min guaranteed bandwidth";
+       }
+       description
+         "minimum rate grouping";
+     }
+     grouping dscp-marking {
+       container dscp {
+         leaf dscp {
+           type inet:dscp;
+           description
+             "dscp marking";
+         }
+         description
+           "dscp marking container";
+       }
+       description
+         "dscp marking grouping";
+     }
+     grouping traffic-group-marking {
+       container traffic-group {
+         leaf traffic-group {
+           type string;
+           description
+             "traffic group marking";
+         }
+         description
+           "traffic group marking container";
+       }
+       description
+         "traffic group marking grouping";
+     }
+     grouping child-policy {
+       container child-policy {
+         if-feature qos-types:child-policy;
+         leaf name {
+           type string;
+           description
+             "Hierarchical Policy";
+         }
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 27]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+         description
+           "Hierarchical Policy configuration container";
+       }
+       description
+         "Grouping of Hierarchical Policy configuration";
+     }
+
+     grouping max-rate {
+       container max-rate {
+         uses rate-value-unit;
+
+         leaf burst-value {
+           type uint64;
+           description
+             "Burst value in bytes.";
+         }
+
+         leaf burst-unit {
+           type identityref {
+             base qos-types:burst-unit-type;
+           }
+           description
+             "Unit specification for the burst value.";
+         }
+         description
+           "Maximum rate attributes container";
+       }
+       description
+         "Grouping for maximum rate attributes";
+     }
+
+     grouping red-config-parameters {
+       leaf min-threshold-val {
+         type uint64;
+         description
+          "minimum value of red threshold";
+       }
+       leaf min-threshold-unit {
+         type identityref {
+           base qos-types:red-threshold-unit;
+         }
+         description
+          "unit of minimum red threshold";
+       }
+       leaf max-threshold-val {
+         type uint64;
+         description
+          "maximum value of red threshold";
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 28]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+       }
+       leaf max-threshold-unit {
+         type identityref {
+           base qos-types:red-threshold-unit;
+         }
+         description
+          "unit of maximum red threshold";
+       }
+       leaf weight {
+         type uint8;
+         description
+          "the decay factor for the average queue size
+           calculation. the numbers are 2's exponent";
+       }
+       leaf max-probability-val {
+         type uint64;
+         description
+          "value of maximum probability value. this value need
+           be interpreted along with max-probability-unit";
+       }
+       leaf max-probability-unit {
+         type identityref {
+           base qos-types:probability-unit;
+         }
+         description
+          "probability unit type as defined
+           by probability-unit";
+       }
+       description
+         "Random Early Detect Configuration Parameters";
+     }
+     grouping queue {
+       container queue {
+         uses priority;
+         uses min-rate;
+         uses max-rate;
+         container algorithmic-drop {
+           choice drop-algorithm {
+             case tail-drop {
+               container tail-drop {
+                 leaf tail-drop {
+                   type empty;
+                   description
+                    "tail drop algorithm";
+                 }
+                 description
+                   "Tail Drop configuration container";
+               }
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 29]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+               description
+                 "Tail Drop choice";
+             }
+             case red {
+               container red {
+                 uses red-config-parameters;
+                 leaf ecn-enabled {
+                   type boolean;
+                   default "false";
+                   description
+                     "ecn is enabled on the queue";
+                 }
+                 description
+                   "Random Early Detect configuration";
+               }
+             }
+             case wred {
+               container wred {
+                 list wred {
+                   key "profile";
+                   leaf profile {
+                     type uint8;
+                     description
+                       "profile id of each wred profile";
+                   }
+                   leaf color-type {
+                     type identityref {
+                       base qos-types:wred-color-type;
+                     }
+                     description
+                       "wred color-type of each profile";
+                   }
+                   list color-val {
+                     key "min max";
+                     leaf min {
+                       type uint8;
+                       description
+                         "minimum value of color types";
+                     }
+                     leaf max {
+                       type uint8;
+                       description
+                         "maximum value of color types";
+                     }
+                     description
+                       "list of color markings which constitute
+                        a traffic profile";
+                   }
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 30]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+                   uses red-config-parameters;
+                   description
+                     "list of RED profiles each with its own
+                      threshold values";
+                 }
+                 leaf ecn-enabled {
+                   type boolean;
+                   default "false";
+                   description
+                     "ecn is enabled on the queue";
+                 }
+                 description
+                   "Weighted Random Early Detect configuration";
+               }
+             }
+             description
+               "Choice of Drop Algorithm";
+           }
+           description
+             "Algorithmic Drop configuration container";
+         }
+         description
+           "Queue configuration container";
+       }
+       description
+         "Queue grouping";
+     }
+
+     container queues {
+       description
+         "List of queue templates";
+
+       list queue {
+         key "name";
+         description
+           "Queue entry template";
+
+         leaf name {
+           type string;
+           description
+             "A unique name identifying this queue template";
+         }
+         uses queue;
+       }
+     }
+
+     grouping queue-reference {
+       container queue-reference {
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 31]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+         leaf queue-name {
+           type string;
+           mandatory true;
+           description
+             "This leaf defines name of the  queue template referenced";
+         }
+         description
+           "Queue template reference";
+       }
+       description
+         "Queue template reference grouping";
+     }
+
+     grouping scheduler {
+       container scheduler {
+         uses min-rate;
+         uses max-rate;
+         description
+           "Schedular configuration container";
+       }
+       description
+         "Schedular configuration grouping";
+     }
+   }
+   <CODE ENDS>
+
+                     Figure 9: ietf-qos-actions module
+
+5.3.  ietf-diffserv
+
+   <CODE BEGINS>
+   file "ietf-diffserv@2023-03-10.yang"
+   module ietf-diffserv {
+     yang-version 1.1;
+     namespace "urn:ietf:params:xml:ns:yang:ietf-diffserv";
+     prefix diffserv;
+
+     import ietf-traffic-policy {
+       prefix policy;
+     }
+     import ietf-qos-action {
+       prefix action;
+     }
+     import ietf-inet-types {
+       prefix inet;
+     }
+     import iana-qos-types {
+       prefix qos-types;
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 32]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+       reference
+         "RFC XXXX: YANG Models for Quality of Service (QoS).";
+     }
+
+     organization
+       "IETF Routing Area Working Group";
+
+     contact
+       "WG Web:   <https://datatracker.ietf.org/wg/rtgwg/>
+        WG List:  <mailto:rtgwg@ietf.org>
+
+        Editor:   Aseem Choudhary
+                  <mailto:achoudhary@aviatrix.com>
+        Editor:   Mahesh Jethanandani
+                  <mailto:mjethanandani@gmail.com>";
+
+     description
+       "This module contains a collection of YANG definitions for
+        configuring diffserv specification implementations.
+
+        Copyright (c) 2021 IETF Trust and the persons identified as
+        authors of the code.  All rights reserved.
+
+        Redistribution and use in source and binary forms, with or
+        without modification, is permitted pursuant to, and subject
+        to the license terms contained in, the Revised BSD License
+        set forth in Section 4.c of the IETF Trust's Legal Provisions
+        Relating to IETF Documents
+        (http://trustee.ietf.org/license-info).
+
+        This version of this YANG module is part of RFC XXXX; see
+        the RFC itself for full legal notices.";
+
+     revision 2023-03-10 {
+       description
+         "Initial version";
+       reference
+         "RFC XXXX: A YANG Model for Quality of Service (QoS)";
+     }
+
+     grouping dscp {
+       list dscp {
+         key "min max";
+         description
+           "list of dscp ranges";
+         leaf min {
+           type inet:dscp;
+           description
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 33]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+             "Minimum value of dscp min-max range";
+         }
+         leaf max {
+           type inet:dscp;
+           must ". >= ../min" {
+             error-message
+             "The dscp-max must be greater than or equal to dscp-min";
+           }
+           description
+             "maximum value of dscp min-max range";
+         }
+       }
+       description
+         "Filter grouping containing list of dscp ranges";
+     }
+     grouping source-ipv4-prefix {
+       list source-ipv4-prefix {
+         key "prefix";
+         description
+           "list of source ipv4 prefix";
+         leaf prefix {
+           type inet:ipv4-prefix;
+           description
+             "source ipv4 prefix";
+         }
+       }
+       description
+         "Filter grouping containing list of source ipv4 prefixes";
+     }
+     grouping destination-ipv4-prefix {
+       list destination-ipv4-prefix {
+         key "prefix";
+         description
+           "list of destination ipv4 prefix";
+         leaf prefix {
+           type inet:ipv4-prefix;
+           description
+             "destination ipv4 prefix";
+         }
+       }
+       description
+         "Filter grouping containing list of destination ipv4 prefix";
+     }
+     grouping source-ipv6-prefix {
+       list source-ipv6-prefix {
+         key "prefix";
+         description
+           "list of source ipv6 prefix";
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 34]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+         leaf prefix {
+           type inet:ipv6-prefix;
+           description
+             "source ipv6 prefix";
+         }
+       }
+       description
+         "Filter grouping containing list of source ipv6 prefixes";
+     }
+     grouping destination-ipv6-prefix {
+       list destination-ipv6-prefix {
+         key "prefix";
+         description
+           "list of destination ipv4 or ipv6 prefix";
+         leaf prefix {
+           type inet:ipv6-prefix;
+           description
+             "destination ipv6 prefix";
+         }
+       }
+       description
+         "Filter grouping containing list of destination ipv6 prefix";
+     }
+     grouping source-port {
+       list source-port {
+         key "min max";
+         description
+           "list of ranges of source port";
+         leaf min {
+           type inet:port-number;
+           description
+             "minimum value of source port range";
+         }
+         leaf max {
+           type inet:port-number;
+           must ". >= ../min" {
+             error-message
+             "The source-port-max must be greater than or equal to
+              source-port-min";
+           }
+           description
+             "maximum value of source port range";
+         }
+       }
+       description
+         "Filter grouping containing list of source port ranges";
+     }
+     grouping destination-port {
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 35]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+       list destination-port {
+         key "min max";
+         description
+           "list of ranges of destination port";
+         leaf min {
+           type inet:port-number;
+           description
+             "minimum value of destination port range";
+         }
+         leaf max {
+           type inet:port-number;
+           must ". >= ../min" {
+             error-message
+             "The destination-port-max must be greater than or equal to
+              destination-port-min";
+           }
+           description
+             "maximum value of destination port range";
+         }
+       }
+       description
+         "Filter grouping containing list of destination port ranges";
+     }
+     grouping protocol {
+       list protocol {
+         key "min max";
+         description
+           "list of ranges of protocol values. Protocol refers to the
+            value in the protocol field of the ipv4 header and value
+            in the 'next-header' field of ipv6 header. In ipv6 header,
+            'next-header' field indicates first extension header or the
+             protocol in the 'upper-layer' header.";
+         reference
+           "RFC 791: Internet Protocol
+            RFC 8200: Internet Protocol, Version 6 (IPv6)
+                      Specification";
+         leaf min {
+           type uint8 {
+             range "0..255";
+           }
+           description
+             "minimum value of protocol range";
+         }
+         leaf max {
+           type uint8 {
+             range "0..255";
+           }
+           must ". >= ../min" {
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 36]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+             error-message
+             "The protocol-max must be greater than or equal to
+              protocol-min";
+           }
+           description
+             "maximum value of protocol range";
+         }
+       }
+       description
+         "Filter grouping containing list of Protocol ranges";
+     }
+     grouping traffic-group {
+       container traffic-group {
+         leaf name {
+           type string ;
+           description
+             "This leaf defines name of the traffic group referenced";
+         }
+       description
+         "traffic group container";
+       }
+       description
+         "traffic group grouping";
+     }
+
+     augment "/policy:classifiers/policy:classifier" +
+             "/policy:filter" {
+       choice filter-param {
+         description
+           "Choice of filter types";
+         case dscp {
+           uses dscp;
+           description
+             "Filter containing list of dscp ranges";
+         }
+         case source-ipv4-prefix {
+           uses source-ipv4-prefix;
+           description
+             "Filter containing list of source ipv4 prefixes";
+         }
+         case destination-ipv4-prefix {
+           uses destination-ipv4-prefix;
+           description
+             "Filter containing list of destination ipv4 prefix";
+         }
+         case source-ipv6-prefix {
+           uses source-ipv6-prefix;
+           description
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 37]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+             "Filter containing list of source ipv6 prefixes";
+         }
+         case destination-ipv6-prefix {
+           uses destination-ipv6-prefix;
+           description
+             "Filter containing list of destination ipv6 prefix";
+         }
+         case source-port {
+           uses source-port;
+           description
+             "Filter containing list of source-port ranges";
+         }
+         case destination-port {
+           uses destination-port;
+           description
+             "Filter containing list of destination-port ranges";
+         }
+         case protocol {
+           uses protocol;
+           description
+             "Filter Type Protocol";
+         }
+         case traffic-group {
+           uses traffic-group;
+           description
+             "Filter Type traffic-group";
+         }
+       }
+       description
+         "augments diffserv filters to qos classifier";
+     }
+     augment "/policy:policies/policy:policy/policy:classifier" +
+             "/policy:inline/policy:filter" {
+       when "derived-from-or-self(../../../policy:type, " +
+            "'qos-types:ipv4-diffserv-policy-type') or " +
+            "derived-from-or-self(../../../policy:type, " +
+            "'qos-types:ipv6-diffserv-policy-type') or " +
+            "derived-from-or-self(../../../policy:type, " +
+            "'qos-types:diffserv-policy-type')" {
+         description
+           "If policy type is v4, v6 or default diffserv,
+            this filter can be used.";
+       }
+       choice filter-params {
+         description
+           "Choice of action types";
+         case dscp {
+           uses dscp;
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 38]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+           description
+             "Filter containing list of dscp ranges";
+         }
+         case source-ipv4-prefix {
+           when "derived-from-or-self(/policy:policies/" +
+                "policy:policy/policy:type, " +
+                "'qos-types:ipv6-diffserv-policy-type')" {
+               description
+                  "If policy type is v6, this filter cannot be used.";
+           }
+           uses source-ipv4-prefix;
+           description
+             "Filter containing list of source ipv4 prefixes";
+         }
+         case destination-ipv4-prefix {
+           when "derived-from-or-self(/policy:policies" +
+                "/policy:policy/policy:type, " +
+                "'qos-types:ipv6-diffserv-policy-type')" {
+               description
+                  "If policy type is v6, this filter cannot be used.";
+           }
+           uses destination-ipv4-prefix;
+           description
+             "Filter containing list of destination ipv4 prefix";
+         }
+         case source-ipv6-prefix {
+           when "derived-from-or-self(/policy:policies" +
+                "/policy:policy/policy:type, "+
+                "'qos-types:ipv4-diffserv-policy-type')" {
+               description
+                  "If policy type is v4, this filter cannot be used.";
+           }
+           uses source-ipv6-prefix;
+           description
+             "Filter containing list of source ipv6 prefixes";
+         }
+         case destination-ipv6-prefix {
+           when "derived-from-or-self(/policy:policies" +
+                "/policy:policy/policy:type, " +
+                "'qos-types:ipv4-diffserv-policy-type')" {
+               description
+                  "If policy type is v4, this filter cannot be used.";
+           }
+           uses destination-ipv6-prefix;
+           description
+             "Filter containing list of destination ipv6 prefix";
+         }
+         case source-port {
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 39]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+           uses source-port;
+           description
+             "Filter containing list of source-port ranges";
+         }
+         case destination-port {
+           uses destination-port;
+           description
+             "Filter containing list of destination-port ranges";
+         }
+         case protocol {
+           uses protocol;
+           description
+             "Filter Type Protocol";
+         }
+         case traffic-group {
+           uses traffic-group;
+           description
+             "Filter Type traffic-group";
+         }
+       }
+       description
+         "Augments Diffserv Classifier with common filter types";
+     }
+     augment "/policy:policies/policy:policy/policy:classifier" +
+             "/policy:action/policy:action-params" {
+       when "derived-from-or-self(../../policy:type, " +
+            "'qos-types:ipv4-diffserv-policy-type') or " +
+            "derived-from-or-self(../../policy:type, " +
+            "'qos-types:ipv6-diffserv-policy-type') or " +
+            "derived-from-or-self(../../policy:type, " +
+            "'qos-types:diffserv-policy-type')" {
+         description
+           "If policy type is v4, v6 or default diffserv,
+            these actions can be used.";
+       }
+       description
+         "Augments Diffserv Policy with action configuration";
+
+       case dscp-marking {
+         uses action:dscp-marking;
+       }
+       case meter-inline {
+         uses action:meter;
+       }
+       case meter-reference {
+         uses action:meter-reference;
+       }
+       case traffic-group-marking {
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 40]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+         uses action:traffic-group-marking;
+       }
+       case child-policy {
+         if-feature qos-types:child-policy;
+         uses action:child-policy;
+       }
+       case count {
+         if-feature qos-types:count;
+         uses action:count;
+       }
+       case named-count {
+         if-feature qos-types:named-counter;
+         uses action:named-counter;
+       }
+       case queue-inline {
+         uses action:queue;
+       }
+       case scheduler-inline {
+         uses action:scheduler;
+       }
+     }
+   }
+   <CODE ENDS>
+
+                      Figure 10: ietf-diffserv module
+
+5.4.  ietf-queue-policy
+
+   <CODE BEGINS>
+   file "ietf-queue-policy@2023-03-10.yang"
+   module ietf-queue-policy {
+     yang-version 1.1;
+     namespace "urn:ietf:params:xml:ns:yang:ietf-queue-policy";
+     prefix queue-policy;
+
+     import ietf-traffic-policy {
+       prefix policy;
+     }
+     import ietf-qos-action {
+       prefix action;
+     }
+     import ietf-diffserv {
+       prefix diffserv;
+     }
+
+     organization
+       "IETF Routing Area Working Group";
+
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 41]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+     contact
+       "WG Web:   <https://datatracker.ietf.org/wg/rtgwg/>
+        WG List:  <mailto:rtgwg@ietf.org>
+
+        Editor:   Aseem Choudhary
+                  <mailto:achoudhary@aviatrix.com>
+        Editor:   Mahesh Jethanandani
+                  <mailto:mjethanandani@gmail.com>";
+
+     description
+       "This module contains a collection of YANG definitions for
+        configuring diffserv specification implementations.
+
+        Copyright (c) 2021 IETF Trust and the persons identified as
+        authors of the code.  All rights reserved.
+
+        Redistribution and use in source and binary forms, with or
+        without modification, is permitted pursuant to, and subject
+        to the license terms contained in, the Revised BSD License
+        set forth in Section 4.c of the IETF Trust's Legal Provisions
+        Relating to IETF Documents
+        (http://trustee.ietf.org/license-info).
+
+        This version of this YANG module is part of RFC XXXX; see
+        the RFC itself for full legal notices.";
+
+     revision 2023-03-10 {
+       description
+         "Initial version";
+       reference
+         "RFC XXXX: YANG Models for Quality of Service (QoS).";
+     }
+
+     augment "/policy:policies/policy:policy/policy:classifier" +
+             "/policy:inline/policy:filter" {
+       when "derived-from-or-self(../../../policy:type, " +
+            "'queue-policy:queue-policy-type')" {
+         description
+           "If policy type is queue policy, this filter can be used.";
+       }
+
+       choice filter-params {
+         description
+           "Choice of action types";
+         case traffic-group-name {
+           uses diffserv:traffic-group;
+           description
+             "traffic group name";
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 42]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+         }
+       }
+       description
+         "Augments Queue policy Classifier with common filter types";
+     }
+
+     augment "/policy:policies/policy:policy/policy:classifier" +
+             "/policy:action/policy:action-params" {
+       when "derived-from-or-self(../../policy:type,"  +
+            "'queue-policy:queue-policy-type')" {
+         description
+           "queue policy actions.";
+       }
+       case queue-template-name {
+         uses action:queue-reference;
+       }
+       case queue-inline {
+         uses action:queue;
+       }
+       description
+         "augments queue template reference to queue policy";
+     }
+   }
+   <CODE ENDS>
+
+                    Figure 11: ietf-queue-policy module
+
+5.5.  ietf-scheduler-policy
+
+   <CODE BEGINS>
+   file "ietf-scheduler-policy@2023-03-10.yang"
+   module ietf-scheduler-policy {
+     yang-version 1.1;
+     namespace "urn:ietf:params:xml:ns:yang:ietf-scheduler-policy";
+     prefix scheduler-policy;
+
+     import ietf-qos-action {
+       prefix action;
+     }
+     import ietf-traffic-policy {
+       prefix policy;
+     }
+
+     organization
+       "IETF Routing Area Working Group";
+
+     contact
+       "WG Web:   <https://datatracker.ietf.org/wg/rtgwg/>
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 43]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+        WG List:  <mailto:rtgwg@ietf.org>
+
+        Editor:   Aseem Choudhary
+                  <mailto:achoudhary@aviatrix.com>
+        Editor:   Mahesh Jethanandani
+                  <mailto:mjethanandani@gmail.com>";
+
+     description
+       "This module contains a collection of YANG definitions for
+        configuring diffserv specification implementations.
+
+        Copyright (c) 2021 IETF Trust and the persons identified as
+        authors of the code.  All rights reserved.
+
+        Redistribution and use in source and binary forms, with or
+        without modification, is permitted pursuant to, and subject
+        to the license terms contained in, the Revised BSD License
+        set forth in Section 4.c of the IETF Trust's Legal Provisions
+        Relating to IETF Documents
+        (http://trustee.ietf.org/license-info).
+
+        This version of this YANG module is part of RFC XXXX; see
+        the RFC itself for full legal notices.";
+
+     revision 2023-03-10 {
+       description
+         "Initial version";
+       reference
+         "RFC XXXX: YANG Models for Quality of Service (QoS).";
+     }
+
+     grouping filter-match-all {
+       container match-all {
+         leaf match-all-action {
+           type empty;
+           description
+             "match all packets";
+         }
+         description
+           "the match-all action";
+       }
+       description
+         "the match-all filter grouping";
+     }
+
+     augment "/policy:policies/policy:policy/policy:classifier" +
+             "/policy:inline/policy:filter" {
+           when "derived-from-or-self(../../../policy:type, " +
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 44]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+                "'scheduler-policy:scheduler-policy-type')" {
+               description
+                  "Only when policy type is scheduler-policy";
+           }
+       choice filter-params {
+         description
+           "Choice of action types";
+         case filter-match-all {
+           uses filter-match-all;
+           description
+             "filter match-all";
+         }
+       }
+       description
+         "Augments Queue policy Classifier with common filter types";
+     }
+
+     grouping queue-policy-name {
+       container queue-policy-name {
+         leaf queue-policy {
+           type string ;
+           mandatory true;
+           description
+             "This leaf defines name of the queue-policy";
+         }
+       description
+         "container for queue-policy name";
+       }
+       description
+         "queue-policy name grouping";
+     }
+
+
+     augment "/policy:policies/policy:policy/policy:classifier" +
+             "/policy:action/policy:action-params" {
+           when "derived-from-or-self(../../policy:type, " +
+                "'scheduler-policy:scheduler-policy-type')" {
+               description
+                  "Only when policy type is scheduler-policy";
+           }
+         case scheduler {
+           uses action:scheduler;
+         }
+         case queue-policy-name {
+           uses queue-policy-name;
+         }
+       description
+         "augments scheduler template reference to scheduler policy";
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 45]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+     }
+   }
+   <CODE ENDS>
+
+                  Figure 12: ietf-scheduler-policy module
+
+5.6.  ietf-qos-oper
+
+   <CODE BEGINS>
+   file "ietf-qos-oper@2023-03-10.yang"
+   module ietf-qos-oper {
+     yang-version 1.1;
+     namespace "urn:ietf:params:xml:ns:yang:ietf-qos-oper";
+     prefix oper;
+
+     import ietf-yang-types {
+       prefix yang;
+       reference
+         "RFC 6991:Common YANG Data Types";
+     }
+     import ietf-interfaces {
+       prefix if;
+       reference
+         "RFC8343: A YANG Data Model for Interface Management";
+     }
+     import iana-qos-types {
+       prefix qos-types;
+       reference
+         "RFC XXXX: YANG Models for Quality of Service (QoS).";
+     }
+
+
+     organization "IETF RTG (Routing Area) Working Group";
+
+     contact
+       "WG Web:   <http://tools.ietf.org/wg/rtgwg/>
+        WG List:  <mailto:rtgwg@ietf.org>
+        Editor:   Aseem Choudhary
+                  <mailto:achoudhary@aviatrix.com>
+        Editor:   Mahesh Jethanandani
+                  <mailto:mjethanandani@gmail.com>";
+     description
+       "This module contains a collection of YANG definitions for
+        qos operational specification.
+
+        Copyright (c) 2021 IETF Trust and the persons identified as
+        authors of the code.  All rights reserved.
+
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 46]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+        Redistribution and use in source and binary forms, with or
+        without modification, is permitted pursuant to, and subject
+        to the license terms contained in, the Revised BSD License
+        set forth in Section 4.c of the IETF Trust's Legal Provisions
+        Relating to IETF Documents
+        (http://trustee.ietf.org/license-info).
+
+        This version of this YANG module is part of RFC XXXX; see
+        the RFC itself for full legal notices.";
+
+     revision 2023-03-10 {
+       description
+         "Initial version";
+       reference
+         "RFC XXXX: YANG Models for Quality of Service (QoS).";
+     }
+
+     grouping named-stats {
+       description
+         "QoS matching statistics associated with a stats-name";
+       leaf pkts {
+         type yang:zero-based-counter64;
+         description
+           " Number of total matched packets associated
+             to a statistics name";
+       }
+       leaf bytes {
+         type yang:zero-based-counter64;
+         description
+           " Number of total matched bytes associated
+             to a statistics name";
+       }
+       leaf rate {
+         type yang:gauge64;
+         units "bits-per-second";
+         description
+           " Rate of average matched data which is associated
+             to a statistics name";
+       }
+     }
+     grouping meter-stats {
+       description
+         "Metering counters";
+       leaf conform-pkts {
+         type yang:zero-based-counter64;
+         description
+           "Number of packets within conform rate and burst";
+       }
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 47]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+       leaf conform-bytes {
+         type yang:zero-based-counter64;
+         description
+           "Total bytes count within conform rate and burst";
+       }
+       leaf conform-rate {
+         type yang:gauge64;
+         units "bits-per-second";
+         description
+           "Traffic Rate measured as conformimg";
+       }
+       leaf exceed-pkts {
+         type yang:zero-based-counter64;
+         description
+           "Number of non-conforming packets which are within peak rate
+            and peak burst";
+       }
+       leaf exceed-bytes {
+         type yang:zero-based-counter64;
+         description
+           "Total non-conforming bytes count which is within peak rate
+            and peak burst";
+       }
+       leaf exceed-rate {
+         type yang:gauge64;
+         units "bits-per-second";
+         description
+           "Traffic Rate measured as exceeding";
+       }
+       leaf violate-pkts {
+         type yang:zero-based-counter64;
+         description
+           "Number of packets which are beyond peak rate
+            and peak burst";
+       }
+       leaf violate-bytes {
+         type yang:zero-based-counter64;
+         description
+           "Total bytes count which is beyond peak rate and peak burst";
+       }
+       leaf violate-rate {
+         type yang:gauge64;
+         units "bits-per-second";
+         description
+           "Traffic Rate measured as violating";
+       }
+       leaf meter-drop-pkts {
+         type yang:zero-based-counter64;
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 48]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+         description
+           "Number of packets dropped by meter";
+       }
+       leaf meter-drop-bytes {
+         type yang:zero-based-counter64;
+         description
+           "Bytes of packets dropped by meter";
+       }
+     }
+     grouping classifier-statistics {
+       description
+         "Statistics for a classifier";
+       leaf name {
+         type string;
+         description
+           "Classifier Name";
+       }
+       leaf classified-pkts {
+         type yang:zero-based-counter64;
+         description
+           " Number of total packets which filtered
+             to a classifier";
+       }
+       leaf classified-bytes {
+         type yang:zero-based-counter64;
+         description
+           " Number of total bytes which filtered
+             to a classifier";
+       }
+       leaf classified-rate {
+         type yang:gauge64;
+         units "bits-per-second";
+         description
+           " Rate of average data flow through a
+             classifier";
+       }
+     }
+     grouping queuing-stats {
+       description
+         "Statistics for a queue";
+       leaf queue-id {
+         type string;
+         description
+           "Queue Identifier";
+       }
+       leaf transmit-pkts {
+         type yang:zero-based-counter64;
+         description
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 49]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+           "Number of packets transmitted from queue";
+       }
+       leaf transmit-bytes {
+         type yang:zero-based-counter64;
+         description
+           "Number of bytes transmitted from queue";
+       }
+       leaf queue-current-size-bytes {
+         type yang:gauge64;
+         description
+           "Number of bytes currently buffered";
+       }
+       leaf queue-average-size-bytes {
+         type yang:gauge64;
+         description
+           "Average queue size in number of bytes";
+       }
+       leaf queue-peak-size-bytes {
+         type yang:gauge64;
+         description
+           "Peak buffer queue size in bytes";
+       }
+       leaf tail-drop-pkts {
+         type yang:zero-based-counter64;
+         description
+           "Total number of packets tail-dropped";
+       }
+       leaf tail-drop-bytes {
+         type yang:zero-based-counter64;
+         description
+           "Total number of bytes tail-dropped";
+       }
+       leaf red-drop-pkts {
+         type yang:zero-based-counter64;
+         description
+           "Total number of packets dropped through RED mechanism";
+       }
+       leaf red-drop-bytes {
+         type yang:zero-based-counter64;
+         description
+           "Total number of bytes dropped through RED mechanism";
+       }
+       leaf red-ecn-marked-pkts {
+         type yang:zero-based-counter64;
+         description
+           "Total number of packets ECN marked through RED mechanism";
+       }
+       leaf red-ecn-marked-bytes {
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 50]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+         type yang:zero-based-counter64;
+         description
+           "Total number of bytes ECN marked through RED mechanism";
+       }
+       list wred-stats {
+         config false;
+         description
+           "Qos WRED statistics";
+         leaf profile {
+           type uint8;
+           description
+             "profile identifier for each color of traffic";
+         }
+         leaf drop-pkts {
+           type yang:zero-based-counter64;
+           description
+             "Total number of packets dropped through WRED mechanism";
+         }
+         leaf drop-bytes {
+           type yang:zero-based-counter64;
+           description
+             "Total number of bytes dropped through WRED mechanism";
+         }
+         leaf ecn-marked-pkts {
+           type yang:zero-based-counter64;
+           description
+             "Total number of packets ECN marked through
+              WRED mechanism";
+         }
+         leaf ecn-marked-bytes {
+           type yang:zero-based-counter64;
+           description
+             "Total number of bytes ECN marked through WRED mechanism";
+         }
+       }
+     }
+     grouping metering-stats {
+       description
+         "Statistics for a meter";
+       leaf meter-id {
+         type string;
+         description
+           "Meter Identifier";
+       }
+       uses meter-stats;
+     }
+
+     augment "/if:interfaces/if:interface" {
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 51]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+       description
+         "Augments Qos Target Entry to Interface module";
+
+       container qos-interface-statistics {
+         config false;
+         description
+           "Qos Interface statistics";
+
+         list stats-per-direction {
+           description
+             "Qos Interface statistics for ingress or egress direction";
+
+           leaf direction {
+             type identityref {
+               base qos-types:direction;
+             }
+             description
+               "Direction of the traffic flow either inbound
+                or outbound";
+           }
+           leaf policy-name {
+             type string;
+             description
+               "Policy name for single level policy as well as
+                for Hierarchical policies. For Hierarchical policies,
+                this represent relative path as well as the last level
+                policy name.";
+           }
+
+           list classifier {
+             description
+               "Statistics for each Classifier in a
+                Policy applied in a particular direction";
+             uses classifier-statistics;
+           }
+           list named {
+             description
+               "Statistics for a statistics-name";
+             leaf name {
+               type string;
+               description
+                 "Statistics name";
+             }
+             container aggregated {
+               description
+                 "Matched aggregated statistics for a statistics-name";
+               uses named-stats;
+             }
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 52]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+             container non-aggregated {
+               description
+                 "Statistics for non-aggregated statistics-name";
+               list classifier {
+                 description
+                   "Statistics for each Classifier in a
+                    Policy applied in a particular direction";
+                 uses classifier-statistics;
+               }
+               list metering {
+                 description
+                   "Statistics for each Meter associated with
+                    the Policy";
+                 reference
+                   "RFC2697: A Single Rate Three Color Marker
+                    RFC2698: A Two Rate Three Color Marker";
+                 uses metering-stats;
+               }
+               list queueing {
+                 description
+                   "Statistics for each Queue associated with
+                    the Policy";
+                 uses queuing-stats;
+               }
+             }
+           }
+           list metering {
+             description
+               "Statistics for each Meter associated with the Policy";
+             reference
+               "RFC2697: A Single Rate Three Color Marker
+                RFC2698: A Two Rate Three Color Marker";
+             uses metering-stats;
+           }
+           list queueing {
+             description
+               "Statistics for each Queue associated with the Policy";
+             uses queuing-stats;
+           }
+         }
+         action clear {
+           description
+             "Clear statistics action command. Execution of this command
+              should result in all the QoS interface counters to be
+              cleared and set to 0.";
+           input {
+             leaf category {
+               type identityref {
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 53]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+                 base qos-types:clear-counters-type;
+               }
+               description
+                 "category of counters which is being cleared";
+             }
+           }
+         }
+       }
+     }
+   }
+   <CODE ENDS>
+
+                      Figure 13: ietf-qos-oper module
+
+5.7.  iana-qos-types
+
+   <CODE BEGINS>
+   file "iana-qos-types@2023-03-10.yang"
+   module iana-qos-types {
+     yang-version 1.1;
+     namespace "urn:ietf:params:xml:ns:yang:iana-qos-types";
+     prefix qos-types;
+
+     organization
+       "IETF Routing Area Working Group";
+
+     contact
+       "WG Web:   <https://datatracker.ietf.org/wg/rtgwg/>
+        WG List:  <mailto:rtgwg@ietf.org>
+
+        Editor:   Aseem Choudhary
+                  <mailto:asechoud@cisco.com>
+        Editor:   Mahesh Jethanandani
+                  <mailto:mjethanandani@gmail.com>";
+
+     description
+       "This module contains type definitions for all QoS types.
+
+        Copyright (c) 2022 IETF Trust and the persons identified as
+        authors of the code.  All rights reserved.
+
+        Redistribution and use in source and binary forms, with or
+        without modification, is permitted pursuant to, and subject
+        to the license terms contained in, the Simplified BSD License
+        set forth in Section 4.c of the IETF Trust's Legal Provisions
+        Relating to IETF Documents
+        (http://trustee.ietf.org/license-info).
+
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 54]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+        This version of this YANG module is part of RFC XXXX; see
+        the RFC itself for full legal notices.";
+
+     revision 2023-03-10 {
+       description
+         "Initial version";
+       reference
+         "RFC XXXX: YANG Models for Quality of Service (QoS).";
+     }
+
+     /*
+      * Features.
+      */
+     feature child-policy {
+       description
+         " This feature allows configuration of hierarchical policy.";
+     }
+     feature count {
+       description
+         "This feature allows action configuration to enable
+          counter in a classifier";
+     }
+     feature named-counter {
+       description
+         "This feature allows action configuration to enable
+          named counter in a classifier";
+     }
+
+     /*
+      * Identities.
+      */
+     identity policy-type {
+       description
+         "This base identity type defines policy-types";
+     }
+     identity diffserv-policy-type {
+       base policy-type;
+       description
+         "This defines ip policy-type";
+     }
+     identity ipv4-diffserv-policy-type {
+       base policy-type;
+       description
+         "This defines ipv4 policy-type";
+     }
+     identity ipv6-diffserv-policy-type {
+       base policy-type;
+       description
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 55]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+         "This defines ipv6 policy-type";
+     }
+     identity queue-policy-type {
+       base policy-type;
+       description
+         "This defines queue policy-type";
+     }
+     identity scheduler-policy-type {
+       base policy-type;
+       description
+         "This defines scheduler policy-type";
+     }
+
+     identity action-type {
+       description
+         "This base identity type defines action-types";
+     }
+     identity dscp-marking {
+       base action-type;
+       description
+         "dscp marking action type";
+     }
+     identity meter-inline {
+       base action-type;
+       description
+         "meter-inline action type";
+     }
+     identity meter-reference {
+       base action-type;
+       description
+         "meter reference action type";
+     }
+     identity queue {
+       base action-type;
+       description
+         "queue action type";
+     }
+     identity scheduler {
+       base action-type;
+       description
+         "scheduler action type";
+     }
+     identity discard {
+       base action-type;
+       description
+         "discard action type";
+     }
+     identity child-policy {
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 56]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+       if-feature child-policy;
+       base action-type;
+       description
+         "child-policy action type";
+     }
+     identity count {
+       if-feature count;
+       base action-type;
+       description
+         "count action type";
+     }
+     identity named-counter {
+       if-feature named-counter;
+       base action-type;
+       description
+         "name counter action type";
+     }
+     identity queue-policy-name {
+       base action-type;
+       description
+         "queue policy name";
+     }
+
+     identity meter-type {
+       description
+         "This base identity type defines meter types";
+     }
+     identity one-rate-two-color {
+       base meter-type;
+       description
+         "one rate two color meter type";
+     }
+     identity one-rate-tri-color {
+       base meter-type;
+       description
+         "one rate three color meter type";
+     }
+     identity two-rate-tri-color {
+       base meter-type;
+       description
+         "two rate three color meter action type";
+     }
+
+     identity drop-type {
+       description
+         "drop algorithm";
+     }
+     identity tail-drop {
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 57]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+       base drop-type;
+       description
+         "tail drop algorithm";
+     }
+     identity red {
+       base drop-type;
+       description
+         "Random Early Detect drop algorithm";
+     }
+     identity wred {
+       base drop-type;
+       description
+         "Weighted Random Early Detect drop algorithm";
+     }
+
+     identity rate-unit-type {
+       description
+         "base rate-unit type";
+     }
+     identity bits-per-second {
+       base rate-unit-type;
+       description
+         "bits per second identity";
+     }
+     identity kilo-bits-per-second {
+       base rate-unit-type;
+       description
+         "kilo bits per second identity";
+     }
+     identity mega-bits-per-second {
+       base rate-unit-type;
+       description
+         "mega bits per second identity";
+     }
+     identity giga-bits-per-second {
+       base rate-unit-type;
+       description
+         "mega bits per second identity";
+     }
+     identity percent {
+       base rate-unit-type;
+       description
+         "percentage";
+     }
+
+     identity burst-unit-type {
+       description
+         "base burst-unit type";
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 58]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+     }
+     identity bytes {
+       base burst-unit-type;
+       description
+         "bytes";
+     }
+     identity kilo-bytes {
+       base burst-unit-type;
+       description
+         "kilo bytes";
+     }
+     identity mega-bytes {
+       base burst-unit-type;
+       description
+         "mega bytes";
+     }
+     identity millisecond {
+       base burst-unit-type;
+       description
+         "milli seconds";
+     }
+     identity microsecond {
+       base burst-unit-type;
+       description
+         "micro seconds";
+     }
+     identity red-threshold-unit {
+       description
+         "base red-unit type";
+     }
+     identity red-threshold-bytes {
+       base red-threshold-unit;
+       description
+         "bytes";
+     }
+     identity red-threshold-kb {
+       base red-threshold-unit;
+       description
+         "kilo bytes";
+     }
+     identity red-threshold-mb {
+       base red-threshold-unit;
+       description
+         "mega bytes";
+     }
+     identity red-threshold-ms {
+       base red-threshold-unit;
+       description
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 59]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+         "milli seconds";
+     }
+     identity red-threshold-us {
+       base red-threshold-unit;
+       description
+         "micro seconds";
+     }
+     identity red-threshold-pc {
+       base red-threshold-unit;
+       description
+         "per-centage";
+     }
+     identity red-theshold-pt {
+       base red-threshold-unit;
+       description
+         "per-thousand";
+     }
+     identity red-threshold-pm {
+       base red-threshold-unit;
+       description
+         "per-million";
+     }
+     identity wred-color-type {
+       description
+         "base wred color type";
+     }
+     identity wred-color-dscp {
+       base wred-color-type;
+       description
+         "dscp wred color type";
+     }
+
+     identity probability-unit {
+       description
+         "base probability unit type";
+     }
+     identity probability-pc {
+       base probability-unit;
+       description
+         "probability in percentage";
+     }
+     identity probability-pt {
+       base probability-unit;
+       description
+         "probability in per thousand";
+     }
+     identity probability-pm {
+       base probability-unit;
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 60]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+       description
+         "probability in per million";
+     }
+     identity probability-denominator {
+       base probability-unit;
+       description
+         "probability value is denominator value
+          while numerator is always 1";
+     }
+
+     identity filter-type {
+       description
+         "This is identity of base filter-type";
+     }
+
+     identity dscp {
+       base filter-type;
+       description
+         "Differentiated services code point filter-type";
+     }
+     identity source-ipv4-prefix {
+       base filter-type;
+       description
+         "source ipv4 prefix filter-type";
+     }
+     identity destination-ipv4-prefix {
+       base filter-type;
+       description
+         "destination ipv4 prefix filter-type";
+     }
+     identity source-ipv6-prefix {
+       base filter-type;
+       description
+         "source ipv6 prefix filter-type";
+     }
+     identity destination-ipv6-prefix {
+       base filter-type;
+       description
+         "destination ipv6 prefix filter-type";
+     }
+     identity source-port {
+       base filter-type;
+       description
+         "source port filter-type";
+     }
+     identity destination-port {
+       base filter-type;
+       description
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 61]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+         "destination port filter-type";
+     }
+     identity protocol {
+       base filter-type;
+       description
+         "protocol type filter-type";
+     }
+     identity traffic-group-name {
+       base filter-type;
+       description
+         "traffic-group filter type";
+     }
+     identity filter-match-all {
+       base filter-type;
+       description
+         "Traffic-group filter type";
+     }
+
+     typedef match-operation-type {
+       type enumeration {
+         enum match-all {
+           description
+             "Classifier entry filters logical AND operation";
+         }
+         enum match-any {
+           description
+             "Classifier entry filters logical OR operation";
+         }
+       }
+       default "match-all";
+       description
+         "Filter match logical operation type";
+     }
+
+     identity direction {
+       description
+         "This is identity of traffic direction";
+     }
+     identity inbound {
+       base direction;
+       description
+         "Direction of traffic coming into the network entry";
+     }
+     identity outbound {
+       base direction;
+       description
+         "Direction of traffic going out of the network entry";
+     }
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 62]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+     identity meter-action-type {
+       description
+         "Base identify for actions related to metering";
+     }
+     identity action-drop {
+       base meter-action-type;
+         description
+           "Drop packets that conform/exceed/violate to the set value.";
+     }
+     identity action-transmit {
+       base meter-action-type;
+         description
+           "Transmit packets that conform/exceed/violate to the set
+            value.";
+     }
+     identity action-mark {
+       base meter-action-type;
+         description
+           "Mark packets that conform/exceed/violate to the set value.";
+     }
+
+     identity clear-counters-type {
+       description
+         "Base identify for clear interface counters related options";
+     }
+     identity all-counters {
+       base clear-counters-type;
+         description
+           "clear all counters in both directions";
+     }
+     identity inbound-counters {
+       base clear-counters-type;
+         description
+           "clear counters in inbound direction";
+     }
+     identity outbound-counters {
+       base clear-counters-type;
+         description
+           "clear counters in outbound direction";
+     }
+   }
+   <CODE ENDS>
+
+                      Figure 14: iana-qos-types module
+
+
+
+
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 63]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+6.  IANA Considerations
+
+   This document registers seven URIs and seven YANG modules.
+
+6.1.  URI Registration
+
+   Following the format in the IETF XML registry [RFC3688], the
+   following registration is requested to be made:
+
+             URI: urn:ietf:params:xml:ns:yang:iana-qos-types
+             URI: urn:ietf:params:xml:ns:yang:ietf-diffserv
+             URI: urn:ietf:params:xml:ns:yang:ietf-qos-action
+             URI: urn:ietf:params:xml:ns:yang:ietf-qos-oper
+             URI: urn:ietf:params:xml:ns:yang:ietf-queue-policy
+             URI: urn:ietf:params:xml:ns:yang:ietf-scheduler-policy
+             URI: urn:ietf:params:xml:ns:yang:ietf-traffic-policy
+
+   Registrant Contact: The IESG.  XML: N/A, the requested URI is an XML
+   namespace.
+
+6.2.  YANG Module Name Registration
+
+   This document registers seven YANG modules in the YANG Module Names
+   registry YANG [RFC6020].
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 64]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+            name: iana-qos-types
+            namespace: urn:ietf:params:xml:ns:yang:iana-qos-types
+            prefix: qos-types
+            reference: RFC XXXX
+
+            name: ietf-diffserv
+            namespace: urn:ietf:params:xml:ns:yang:ietf-diffserv
+            prefix: diffserv
+            reference: RFC XXXX
+
+            name: ietf-qos-action
+            namespace: urn:ietf:params:xml:ns:yang:ietf-qos-action
+            prefix: action
+            reference: RFC XXXX
+
+            name: ietf-qos-oper
+            namespace: urn:ietf:params:xml:ns:yang:ietf-qos-oper
+            prefix: oper
+            reference: RFC XXXX
+
+            name: ietf-queue-policy
+            namespace: urn:ietf:params:xml:ns:yang:ietf-queue-policy
+            prefix: queue-policy
+            reference: RFC XXXX
+
+            name: ietf-scheduler-policy
+            namespace: urn:ietf:params:xml:ns:yang:ietf-scheduler-policy
+            prefix: scheduler-policy
+            reference: RFC XXXX
+
+            name: ietf-traffic-policy
+            namespace: urn:ietf:params:xml:ns:yang:ietf-traffic-policy
+            prefix: policy
+            reference: RFC XXXX
+
+7.  Security Considerations
+
+   The YANG module specified in this document defines a schema for data
+   that is designed to be accessed via network management protocols such
+   as NETCONF [RFC6241] or RESTCONF [RFC8040].  The lowest NETCONF layer
+   is the secure transport layer, and the mandatory-to-implement secure
+   transport is Secure Shell (SSH) [RFC6242].  The lowest RESTCONF layer
+   is HTTPS, and the mandatory-to-implement secure transport is TLS
+   [RFC8446].  The NETCONF Access Control Model (NACM) [RFC8341]
+   provides the means to restrict access for particular NETCONF or
+   RESTCONF users to a preconfigured subset of all available NETCONF or
+   RESTCONF protocol operations and content.
+
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 65]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+   There are a number of data nodes defined in this YANG module that are
+   writable/creatable/deletable (i.e., config true, which is the
+   default).  These data nodes may be considered sensitive or vulnerable
+   in some network environments.  Write operations (e.g., edit-config)
+   to these data nodes without proper protection can have a negative
+   effect on network operations.  Some of the subtrees and data nodes
+   and their sensitivity/vulnerability are described here.
+
+   - 'filter-operation' and 'filter'. 'filter-operation' includes the
+   ability to 'match all', which is a logical AND operation or 'match
+   any', which is a logical OR operation.  Both the operations have an
+   impact on the traffic that is being classified.  Similarly, the
+   'filter' list decides what parts of the packet will examined, which
+   will also impact the traffic that is being classified.
+
+   - 'action'.  The 'action' decides what action will be taken on the
+   packet.  That includes whether the packet will be marked, queued, or
+   just discarded.
+
+   Some of the readable data nodes in this YANG module may be considered
+   sensitive or vulnerable in some network environments.  It is thus
+   important to control read access (e.g., via get, get-config, or
+   notification) to these data nodes.  Some of the subtrees and data
+   nodes and their sensitivity/vulnerability are:
+
+   - 'conform-pkts', 'conform-bytes', 'exceed-pkts', 'exceed-bytes',
+   'voilate-pkts' or 'voilate-bytes'.  All these statistics combined
+   with their 'meter-id' are an indication of what is happening in the
+   network, and can allow for an intruder insight into how to disrupt
+   the traffic.
+
+   - 'tail-drop-pkts', 'red-drop-bytes', 'wred-stats' are examples of
+   statistics that indicate the kind of traffic that is being profiled
+   for drop or marked for Explicit Congestion Notification (ECN), and
+   can give an insight into the operation of a network.
+
+   Some of the RPC operations in this YANG module may be considered
+   sensitive or vulnerable in some network environments.  It is thus
+   important to control access to these operations.  These are the
+   operations and their sensitivity/vulnerability:
+
+   - The model allows for statistics to be cleared by the 'clear' RPC
+   operation, causing all the individual statistics to be cleared.
+
+8.  Acknowledgement
+
+   The authors wish to thank Ruediger Geib, Fred Baker, Greg Misky, Tom
+   Petch, Acee Lindem, many others for their helpful comments.
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 66]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+   MITRE has approved this document for Public Release, Distribution
+   Unlimited, with Public Release Case Number 19-3027.
+
+9.  Contributors
+
+   The following people have substantially contributed to the editing of
+   this document:
+
+       Norm Strahle
+       Email: nstrahle@juniper.net       .
+
+10.  References
+
+10.1.  Normative References
+
+   [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
+              Requirement Levels", BCP 14, RFC 2119,
+              DOI 10.17487/RFC2119, March 1997,
+              <https://www.rfc-editor.org/info/rfc2119>.
+
+   [RFC6020]  Bjorklund, M., Ed., "YANG - A Data Modeling Language for
+              the Network Configuration Protocol (NETCONF)", RFC 6020,
+              DOI 10.17487/RFC6020, October 2010,
+              <https://www.rfc-editor.org/info/rfc6020>.
+
+   [RFC6991]  Schoenwaelder, J., Ed., "Common YANG Data Types",
+              RFC 6991, DOI 10.17487/RFC6991, July 2013,
+              <https://www.rfc-editor.org/info/rfc6991>.
+
+   [RFC7950]  Bjorklund, M., Ed., "The YANG 1.1 Data Modeling Language",
+              RFC 7950, DOI 10.17487/RFC7950, August 2016,
+              <https://www.rfc-editor.org/info/rfc7950>.
+
+   [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
+              2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
+              May 2017, <https://www.rfc-editor.org/info/rfc8174>.
+
+   [RFC8342]  Bjorklund, M., Schoenwaelder, J., Shafer, P., Watsen, K.,
+              and R. Wilton, "Network Management Datastore Architecture
+              (NMDA)", RFC 8342, DOI 10.17487/RFC8342, March 2018,
+              <https://www.rfc-editor.org/info/rfc8342>.
+
+   [RFC8343]  Bjorklund, M., "A YANG Data Model for Interface
+              Management", RFC 8343, DOI 10.17487/RFC8343, March 2018,
+              <https://www.rfc-editor.org/info/rfc8343>.
+
+10.2.  Informative References
+
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 67]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+   [RFC2474]  Nichols, K., Blake, S., Baker, F., and D. Black,
+              "Definition of the Differentiated Services Field (DS
+              Field) in the IPv4 and IPv6 Headers", RFC 2474,
+              DOI 10.17487/RFC2474, December 1998,
+              <https://www.rfc-editor.org/info/rfc2474>.
+
+   [RFC2475]  Blake, S., Black, D., Carlson, M., Davies, E., Wang, Z.,
+              and W. Weiss, "An Architecture for Differentiated
+              Services", RFC 2475, DOI 10.17487/RFC2475, December 1998,
+              <https://www.rfc-editor.org/info/rfc2475>.
+
+   [RFC2697]  Heinanen, J. and R. Guerin, "A Single Rate Three Color
+              Marker", RFC 2697, DOI 10.17487/RFC2697, September 1999,
+              <https://www.rfc-editor.org/info/rfc2697>.
+
+   [RFC2698]  Heinanen, J. and R. Guerin, "A Two Rate Three Color
+              Marker", RFC 2698, DOI 10.17487/RFC2698, September 1999,
+              <https://www.rfc-editor.org/info/rfc2698>.
+
+   [RFC3688]  Mealling, M., "The IETF XML Registry", BCP 81, RFC 3688,
+              DOI 10.17487/RFC3688, January 2004,
+              <https://www.rfc-editor.org/info/rfc3688>.
+
+   [RFC6241]  Enns, R., Ed., Bjorklund, M., Ed., Schoenwaelder, J., Ed.,
+              and A. Bierman, Ed., "Network Configuration Protocol
+              (NETCONF)", RFC 6241, DOI 10.17487/RFC6241, June 2011,
+              <https://www.rfc-editor.org/info/rfc6241>.
+
+   [RFC6242]  Wasserman, M., "Using the NETCONF Protocol over Secure
+              Shell (SSH)", RFC 6242, DOI 10.17487/RFC6242, June 2011,
+              <https://www.rfc-editor.org/info/rfc6242>.
+
+   [RFC8040]  Bierman, A., Bjorklund, M., and K. Watsen, "RESTCONF
+              Protocol", RFC 8040, DOI 10.17487/RFC8040, January 2017,
+              <https://www.rfc-editor.org/info/rfc8040>.
+
+   [RFC8340]  Bjorklund, M. and L. Berger, Ed., "YANG Tree Diagrams",
+              BCP 215, RFC 8340, DOI 10.17487/RFC8340, March 2018,
+              <https://www.rfc-editor.org/info/rfc8340>.
+
+   [RFC8341]  Bierman, A. and M. Bjorklund, "Network Configuration
+              Access Control Model", STD 91, RFC 8341,
+              DOI 10.17487/RFC8341, March 2018,
+              <https://www.rfc-editor.org/info/rfc8341>.
+
+   [RFC8446]  Rescorla, E., "The Transport Layer Security (TLS) Protocol
+              Version 1.3", RFC 8446, DOI 10.17487/RFC8446, August 2018,
+              <https://www.rfc-editor.org/info/rfc8446>.
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 68]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+Appendix A.  Company A and Company B examples
+
+   Company A and Company B Diffserv modules augments all the filter
+   types of the QoS classifier module as well as the QoS policy module
+   that allow it to define marking, metering, min-rate, max-rate
+   actions.  Queuing and metering counters are realized by augmenting of
+   the QoS target module.
+
+A.1.  Example of Company A Diffserv Model
+
+   The following Company A vendor example augments the QoS and diffserv
+   model, demonstrating some of the following functionality:
+
+   - use of template based classifier definitions
+
+   - use of single policy type modelling queue, scheduler policy, and a
+   filter policy.  All of these policies either augment the QoS policy
+   or the diffserv modules
+
+   - use of inline actions in a policy
+
+   - flexibility in marking dscp or metadata at ingress and/or egress.
+
+   module example-compa-diffserv {
+     yang-version 1.1;
+     namespace "urn:ietf:params:xml:ns:yang:example-compa-diffserv";
+     prefix example;
+
+     import iana-qos-types {
+       prefix qos-types;
+       reference
+         "RFC XXXX: YANG Models for Quality of Service (QoS).";
+     }
+     import ietf-traffic-policy {
+       prefix policy;
+       reference
+         "RFC XXXX: YANG Models for Quality of Service (QoS).";
+     }
+     import ietf-qos-action {
+       prefix action;
+       reference
+         "RFC XXXX: YANG Models for Quality of Service (QoS).";
+     }
+     import ietf-diffserv {
+       prefix diffserv;
+       reference
+         "RFC XXXX: YANG Models for Quality of Service (QoS).";
+     }
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 69]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+     organization "Company A";
+     contact
+       "Editor:   XYZ
+                 <mailto:xyz@compa.com>";
+     description
+       "This module contains a collection of YANG definitions of
+        companyA diffserv specification extension.";
+     revision 2023-03-10 {
+       description
+         "Initial revision for diffserv actions on network packets";
+       reference
+         "RFC XXXX: A YANG Data Model for Quality of Service (QoS).";
+     }
+
+     identity default-policy-type {
+       base qos-types:policy-type;
+       description
+         "This defines default policy-type";
+     }
+
+     identity qos-group {
+       base qos-types:filter-type;
+       description
+         "qos-group filter-type";
+     }
+
+     identity drop {
+       base qos-types:action-type;
+       description
+         "drop action-type";
+     }
+
+     grouping qos-group {
+       list qos-group {
+         key "qos-group-min qos-group-max";
+         description
+           "list of dscp ranges";
+         leaf qos-group-min {
+           type uint8;
+           description
+             "Minimum value of qos-group range";
+         }
+         leaf qos-group-max {
+           type uint8;
+           description
+             "Maximum value of qos-group range";
+         }
+       }
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 70]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+       description
+         "Filter containing list of qos-group ranges";
+     }
+     grouping drop {
+       container drop {
+         leaf drop {
+           type empty;
+           description
+             "drop action";
+         }
+         description
+           "drop container";
+       }
+       description
+         "drop grouping";
+     }
+
+     augment "/policy:classifiers/" +
+       "policy:classifier/" +
+       "policy:filter/diffserv:filter-param" {
+       case qos-group {
+         uses qos-group;
+         description
+           "Filter containing list of qos-group ranges.
+           Qos-group represent packet metadata information
+           in a device. ";
+       }
+       description
+         "augmentation of classifier filters";
+     }
+     augment "/policy:policies/policy:policy/" +
+       "policy:classifier/" +
+       "policy:action/" +
+       "policy:action-params" {
+       case priority {
+         uses action:priority;
+       }
+       case min-rate {
+         uses action:min-rate;
+       }
+       case max-rate {
+         uses action:max-rate;
+       }
+       description
+         "Augment the actions to policy entry";
+     }
+
+     augment "/policy:policies" +
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 71]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+       "/policy:policy" +
+       "/policy:classifier" +
+       "/policy:action" +
+       "/policy:action-params" +
+       "/diffserv:meter-inline" +
+       "/diffserv:meter-types" +
+       "/diffserv:single-rate-two-color-meter-type" +
+       "/diffserv:single-rate-two-color-meter" +
+       "/diffserv:conform-action" +
+       "/diffserv:action" +
+       "/diffserv:action-val" {
+
+       description
+         "augment the single-rate-two-color meter conform
+         with actions";
+       case meter-action-drop {
+         description
+           "meter drop";
+         uses drop;
+       }
+       case meter-action-mark-dscp {
+         description
+           "meter action dscp marking";
+         uses action:dscp-marking;
+       }
+     }
+     augment "/policy:policies" +
+       "/policy:policy" +
+       "/policy:classifier" +
+       "/policy:action" +
+       "/policy:action-params" +
+       "/diffserv:meter-inline" +
+       "/diffserv:meter-types" +
+       "/diffserv:single-rate-two-color-meter-type" +
+       "/diffserv:single-rate-two-color-meter" +
+       "/diffserv:exceed-action" +
+       "/diffserv:action" +
+       "/diffserv:action-val" {
+
+       description
+         "augment the single-rate-two-color meter exceed
+         with actions";
+       case meter-action-drop {
+         description
+           "meter drop";
+         uses drop;
+       }
+       case meter-action-mark-dscp {
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 72]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+         description
+           "meter action dscp marking";
+         uses action:dscp-marking;
+       }
+     }
+     augment "/policy:policies" +
+       "/policy:policy" +
+       "/policy:classifier" +
+       "/policy:action" +
+       "/policy:action-params" +
+       "/diffserv:meter-inline" +
+       "/diffserv:meter-types" +
+       "/diffserv:single-rate-three-color-meter-type" +
+       "/diffserv:single-rate-three-color-meter" +
+       "/diffserv:conform-action" +
+       "/diffserv:action" +
+       "/diffserv:action-val" {
+
+       description
+         "augment the one-rate-tri-color meter conform
+         with actions";
+       case meter-action-drop {
+         description
+           "meter drop";
+         uses drop;
+       }
+       case meter-action-mark-dscp {
+         description
+           "meter action dscp marking";
+         uses action:dscp-marking;
+       }
+     }
+     augment "/policy:policies" +
+       "/policy:policy" +
+       "/policy:classifier" +
+       "/policy:action" +
+       "/policy:action-params" +
+       "/diffserv:meter-inline" +
+       "/diffserv:meter-types" +
+       "/diffserv:single-rate-three-color-meter-type" +
+       "/diffserv:single-rate-three-color-meter" +
+       "/diffserv:exceed-action" +
+       "/diffserv:action" +
+       "/diffserv:action-val" {
+
+       description
+         "augment the one-rate-tri-color meter exceed
+         with actions";
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 73]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+       case meter-action-drop {
+         description
+           "meter drop";
+         uses drop;
+       }
+       case meter-action-mark-dscp {
+         description
+           "meter action dscp marking";
+         uses action:dscp-marking;
+       }
+     }
+     augment "/policy:policies" +
+       "/policy:policy" +
+       "/policy:classifier" +
+       "/policy:action" +
+       "/policy:action-params" +
+       "/diffserv:meter-inline" +
+       "/diffserv:meter-types" +
+       "/diffserv:single-rate-three-color-meter-type" +
+       "/diffserv:single-rate-three-color-meter" +
+       "/diffserv:violate-action" +
+       "/diffserv:action" +
+       "/diffserv:action-val" {
+
+       description
+         "augment the one-rate-tri-color meter conform
+         with actions";
+       case meter-action-drop {
+         description
+           "meter drop";
+         uses drop;
+       }
+       case meter-action-mark-dscp {
+         description
+           "meter action dscp marking";
+         uses action:dscp-marking;
+       }
+     }
+
+     augment "/policy:policies" +
+       "/policy:policy" +
+       "/policy:classifier" +
+       "/policy:action" +
+       "/policy:action-params" +
+       "/diffserv:meter-inline" +
+       "/diffserv:meter-types" +
+       "/diffserv:two-rate-three-color-meter-type" +
+       "/diffserv:two-rate-three-color-meter" +
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 74]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+       "/diffserv:conform-action" +
+       "/diffserv:action" +
+       "/diffserv:action-val" {
+
+       description
+         "augment the one-rate-tri-color meter conform
+         with actions";
+       case meter-action-drop {
+         description
+           "meter drop";
+         uses drop;
+       }
+       case meter-action-mark-dscp {
+         description
+           "meter action dscp marking";
+         uses action:dscp-marking;
+       }
+     }
+     augment "/policy:policies" +
+       "/policy:policy" +
+       "/policy:classifier" +
+       "/policy:action" +
+       "/policy:action-params" +
+       "/diffserv:meter-inline" +
+       "/diffserv:meter-types" +
+       "/diffserv:two-rate-three-color-meter-type" +
+       "/diffserv:two-rate-three-color-meter" +
+       "/diffserv:exceed-action" +
+       "/diffserv:action" +
+       "/diffserv:action-val" {
+
+       description
+         "augment the two-rate-tri-color meter exceed
+         with actions";
+       case meter-action-drop {
+         description
+           "meter drop";
+         uses drop;
+       }
+       case meter-action-mark-dscp {
+         description
+           "meter action dscp marking";
+         uses action:dscp-marking;
+       }
+     }
+     augment "/policy:policies" +
+       "/policy:policy" +
+       "/policy:classifier" +
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 75]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+       "/policy:action" +
+       "/policy:action-params" +
+       "/diffserv:meter-inline" +
+       "/diffserv:meter-types" +
+       "/diffserv:two-rate-three-color-meter-type" +
+       "/diffserv:two-rate-three-color-meter" +
+       "/diffserv:violate-action" +
+       "/diffserv:action" +
+       "/diffserv:action-val" {
+
+       description
+         "augment the two-rate-tri-color meter violate
+         with actions";
+       case meter-action-drop {
+         description
+           "meter drop";
+         uses drop;
+       }
+       case meter-action-mark-dscp {
+         description
+           "meter action dscp marking";
+         uses action:dscp-marking;
+       }
+     }
+
+     augment "/policy:policies" +
+       "/policy:policy" +
+       "/policy:classifier" +
+       "/policy:action" +
+       "/policy:action-params" +
+       "/diffserv:meter-inline" +
+       "/diffserv:meter-types" +
+       "/diffserv:single-rate-two-color-meter-type" +
+       "/diffserv:single-rate-two-color-meter" {
+
+       description
+         "augment the single-rate-two-color meter with" +
+         "color classifiers";
+       container conform-color {
+         uses policy:generic-classifier-attr;
+         description
+           "conform color classifier container";
+       }
+       container exceed-color {
+         uses policy:generic-classifier-attr;
+         description
+           "exceed color classifier container";
+       }
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 76]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+     }
+
+     augment "/policy:policies" +
+       "/policy:policy" +
+       "/policy:classifier" +
+       "/policy:action" +
+       "/policy:action-params" +
+       "/diffserv:meter-inline" +
+       "/diffserv:meter-types" +
+       "/diffserv:single-rate-three-color-meter-type" +
+       "/diffserv:single-rate-three-color-meter" {
+       description
+         "augment the one-rate-tri-color meter with" +
+         "color classifiers";
+       container conform-color {
+         uses policy:generic-classifier-attr;
+         description
+           "conform color classifier container";
+       }
+       container exceed-color {
+         uses policy:generic-classifier-attr;
+         description
+           "exceed color classifier container";
+       }
+       container violate-color {
+         uses policy:generic-classifier-attr;
+         description
+           "violate color classifier container";
+       }
+     }
+     augment "/policy:policies" +
+       "/policy:policy" +
+       "/policy:classifier" +
+       "/policy:action" +
+       "/policy:action-params" +
+       "/diffserv:meter-inline" +
+       "/diffserv:meter-types" +
+       "/diffserv:two-rate-three-color-meter-type" +
+       "/diffserv:two-rate-three-color-meter" {
+       description
+         "augment the two-rate-tri-color meter with" +
+         "color classifiers";
+       container conform-color {
+         uses policy:generic-classifier-attr;
+         description
+           "conform color classifier container";
+       }
+       container exceed-color {
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 77]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+         uses policy:generic-classifier-attr;
+         description
+           "exceed color classifier container";
+       }
+       container violate-color {
+         uses policy:generic-classifier-attr;
+         description
+           "violate color classifier container";
+       }
+     }
+   }
+
+A.2.  Example of Company B Diffserv Model
+
+   The following vendor example augments the QoS and diffserv model,
+   demonstrating some of the following functionality:
+
+   - use of inline classifier definitions (defined inline in the policy
+   vs referencing an externally defined classifier)
+
+   - use of mulitple policy types, e.g. a queue policy, a scheduler
+   policy, and a filter policy.  All of these policies either augment
+   the QoS policy or the diffserv modules
+
+   - use of a queue module, which uses and extends the queue grouping
+   from the ietf-qos-action module
+
+   - use of meter templates (v.s. meter inline)
+
+   - use of internal meta data for classification and marking
+
+   module example-compb-diffserv-filter-policy {
+     yang-version 1.1;
+     namespace "urn:ietf:params:xml:ns:yang:" +
+               "example-compb-diffserv-filter-policy";
+     prefix compb-filter-policy;
+
+     import iana-qos-types {
+       prefix qos-types;
+       reference
+         "RFC XXXX: YANG Models for Quality of Service (QoS).";
+     }
+     import ietf-traffic-policy {
+       prefix policy;
+     }
+     import ietf-qos-action {
+       prefix action;
+     }
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 78]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+     import ietf-diffserv {
+       prefix diffserv;
+     }
+
+     organization
+       "Company B";
+
+     contact
+       "Editor:   XYZ
+                  <mailto:xyz@compb.com>";
+
+     description
+       "This module contains a collection of YANG definitions for
+        configuring diffserv specification implementations.
+
+        Copyright (c) 2022 IETF Trust and the persons identified as
+        authors of the code.  All rights reserved.
+
+        Redistribution and use in source and binary forms, with or
+        without modification, is permitted pursuant to, and subject
+        to the license terms contained in, the Revised BSD License
+        set forth in Section 4.c of the IETF Trust's Legal Provisions
+        Relating to IETF Documents
+        (http://trustee.ietf.org/license-info).
+
+        This version of this YANG module is part of RFC XXXX; see
+        the RFC itself for full legal notices.";
+
+     revision 2023-03-10 {
+       description
+         "Initial revision of diffserv policy";
+       reference
+         "RFC XXXX: YANG Data Model for QoS.";
+     }
+
+
+     /*
+      * The policy must be of either type v4 or v6. Corresponding
+      * address types must be used. Enforce with "must" statement?
+      */
+     identity v4-diffserv-policy-type {
+       base qos-types:policy-type;
+       description
+         "This defines default policy-type";
+     }
+
+     identity v6-diffserv-policy-type {
+       base qos-types:policy-type;
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 79]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+       description
+         "This defines default policy-type";
+     }
+
+     /*************************************************
+      * Classification types
+      *************************************************/
+
+     identity forwarding-class {
+         base qos-types:filter-type;
+         description
+           "Forwarding class filter type";
+     }
+
+     identity internal-loss-priority  {
+        base qos-types:filter-type;
+        description
+           "Internal loss priority filter type";
+     }
+
+     grouping drop {
+       container drop {
+         leaf drop {
+           type empty;
+           description
+             "drop action";
+         }
+         description
+           "drop container";
+       }
+       description
+         "drop grouping";
+     }
+
+     grouping forwarding-class {
+       list forwarding-class {
+         key "forwarding-class";
+         description
+           "list of forwarding-classes";
+         leaf forwarding-class {
+           type string;
+           description
+             "Forwarding class name";
+         }
+       }
+       description
+         "Filter containing list of forwarding classes";
+     }
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 80]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+     grouping loss-priority {
+       list loss-priority {
+         key "loss-priority";
+         description
+           "list of loss-priorities";
+         leaf loss-priority {
+           type enumeration {
+             enum high {
+              description "High Loss Priority";
+             }
+             enum medium-high {
+              description "Medium-high Loss Priority";
+             }
+             enum medium-low {
+              description "Medium-low Loss Priority";
+             }
+             enum low {
+              description "Low Loss Priority";
+             }
+           }
+           description
+             "Loss-priority";
+         }
+       }
+       description
+         "Filter containing list of loss priorities";
+     }
+
+     augment "/policy:policies" +
+             "/policy:policy" +
+             "/policy:classifier" +
+             "/policy:inline/policy:filter" +
+             "/diffserv:filter-params" {
+       case forwarding-class {
+           uses forwarding-class;
+         description
+           "Filter Type Internal-loss-priority";
+       }
+       case internal-loss-priority {
+           uses loss-priority;
+         description
+           "Filter Type Internal-loss-priority";
+       }
+       description
+         "Augments Diffserv Classifier with vendor" +
+         " specific types";
+     }
+
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 81]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+     /*************************************************
+      * Actions
+      *************************************************/
+
+     identity mark-fwd-class {
+       base qos-types:action-type;
+       description
+         "mark forwarding class action type";
+     }
+
+     identity mark-loss-priority {
+       base qos-types:action-type;
+       description
+         "mark loss-priority action type";
+     }
+
+     grouping mark-fwd-class {
+       container mark-fwd-class {
+         leaf forwarding-class {
+           type string;
+           description
+             "Forwarding class name";
+         }
+         description
+           "mark-fwd-class container";
+       }
+       description
+         "mark-fwd-class grouping";
+     }
+
+     grouping mark-loss-priority {
+       container mark-loss-priority {
+         leaf loss-priority {
+           type enumeration {
+             enum high {
+              description "High Loss Priority";
+             }
+             enum medium-high {
+              description "Medium-high Loss Priority";
+             }
+             enum medium-low {
+              description "Medium-low Loss Priority";
+             }
+             enum low {
+              description "Low Loss Priority";
+             }
+           }
+           description
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 82]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+             "Loss-priority";
+         }
+         description
+           "mark-loss-priority container";
+       }
+       description
+         "mark-loss-priority grouping";
+     }
+
+     augment "/policy:policies" +
+             "/policy:policy" +
+             "/policy:classifier" +
+             "/policy:action" +
+             "/policy:action-params" {
+       case mark-fwd-class {
+         uses mark-fwd-class;
+         description
+           "Mark forwarding class in the packet";
+       }
+       case mark-loss-priority {
+           uses mark-loss-priority;
+         description
+           "Mark loss priority in the packet";
+       }
+       case meter-reference {
+           uses action:meter-reference;
+         description
+           "Assign a meter as an action";
+       }
+       case discard {
+           uses action:discard;
+         description
+           "Discard action";
+       }
+       case count {
+           uses action:count;
+         description
+           "Count action - explicit count configuration";
+       }
+       description
+         "Augments common diffserv policy actions";
+     }
+
+     augment "/action:meters" +
+             "/action:meter" +
+             "/action:meter-types" +
+             "/action:single-rate-three-color-meter-type" +
+             "/action:single-rate-three-color-meter" {
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 83]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+        leaf one-rate-color-aware {
+         type boolean;
+         description
+           "This defines if the meter is color-aware";
+       }
+       description
+         "Augmentation of color-aware flag";
+     }
+     augment "/action:meters" +
+             "/action:meter" +
+             "/action:meter-types" +
+             "/action:two-rate-three-color-meter-type" +
+             "/action:two-rate-three-color-meter" {
+        leaf two-rate-color-aware {
+         type boolean;
+         description
+           "This defines if the meter is color-aware";
+       }
+       description
+         "Augmentation of color-aware flag";
+     }
+
+     /* example of augmenting a meter template with a
+     /* vendor specific action */
+     augment "/action:meters" +
+             "/action:meter" +
+             "/action:meter-types" +
+             "/action:single-rate-two-color-meter-type" +
+             "/action:single-rate-two-color-meter" +
+             "/action:exceed-action" +
+             "/action:action" +
+             "/action:action-val" {
+       case meter-action-drop {
+         description
+             "meter drop";
+              uses drop;
+       }
+
+       description
+         "Augment the actions to basic meter";
+     }
+
+   }
+
+   module example-compb-queue-policy {
+     yang-version 1.1;
+     namespace "urn:ietf:params:xml:ns:yang:example-compb-queue-policy";
+     prefix queue-plcy;
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 84]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+     import iana-qos-types {
+       prefix qos-types;
+       reference
+         "RFC XXXX: YANG Models for Quality of Service (QoS).";
+     }
+     import ietf-traffic-policy {
+       prefix policy;
+     }
+
+     organization "Company B";
+     contact
+       "Editor:   XYZ
+                 <mailto:xyz@compb.com>";
+
+     description
+       "This module defines a queue policy. The classification
+        is based on aforwarding class, and the actions are queues.
+
+        Copyright (c) 2014 IETF Trust and the persons identified as
+        authors of the code.  All rights reserved.
+
+        Redistribution and use in source and binary forms, with or
+        without modification, is permitted pursuant to, and subject
+        to the license terms contained in, the Simplified BSD License
+        set forth in Section 4.c of the IETF Trust's Legal Provisions
+        Relating to IETF Documents
+        (http://trustee.ietf.org/license-info).
+
+        This version of this YANG module is part of RFC XXXX; see
+        the RFC itself for full legal notices.";
+
+     revision 2023-03-10 {
+       description
+         "Initial revision of diffserv policy";
+       reference
+         "RFC XXXX: A YANG Data Model for Quality of Service (QoS).";
+     }
+
+     identity forwarding-class {
+       base qos-types:filter-type;
+       description
+          "Forwarding class filter type";
+     }
+
+     grouping forwarding-class {
+       leaf forwarding-class {
+         type string;
+         description
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 85]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+           "forwarding-class name";
+       }
+       description
+         "Forwarding class filter";
+     }
+
+     augment "/policy:policies/policy:policy/policy:classifier" +
+             "/policy:inline/policy:filter" {
+       choice filter-params {
+         description
+           "Choice of filters";
+         case forwarding-class {
+           uses forwarding-class;
+           description
+             "Filter Type Internal-loss-priority";
+         }
+       }
+       description
+         "Augments Diffserv Classifier with fwd class filter";
+     }
+
+     identity compb-queue {
+       base qos-types:action-type;
+       description
+         "compb-queue action type";
+     }
+
+     grouping compb-queue-name {
+       container queue-name {
+         leaf name {
+           type string;
+           description
+             "Queue class name";
+         }
+         description
+           "compb queue container";
+       }
+       description
+         "compb-queue grouping";
+     }
+
+     augment "/policy:policies" +
+             "/policy:policy" +
+             "/policy:classifier" +
+             "/policy:action" {
+       choice action-params {
+         description
+           "Choice of action types";
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 86]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+         case compb-queue {
+           uses compb-queue-name;
+         }
+       }
+       description
+         "Augment the queue actions to queue policy entry";
+     }
+   }
+
+   module example-compb-queue {
+     yang-version 1.1;
+     namespace "urn:ietf:params:xml:ns:yang:ietf-compb-queue";
+     prefix compb-queue;
+
+     import ietf-qos-action {
+       prefix action;
+       reference "RFC XXXX: YANG Model for QoS";
+     }
+
+     organization "Company B";
+     contact
+       "Editor:   XYZ
+                  <mailto:xyz@compb.com>";
+
+     description
+       "This module describes a compb queue module. This is a
+        template for a queue within a queue policy, referenced
+        by name.
+
+        This version of this YANG module is part of RFC XXXX; see
+        the RFC itself for full legal notices.";
+
+     revision 2023-03-10 {
+       description
+         "Initial revision of diffserv based classifier";
+       reference
+         "RFC XXXX: YANG Data Model for Quality of Service (QoS).";
+     }
+
+     container compb-queue {
+       description
+         "Queue used in compb architecture";
+       leaf name {
+         type string;
+         description
+           "A unique name identifying this queue";
+       }
+       uses action:queue;
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 87]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+       container excess-rate {
+         choice excess-rate-type {
+           case percent {
+             leaf excess-rate-percent {
+               type uint32 {
+                 range "1..100";
+               }
+               description
+                 "excess-rate-percent";
+             }
+           }
+           case proportion {
+             leaf excess-rate-poroportion {
+               type uint32 {
+                 range "1..1000";
+               }
+               description
+                 "excess-rate-poroportion";
+             }
+           }
+           description
+             "Choice of excess-rate type";
+         }
+         description
+           "Excess rate value";
+       }
+       leaf excess-priority {
+         type enumeration {
+           enum high {
+             description "High Loss Priority";
+           }
+           enum medium-high {
+             description "Medium-high Loss Priority";
+           }
+           enum medium-low {
+             description "Medium-low Loss Priority";
+           }
+           enum low {
+             description "Low Loss Priority";
+           }
+           enum none {
+             description "No excess priority";
+           }
+         }
+         description
+           "Priority of excess (above guaranted rate) traffic";
+       }
+       container buffer-size {
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 88]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+         choice buffer-size-type {
+           case percent {
+             leaf buffer-size-percent {
+               type uint32 {
+                 range "1..100";
+               }
+               description
+                 "buffer-size-percent";
+             }
+           }
+           case temporal {
+             leaf buffer-size-temporal {
+               type uint64;
+               units "microsecond";
+               description
+                 "buffer-size-temporal";
+             }
+           }
+           case remainder {
+             leaf buffer-size-remainder {
+               type empty;
+               description
+                 "use remaining of buffer";
+             }
+           }
+           description
+             "Choice of buffer size type";
+         }
+         description
+           "Buffer size value";
+       }
+     }
+
+     augment
+       "/compb-queue/queue/algorithmic-drop" +
+       "/drop-algorithm" {
+       case random-detect {
+         list drop-profile-list {
+           key "priority";
+           description
+             "map of priorities to drop-algorithms";
+           leaf priority {
+             type enumeration {
+               enum any {
+                 description "Any priority mapped here";
+               }
+               enum high {
+                 description "High Priority Packet";
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 89]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+               }
+               enum medium-high {
+                 description "Medium-high Priority Packet";
+               }
+               enum medium-low {
+                 description "Medium-low Priority Packet";
+               }
+               enum low {
+                 description "Low Priority Packet";
+               }
+             }
+             description
+               "Priority of guaranteed traffic";
+           }
+           leaf drop-profile {
+             type string;
+             description
+               "drop profile to use for this priority";
+           }
+         }
+       }
+       description
+         "compb random detect drop algorithm config";
+     }
+   }
+
+   module example-compb-scheduler-policy {
+     yang-version 1.1;
+     namespace "urn:ietf:params:xml:ns:yang:" +
+               "example-compb-scheduler-policy";
+     prefix scheduler-plcy;
+
+     import iana-qos-types {
+       prefix qos-types;
+       reference
+         "RFC XXXX: YANG Models for Quality of Service (QoS).";
+     }
+     import ietf-qos-action {
+       prefix action;
+       reference
+         "RFC XXXX: A YANG Data Model for Quality of Service (QoS).";
+     }
+
+     import ietf-traffic-policy {
+       prefix policy;
+       reference
+         "RFC XXXX: A YANG Data Model for Quality of Service (QoS).";
+     }
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 90]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+     organization
+       "Company B";
+
+     contact
+       "Editor:   XYZ
+                  <mailto:xyz@compb.com>";
+
+     description
+       "This module defines a scheduler policy. The classification
+        is based on classifier-any, and the action is a scheduler.";
+
+     revision 2023-03-10 {
+       description
+         "Initial revision of diffserv policy";
+       reference
+         "RFC XXXX: A YANG Data Model for Quality of Service (QoS).";
+     }
+
+     identity queue-policy {
+       base qos-types:action-type;
+       description
+         "forwarding-class-queue action type";
+     }
+
+     grouping queue-policy-name {
+       container compb-queue-policy-name {
+         leaf name {
+           type string;
+           description
+             "Queue policy name";
+         }
+         description
+           "compb-queue-policy container";
+       }
+       description
+         "compb-queue policy grouping";
+     }
+
+     augment "/policy:policies" +
+       "/policy:policy" +
+       "/policy:classifier" +
+       "/policy:action" {
+       choice action-params {
+         case scheduler {
+           uses action:scheduler;
+         }
+         case queue-policy {
+           uses queue-policy-name;
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 91]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+         }
+         description
+           "Augment the scheduler policy with a queue policy";
+       }
+       description
+         "Augmentation of the scheduler policy with a queue policy";
+     }
+   }
+
+Appendix B.  Configuration examples
+
+   This section describes several examples of how the models defined in
+   this draft can be used for configuration.
+
+B.1.  Configuration example for QoS Classifier
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 92]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+   <!--
+       This example shows a QoS classifier configuration.
+       This classifier will match on any packet which has
+       dscp value not in the range of 11-13 and source-port
+       value which is in the range of either 10000-10300 or
+       17540-19800. In other words, packets with dscp value
+       0-10 or 14-63 and source-port value 10000-10300 or
+       17540-19800
+   -->
+   <?xml version="1.0" encoding="UTF-8"?>
+   <classifiers
+       xmlns="urn:ietf:params:xml:ns:yang:ietf-traffic-policy"
+       xmlns:qt="urn:ietf:params:xml:ns:yang:iana-qos-types">
+     <classifier>
+       <name>my-classifier</name>
+       <filter-operation>match-all</filter-operation>
+       <filter>
+         <type>qt:dscp</type>
+         <logical-not>true</logical-not>
+         <dscp
+           xmlns="urn:ietf:params:xml:ns:yang:ietf-diffserv">
+           <min>11</min>
+           <max>13</max>
+         </dscp>
+       </filter>
+       <filter>
+         <type>qt:source-port</type>
+         <logical-not>false</logical-not>
+           <source-port
+             xmlns="urn:ietf:params:xml:ns:yang:ietf-diffserv">
+             <min>10000</min>
+             <max>10300</max>
+           </source-port>
+           <source-port
+             xmlns="urn:ietf:params:xml:ns:yang:ietf-diffserv">
+             <min>17540</min>
+             <max>19800</max>
+           </source-port>
+       </filter>
+     </classifier>
+   </classifiers>
+
+            Figure 15: Configuration example for QoS Classifier
+
+B.2.  Configuration example for QoS Policy
+
+
+
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 93]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+   <!--
+       This example shows a QoS policy configuration.
+   -->
+
+   <?xml version="1.0" encoding="UTF-8"?>
+   <policies
+        xmlns="urn:ietf:params:xml:ns:yang:ietf-traffic-policy"
+        xmlns:qt="urn:ietf:params:xml:ns:yang:iana-qos-types">
+     <policy>
+       <name>my-policy</name>
+       <type>qt:diffserv-policy-type</type>
+       <classifier>
+         <name>my-classifier</name>
+         <inline>
+           <filter>
+                 <type>qt:dscp</type>
+                 <logical-not>false</logical-not>
+               <dscp
+                 xmlns="urn:ietf:params:xml:ns:yang:ietf-diffserv">
+                 <min>21</min>
+                 <max>22</max>
+               </dscp>
+           </filter>
+         </inline>
+         <action>
+           <type>qt:dscp-marking</type>
+           <dscp
+             xmlns="urn:ietf:params:xml:ns:yang:ietf-diffserv">
+             <dscp>23</dscp>
+           </dscp>
+         </action>
+       </classifier>
+     </policy>
+   </policies>
+
+              Figure 16: Configuration example for QoS Policy
+
+B.3.  Configuration example for QoS Policing
+
+<!--
+    This example shows a QoS policy configuration for a single rate
+    two color policing. For a description of the problem refer to:
+    https://networklessons.com/quality-of-service/policing-configuration-example
+-->
+
+<?xml version="1.0" encoding="UTF-8"?>
+<classifiers
+    xmlns="urn:ietf:params:xml:ns:yang:ietf-traffic-policy"
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 94]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+    xmlns:qt="urn:ietf:params:xml:ns:yang:iana-qos-types">
+  <classifier>
+    <name>ICMP</name>
+    <description>class-map definition for ICMP</description>
+    <filter>
+      <type>qt:protocol</type>
+      <logical-not>false</logical-not>
+      <protocol
+          xmlns="urn:ietf:params:xml:ns:yang:ietf-diffserv">
+        <min>4</min>
+        <max>4</max>
+      </protocol>
+    </filter>
+  </classifier>
+</classifiers>
+
+<policies
+    xmlns="urn:ietf:params:xml:ns:yang:ietf-traffic-policy"
+    xmlns:qt="urn:ietf:params:xml:ns:yang:iana-qos-types">
+  <policy>
+    <name>SINGLE-RATE-TWO-COLOR</name>
+    <type>qt:diffserv-policy-type</type>
+    <classifier>
+      <name>ICMP</name>
+      <action>
+        <type>qt:meter-inline</type>
+        <single-rate-two-color-meter
+            xmlns="urn:ietf:params:xml:ns:yang:ietf-diffserv">
+          <committed-information-rate>128000</committed-information-rate>
+          <conform-action>
+            <action>
+              <action-type>qt:action-transmit</action-type>
+            </action>
+          </conform-action>
+          <exceed-action>
+            <action>
+              <action-type>qt:action-drop</action-type>
+            </action>
+          </exceed-action>
+        </single-rate-two-color-meter>
+      </action>
+    </classifier>
+  </policy>
+</policies>
+
+<interfaces
+    xmlns="urn:ietf:params:xml:ns:yang:ietf-interfaces"
+    xmlns:qt="urn:ietf:params:xml:ns:yang:iana-qos-types"
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 95]
+
+Internet-Draft             YANG Models for QoS                March 2023
+
+
+    xmlns:ianaift="urn:ietf:params:xml:ns:yang:iana-if-type">
+  <interface>
+    <name>FastEthernet 0/0</name>
+    <type>ianaift:ethernetCsmacd</type>
+    <qos-target-policy
+        xmlns="urn:ietf:params:xml:ns:yang:ietf-traffic-policy">
+      <direction>qt:inbound</direction>
+      <type>qt:diffserv-policy-type</type>
+      <name>SINGLE-RATE-TWO-COLOR</name>
+    </qos-target-policy>
+  </interface>
+</interfaces>
+
+          Figure 17: Configuration example for QoS Policing
+
+Authors' Addresses
+
+   Aseem Choudhary
+   Aviatrix Systems
+   2901 Tasman Drive #109
+   Santa Clara, CA 95054
+   United States of America
+   Email: achoudhary@aviatrix.com
+
+
+   Mahesh Jethanandani
+   Kloud Services
+   Email: mjethanandani@gmail.com
+
+
+   Ebben Aries
+   Juniper Networks
+   1194 North Mathilda Avenue
+   Sunnyvale, CA 94089
+   United States of America
+   Email: exa@juniper.net
+
+
+   Ing-Wher Chen
+   The MITRE Corporation
+   Email: ingwherchen@mitre.org
+
+
+
+
+
+
+
+
+
+
+Choudhary, et al.       Expires 11 September 2023              [Page 96]
