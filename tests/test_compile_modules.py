@@ -200,6 +200,30 @@ class TestCompileModules(unittest.TestCase):
             self.assertEqual(len(json.load(f)), modules_count)
         shutil.rmtree(root_dir)
 
+    @mock.patch('modules_compilation.compile_modules.check_yangcatalog_data')
+    def test_modules_without_old_normalized_file_hash(self, check_yang_catalog_mock: mock.MagicMock):
+        prefix = 'TestPrefix'
+        json_file = f'{prefix}.json'
+        root_dir = os.path.join(self.ietf_directory, 'test_dir')
+        self.write_cached_result_to_json_file(json_file, root_dir, root_dir)
+        modules_count = len(os.listdir(root_dir))
+        self.basic_compile_modules_options.force_compilation = False
+        modules_compilation_instance = compile_modules.CompileBaseModules(
+            prefix,
+            root_dir,
+            self.basic_compile_modules_options,
+        )
+        self.add_modules_to_file_hasher(modules_compilation_instance, root_dir, root_dir, add_normalized_hash=False)
+        modules_compilation_instance()
+        check_yang_catalog_mock.assert_not_called()
+        self.assertEqual(len(modules_compilation_instance.file_hasher.updated_hashes), modules_count)
+        for filename in os.listdir(root_dir):
+            self.assertIn(os.path.join(root_dir, filename), modules_compilation_instance.file_hasher.updated_hashes)
+        private_dir_files = os.listdir(self.web_private)
+        self.assertIn(f'{prefix}YANGPageCompilation.html', private_dir_files)
+        with open(os.path.join(self.web_private, json_file)) as f:
+            self.assertEqual(len(json.load(f)), modules_count)
+
     def write_cached_result_to_json_file(self, json_filename: str, modules_dir: str, cached_result_file_directory: str):
         json_file_data = {}
         module_filenames = os.listdir(modules_dir)
@@ -219,12 +243,15 @@ class TestCompileModules(unittest.TestCase):
         modules_compilation_instance: compile_modules.CompileModulesABC,
         modules_directory: str,
         modules_directory_to_use_in_hasher: str,
+        add_normalized_hash: bool = True,
     ):
         file_hasher = modules_compilation_instance.file_hasher
         for filename in os.listdir(modules_directory):
+            path = os.path.join(modules_directory, filename)
             file_hasher.files_hashes[os.path.join(modules_directory_to_use_in_hasher, filename)] = {
-                'hash': file_hasher.hash_file(os.path.join(modules_directory, filename)),
+                'hash': file_hasher.hash_file(path),
                 'validator_versions': self.validator_versions,
+                'normalized_file_hash': file_hasher.get_normalized_file_hash(path) if add_normalized_hash else None,
             }
 
 

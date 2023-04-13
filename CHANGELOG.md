@@ -1,5 +1,12 @@
 ## Module Compilation Release Notes
 
+* ##### v5.11.0 - 2023-04-13
+
+  * Bugfix: matplotlib image size in pixels is too large [#271](https://github.com/YangCatalog/module-compilation/issues/271)
+  * Extract archive drafts only on xym version update [#266](https://github.com/YangCatalog/module-compilation/issues/266)
+  * redis pypi packed bumped from 4.1.2 to 4.5.4
+  * Updating cloned Github repository more regularly
+
 * ##### v5.10.1 - 2023-03-20
 
   * No changes - released with other [deployment submodules](https://github.com/YangCatalog/deployment)

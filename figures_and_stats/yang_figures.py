@@ -20,6 +20,7 @@ from pylab import *
 
 from create_config import create_config
 
+PLOT_MAX_AX_SIZE = 2**16
 mpl.use('Agg')  # To prevent using an X-Windows server
 
 
@@ -88,6 +89,7 @@ for key in sorted(yangmoduleCisco_history):
         yangmodulesuccess.append(int(yangmoduleCisco_history[key]['success']))
         yangmodulewarning.append(int(yangmoduleCisco_history[key]['warning']))
         yangmoduletotal.append(int(yangmoduleCisco_history[key]['total']))
+
 fig, ax = plt.subplots()
 ax.plot(
     yangmoduledates,
@@ -101,9 +103,10 @@ ax.plot(
     'r-',
 )
 ax.set_ylim(bottom=0, auto=False)  # Leave top unset to be dynamic for this one
-plt.text(735727, 80, 'TOTAL', fontdict=fontb)
-plt.text(735727, 25, 'PASSED', fontdict=fontg)
-plt.text(735732, 5, 'WARNING', fontdict=fontr)
+text_ls = []
+text_ls.append(plt.text(735727, 80, 'TOTAL', fontdict=fontb))
+text_ls.append(plt.text(735727, 25, 'PASSED', fontdict=fontg))
+text_ls.append(plt.text(735732, 5, 'WARNING', fontdict=fontr))
 ax.xaxis.set_major_formatter(daysFmt)
 ax.xaxis.set_minor_locator(months)
 plt.ylabel('# YANG Modules')
@@ -112,7 +115,12 @@ ax.autoscale_view()
 ax.grid(True)
 fig.autofmt_xdate()
 ax.xaxis_date()
-savefig(web_directory + '/figures/IETFCiscoAuthorsYANGPageCompilation.png', bbox_inches='tight')
+try:
+    savefig(web_directory + '/figures/IETFCiscoAuthorsYANGPageCompilation.png', bbox_inches='tight')
+except ValueError:
+    for text in text_ls:  # image can become very big when coordinates for text is much bigger than dataset
+        text.remove()  # this can only happen locally, so this code is added for debug purposes
+    savefig(web_directory + '/figures/IETFCiscoAuthorsYANGPageCompilation.png', bbox_inches='tight')
 
 # generate stats for the IETF
 yangmodule_history = historical_yangmodule_compiled_read_json(
@@ -143,9 +151,10 @@ ax.plot(
     'r-',
 )
 ax.set_ylim(bottom=0, auto=False)  # Leave top unset to be dynamic for this one
-plt.text(735697, 95, 'TOTAL', fontdict=fontb)
-plt.text(735697, 40, 'PASSED', fontdict=fontg)
-plt.text(735712, 5, 'WARNING', fontdict=fontr)
+text_ls2 = []
+text_ls2.append(plt.text(735697, 95, 'TOTAL', fontdict=fontb))
+text_ls2.append(plt.text(735697, 40, 'PASSED', fontdict=fontg))
+text_ls2.append(plt.text(735712, 5, 'WARNING', fontdict=fontr))
 ax.xaxis.set_major_formatter(daysFmt)
 ax.xaxis.set_minor_locator(months)
 ax.set_ylabel('# YANG Modules')
@@ -154,7 +163,12 @@ ax.autoscale_view()
 ax.grid(True)
 fig.autofmt_xdate()
 ax.xaxis_date()
-fig.savefig(web_directory + '/figures/IETFYANGPageCompilation.png', bbox_inches='tight')
+try:
+    fig.savefig(web_directory + '/figures/IETFYANGPageCompilation.png', bbox_inches='tight')
+except ValueError:
+    for text in text_ls2:  # the reason for this is described for previous graph generation
+        text.remove()
+    fig.savefig(web_directory + '/figures/IETFYANGPageCompilation.png', bbox_inches='tight')
 
 # generate stats for the IETF RFCs
 yangRFC_history = historical_yangmodule_compiled_read_json(web_directory + '/stats/IETFYANGOutOfRFCStats.json')
