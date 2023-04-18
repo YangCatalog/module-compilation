@@ -77,6 +77,7 @@ class TestCompileModules(unittest.TestCase):
         return os.path.join(cls.resources_path, path)
 
     @mock.patch('modules_compilation.compile_modules.check_yangcatalog_data')
+    @mock.patch('modules_compilation.compile_modules.combined_compilation', mock.MagicMock(return_value='PASSED'))
     def test_rfc_modules_compilation(self, check_yang_catalog_mock: mock.MagicMock):
         modules_count = len(os.listdir(os.path.join(self.ietf_directory, 'YANG-rfc')))
         rfc_modules_compilation_instance = compile_modules.CompileRfcModules(self.basic_compile_modules_options)
@@ -95,6 +96,7 @@ class TestCompileModules(unittest.TestCase):
             self.assertEqual(len(json.load(f)), modules_count)
 
     @mock.patch('modules_compilation.compile_modules.check_yangcatalog_data')
+    @mock.patch('modules_compilation.compile_modules.combined_compilation', mock.MagicMock(return_value='PASSED'))
     def test_draft_modules_compilation(self, check_yang_catalog_mock: mock.MagicMock):
         modules_count = len(os.listdir(os.path.join(self.ietf_directory, 'YANG')))
         draft_modules_compilation_instance = compile_modules.CompileDraftModules(self.basic_compile_modules_options)
@@ -113,6 +115,7 @@ class TestCompileModules(unittest.TestCase):
             self.assertEqual(len(json.load(f)), modules_count)
 
     @mock.patch('modules_compilation.compile_modules.check_yangcatalog_data')
+    @mock.patch('modules_compilation.compile_modules.combined_compilation', mock.MagicMock(return_value='PASSED'))
     def test_draft_archive_modules_compilation(self, check_yang_catalog_mock: mock.MagicMock):
         modules_count = len(os.listdir(os.path.join(self.ietf_directory, 'YANG')))
         draft_archive_modules_compilation_instance = compile_modules.CompileDraftArchiveModules(
@@ -131,6 +134,7 @@ class TestCompileModules(unittest.TestCase):
             self.assertEqual(len(json.load(f)), modules_count)
 
     @mock.patch('modules_compilation.compile_modules.check_yangcatalog_data')
+    @mock.patch('modules_compilation.compile_modules.pyang_compilation_status', mock.MagicMock(return_value='PASSED'))
     def test_example_modules_compilation(self, check_yang_catalog_mock: mock.MagicMock):
         modules_count = len(os.listdir(os.path.join(self.ietf_directory, 'YANG')))
         example_modules_compilation_instance = compile_modules.CompileExampleModules(self.basic_compile_modules_options)
@@ -145,6 +149,7 @@ class TestCompileModules(unittest.TestCase):
             self.assertEqual(len(json.load(f)), modules_count)
 
     @mock.patch('modules_compilation.compile_modules.check_yangcatalog_data')
+    @mock.patch('modules_compilation.compile_modules.combined_compilation', mock.MagicMock(return_value='PASSED'))
     def test_hashed_files_compilation(self, check_yang_catalog_mock: mock.MagicMock):
         prefix = 'TestPrefix'
         json_file = f'{prefix}.json'
@@ -167,11 +172,14 @@ class TestCompileModules(unittest.TestCase):
             self.assertEqual(len(json.load(f)), modules_count)
 
     @mock.patch('modules_compilation.compile_modules.check_yangcatalog_data')
+    @mock.patch('modules_compilation.compile_modules.combined_compilation', mock.MagicMock(return_value='PASSED'))
     def test_change_modules_already_available_in_all_modules_dir(self, check_yang_catalog_mock: mock.MagicMock):
         prefix = 'TestPrefix'
         json_file = f'{prefix}.json'
         root_dir = os.path.join(self.ietf_directory, '_test_test_dir')
         os.makedirs(os.path.join(self.ietf_directory, '_test_test_dir'), exist_ok=True)
+        for filename in os.listdir(root_dir):
+            os.remove(os.path.join(root_dir, filename))
         for filename in os.listdir((test_dir := os.path.join(self.ietf_directory, 'test_dir'))):
             file_path = os.path.join(test_dir, filename)
             shutil.copy(file_path, os.path.join(self.all_modules_dir, filename))
@@ -185,12 +193,7 @@ class TestCompileModules(unittest.TestCase):
             self.basic_compile_modules_options,
         )
         self.add_modules_to_file_hasher(modules_compilation_instance, root_dir, self.all_modules_dir)
-        root_dir_files = os.listdir(root_dir)
-        for i, filename in enumerate(os.listdir((test_dir := os.path.join(self.ietf_directory, 'YANG')))):
-            if i >= modules_count:
-                break
-            root_dir_file = root_dir_files[i]
-            shutil.copy(os.path.join(test_dir, filename), root_dir_file)
+        self.change_all_files_content(root_dir, os.path.join(self.ietf_directory, 'test_dir_changed_content'))
         modules_compilation_instance()
         check_yang_catalog_mock.assert_not_called()
         self.assertEqual(modules_compilation_instance.file_hasher.updated_hashes, {})
@@ -201,6 +204,7 @@ class TestCompileModules(unittest.TestCase):
         shutil.rmtree(root_dir)
 
     @mock.patch('modules_compilation.compile_modules.check_yangcatalog_data')
+    @mock.patch('modules_compilation.compile_modules.combined_compilation', mock.MagicMock(return_value='PASSED'))
     def test_modules_without_old_normalized_file_hash(self, check_yang_catalog_mock: mock.MagicMock):
         prefix = 'TestPrefix'
         json_file = f'{prefix}.json'
@@ -219,6 +223,52 @@ class TestCompileModules(unittest.TestCase):
         self.assertEqual(len(modules_compilation_instance.file_hasher.updated_hashes), modules_count)
         for filename in os.listdir(root_dir):
             self.assertIn(os.path.join(root_dir, filename), modules_compilation_instance.file_hasher.updated_hashes)
+        private_dir_files = os.listdir(self.web_private)
+        self.assertIn(f'{prefix}YANGPageCompilation.html', private_dir_files)
+        with open(os.path.join(self.web_private, json_file)) as f:
+            self.assertEqual(len(json.load(f)), modules_count)
+
+    @mock.patch('modules_compilation.compile_modules.check_yangcatalog_data')
+    @mock.patch('modules_compilation.compile_modules.combined_compilation', mock.MagicMock(return_value='PASSED'))
+    def test_modules_change_content(self, check_yang_catalog_mock: mock.MagicMock):
+        prefix = 'TestPrefix'
+        json_file = f'{prefix}.json'
+        root_dir = os.path.join(self.ietf_directory, 'test_dir')
+        if os.path.exists((gitkeep := os.path.join(self.all_modules_dir, '.gitkeep'))):
+            os.remove(gitkeep)
+        self.write_cached_result_to_json_file(json_file, root_dir, self.all_modules_dir)
+        for filename in os.listdir(root_dir):
+            shutil.copy(os.path.join(root_dir, filename), os.path.join(self.all_modules_dir, filename))
+        self.change_all_files_content(
+            self.all_modules_dir,
+            os.path.join(self.ietf_directory, 'test_dir_changed_content'),
+        )
+        modules_count = len(os.listdir(root_dir))
+        self.basic_compile_modules_options.force_compilation = False
+        modules_compilation_instance = compile_modules.CompileBaseModules(
+            prefix,
+            root_dir,
+            self.basic_compile_modules_options,
+        )
+        self.add_modules_to_file_hasher(modules_compilation_instance, root_dir, self.all_modules_dir, True)
+        all_normalized_file_hashes = [
+            file_hash_info['normalized_file_hash']
+            for file_hash_info in modules_compilation_instance.file_hasher.files_hashes.values()
+        ]
+        modules_compilation_instance()
+        check_yang_catalog_mock.assert_called()
+        self.assertEqual(len(modules_compilation_instance.file_hasher.updated_hashes), modules_count)
+        for filename in os.listdir(self.all_modules_dir):
+            self.assertIn(
+                os.path.join(self.all_modules_dir, filename),
+                modules_compilation_instance.file_hasher.updated_hashes,
+            )
+        updated_normalized_file_hashes = [
+            file_hash_info['normalized_file_hash']
+            for file_hash_info in modules_compilation_instance.file_hasher.updated_hashes.values()
+        ]
+        for normalized_hash in all_normalized_file_hashes:
+            self.assertNotIn(normalized_hash, updated_normalized_file_hashes)
         private_dir_files = os.listdir(self.web_private)
         self.assertIn(f'{prefix}YANGPageCompilation.html', private_dir_files)
         with open(os.path.join(self.web_private, json_file)) as f:
@@ -253,6 +303,14 @@ class TestCompileModules(unittest.TestCase):
                 'validator_versions': self.validator_versions,
                 'normalized_file_hash': file_hasher.get_normalized_file_hash(path) if add_normalized_hash else None,
             }
+
+    def change_all_files_content(self, dir_where_to_change: str, dir_with_new_files: str):
+        root_dir_files = os.listdir(dir_where_to_change)
+        for i, filename in enumerate(os.listdir(dir_with_new_files)):
+            if i >= len(root_dir_files):
+                break
+            root_dir_file = root_dir_files[i]
+            shutil.copy(os.path.join(dir_with_new_files, filename), os.path.join(dir_where_to_change, root_dir_file))
 
 
 if __name__ == '__main__':

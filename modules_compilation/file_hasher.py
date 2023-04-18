@@ -176,7 +176,7 @@ class FileHasher:
         with os.popen(
             (
                 f'pyang -f yang -p {os.path.dirname(path)} --yang-canonical --yang-remove-comments '
-                f'--yang-join-substrings {path}'
+                f'{path}'  # TODO: --yang-join-substrings option should be added when available in pyang
             ),
         ) as normalized_file, open(tmp_file_path, 'w') as tmp_file:
             tmp_file.write(normalized_file.read())
