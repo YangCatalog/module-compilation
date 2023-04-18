@@ -89,15 +89,20 @@ date +"%c: Starting run_generate_main_page.sh"
 } || {
   check_success_message "Main page generation failed"
 }
-date +"%c: Starting run_generate_figures_and_stats.sh"
-{
-  "$VIRTUAL_ENV"/figures_and_stats/run_generate_figures_and_stats.sh
-  check_success_message "Figures and stats generation failed, check the logs for more details: $LOGS/generate_figures_and_stats.log"
-  FIGURES_AND_STATS_GENERATION_MESSAGE="$SUCCESS_MESSAGE"
-  echo "$FIGURES_AND_STATS_GENERATION_MESSAGE"
-} || {
-  check_success_message "Figures and stats generation failed, check the logs for more details: $LOGS/generate_figures_and_stats.log"
-}
+
+# Graph generation is not used in current frontend version.
+# If we want to readd it, we need to fix the problem with date gathering in yang_get_stats.py
+# hint: look at files like IETFCiscoAuthorsYANGPageCompilationStats.json
+
+# date +"%c: Starting run_generate_figures_and_stats.sh"
+# {
+#   "$VIRTUAL_ENV"/figures_and_stats/run_generate_figures_and_stats.sh
+#   check_success_message "Figures and stats generation failed, check the logs for more details: $LOGS/generate_figures_and_stats.log"
+#   FIGURES_AND_STATS_GENERATION_MESSAGE="$SUCCESS_MESSAGE"
+#   echo "$FIGURES_AND_STATS_GENERATION_MESSAGE"
+# } || {
+#   check_success_message "Figures and stats generation failed, check the logs for more details: $LOGS/generate_figures_and_stats.log"
+# }
 
 # This are simple files for other Yang Catalog to know which files have been created
 cd "$WEB_PRIVATE"
