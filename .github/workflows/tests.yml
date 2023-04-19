@@ -57,7 +57,9 @@ jobs:
           export VIRTUAL_ENV="$PWD"
           export TESTS_RESOURCES_DIR="$PWD"/tests/resources
           export YANGCATALOG_CONFIG_PATH="$TESTS_RESOURCES_DIR"/test.conf
+          export PYANG_EXEC=$(which pyang)
           sed -i "s|<TESTS_RESOURCES_DIR>|${TESTS_RESOURCES_DIR}|g" "$YANGCATALOG_CONFIG_PATH"
+          sed -i "s|<PYANG_EXEC>|${PYANG_EXEC}|g" "$YANGCATALOG_CONFIG_PATH"
           coverage run -am pytest
 
       - name: Store coverage file

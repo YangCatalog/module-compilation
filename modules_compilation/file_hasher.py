@@ -173,9 +173,10 @@ class FileHasher:
 
     def get_normalized_file_hash(self, path: str) -> str:
         tmp_file_path = os.path.join(self.config.get('Directory-Section', 'temp'), os.path.basename(path))
+        pyang_exec = self.config.get('Tool-Section', 'pyang-exec')
         with os.popen(
             (
-                f'pyang -f yang -p {os.path.dirname(path)} --yang-canonical --yang-remove-comments '
+                f'python3 {pyang_exec} -f yang -p {os.path.dirname(path)} --yang-canonical --yang-remove-comments '
                 f'{path}'  # TODO: --yang-join-substrings option should be added when available in pyang
             ),
         ) as normalized_file, open(tmp_file_path, 'w') as tmp_file:
