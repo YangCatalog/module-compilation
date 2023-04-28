@@ -18,6 +18,7 @@ __license__ = 'Apache License, Version 2.0'
 __email__ = 'slavomir.mazur@pantheon.tech'
 
 import os
+import subprocess
 
 
 def _remove_duplicate_messages(result: str, module_name: str) -> str:
@@ -63,17 +64,28 @@ class YangdumpProParser:
             config_command = '--config=/etc/yumapro/yangdump-pro.conf'
 
         bash_command = [self._yangdump_exec, config_command, yang_file_path, '2>&1']
+        bash_command = ' '.join(bash_command)
         if self._debug_level > 0:
-            print('DEBUG: running command {}'.format(' '.join(bash_command)))
-
-        # Modify command output
+            print(f'DEBUG: running command {bash_command}')
         try:
-            result_yumadump = os.popen(' '.join(bash_command)).read()
-            result_yumadump = result_yumadump.strip()
-            result_yumadump = result_yumadump.split('\n\n***')[0]
-
+            result_yumadump = subprocess.run(
+                bash_command,
+                capture_output=True,
+                text=True,
+                shell=True,
+                check=True,
+                timeout=60,
+            )
+            result_yumadump = result_yumadump.stdout.strip().split('\n\n***')[0]
             final_result = _remove_duplicate_messages(result_yumadump, yang_file_path)
-        except Exception:
-            final_result = 'Problem occured while running command: {}'.format(' '.join(bash_command))
+        except subprocess.TimeoutExpired:
+            if self._debug_level > 0:
+                print(f'yangdump-pro timed out for: {yang_file_path}')
+            final_result = f'Timeout exception occurred while running command: {bash_command}'
+        except subprocess.CalledProcessError as e:
+            # This error is raised if the bash command's return code isn't equal to 0 and a non-zero status can be
+            # returned by yangdump-pro itself if there are any Errors in the file, so we should still check the output
+            final_result = _remove_duplicate_messages(e.stdout.strip().split('\n\n***')[0], yang_file_path)
+            final_result = f'Problem occurred while running command "{bash_command}":\n{final_result}'
 
         return final_result
