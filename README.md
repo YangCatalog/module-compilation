@@ -27,7 +27,7 @@
 | metadata\_generators/extract\_emails.py                       |       49 |       16 |     67% |59, 64, 75, 86-103 |
 | metadata\_generators/rfc\_metadata\_generator.py              |        7 |        0 |    100% |           |
 | modules\_compilation/\_\_init\_\_.py                          |        0 |        0 |    100% |           |
-| modules\_compilation/compilation\_status.py                   |       67 |       18 |     73% |24, 26, 28, 36, 43, 45, 51, 60-63, 67, 78, 80, 82, 91, 97, 99, 101 |
+| modules\_compilation/compilation\_status.py                   |       67 |       19 |     72% |24, 26, 28, 36, 43, 45, 51, 60-63, 67, 69, 78, 80, 82, 91, 97, 99, 101 |
 | modules\_compilation/compile\_modules.py                      |      379 |       49 |     87% |156-157, 159-160, 165-166, 174, 212, 240-243, 272-277, 282-287, 298-299, 327-332, 413, 498, 561, 631-720, 724 |
 | modules\_compilation/file\_hasher.py                          |       71 |        0 |    100% |           |
 | modules\_compilation/files\_generator.py                      |       83 |        1 |     99% |       176 |
@@ -35,7 +35,7 @@
 | parsers/confdc\_parser.py                                     |       51 |       15 |     71% |60-63, 76-78, 89-92, 104-109 |
 | parsers/pyang\_parser.py                                      |       33 |        0 |    100% |           |
 | parsers/yang\_parser.py                                       |       85 |       29 |     66% |82, 90-98, 160-161, 165-168, 175-188, 228 |
-| parsers/yangdump\_pro\_parser.py                              |       34 |        3 |     91% | 63, 76-77 |
+| parsers/yangdump\_pro\_parser.py                              |       40 |        6 |     85% |64, 79-80, 82-84 |
 | parsers/yanglint\_parser.py                                   |       34 |        3 |     91% | 59, 73-74 |
 | redis\_connections/\_\_init\_\_.py                            |        0 |        0 |    100% |           |
 | redis\_connections/constants.py                               |        5 |        0 |    100% |           |
@@ -58,7 +58,7 @@
 | utility/static\_variables.py                                  |        3 |        0 |    100% |           |
 | utility/utility.py                                            |      271 |       37 |     86% |112, 192, 194, 197-199, 216-217, 222-224, 227, 261, 269-272, 277, 294, 299-300, 308, 310-321, 382-384, 393 |
 | versions.py                                                   |       28 |        0 |    100% |           |
-|                                                     **TOTAL** | **3109** |  **439** | **86%** |           |
+|                                                     **TOTAL** | **3115** |  **443** | **86%** |           |
 
 
 ## Setup coverage badge
