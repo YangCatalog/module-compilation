@@ -13,8 +13,6 @@
 # either express or implied.
 #
 
-exec >> /var/yang/logs/cronjob-daily.log
-
 check_success_message () {
   # $1 - message to log in case if there's no success message
   SUCCESS_MESSAGE=$(head -n1 "$SUCCESSFUL_MESSAGES_LOG")
@@ -31,27 +29,6 @@ python "$VIRTUAL_ENV"/job_log.py --start "$START" --end "" --status "In Progress
 #source activate
 source "$CONF"/configure.sh
 truncate -s 0 "$SUCCESSFUL_MESSAGES_LOG"
-date +"%c: Downloading from GitHub YangModels"
-{
-  ./run_download_github.sh
-  check_success_message "GitHub download failed"
-  DOWNLOAD_GITHUB_STATUS="$SUCCESS_MESSAGE"
-  echo "$DOWNLOAD_GITHUB_STATUS"
-} || {
-  check_success_message "GitHub  fadownloadiled"
-}
-
-(
-    flock -xn 200
-    RETVAL=$?
-    if [ $RETVAL -eq 0 ]; then
-        trap 'rm /var/yang/tmp/cronjob-lock.lock 2>/dev/null' ERR EXIT
-        echo "$(date) starting cronjob-daily" >>/var/yang/logs/crons-log.log
-    else
-        echo "$(date) cronjob-daily still running - skipping now" >>/var/yang/logs/crons-log.log
-        exit 1
-    fi
-) 200>/var/yang/tmp/cronjob-lock.lock
 
 date +"%c: Starting run_ietf_module_extraction.sh"
 
