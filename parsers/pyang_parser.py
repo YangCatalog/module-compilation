@@ -18,6 +18,7 @@ __license__ = 'Apache License, Version 2.0'
 __email__ = 'slavomir.mazur@pantheon.tech'
 
 import os
+import subprocess
 from configparser import ConfigParser
 
 from create_config import create_config
@@ -71,17 +72,37 @@ class PyangParser:
             pyang_param = '--lint' if lint else '--ietf'
             bash_command.append(pyang_param)
         bash_command.append('2>&1')
+        bash_command = ' '.join(bash_command)
 
         if self._debug_level > 0:
-            print(f'DEBUG: running command {" ".join(bash_command)}')
+            print(f'DEBUG: running command {bash_command}')
 
-        with os.popen(' '.join(bash_command)) as pipe:
-            result_pyang = pipe.read()
-        result_pyang = result_pyang.strip()
-        result_pyang = result_pyang.replace('\n\n', '\n').replace('\n', '\n\n')
-        # Remove absolute path from output
-        result_pyang = result_pyang.replace(f'{directory}/', '')
-        for mod_dir in self._modules_directories:
-            result_pyang = result_pyang.replace(f'{mod_dir}/', '')
+        try:
+            result_pyang = subprocess.run(
+                bash_command,
+                capture_output=True,
+                text=True,
+                shell=True,
+                check=True,
+                timeout=60,
+            )
+            result_pyang = self._clean_pyang_result(result_pyang.stdout, directory)
+        except subprocess.TimeoutExpired:
+            if self._debug_level > 0:
+                print(f'pyang timed out for: {yang_file_path}')
+            result_pyang = f'Timeout exception occurred while running command: {bash_command}'
+        except subprocess.CalledProcessError as e:
+            # This error is raised if the bash command's return code isn't equal to 0 and a non-zero status can be
+            # returned by pyang itself if there are any Errors in the file, so we should still check the output
+            result_pyang = self._clean_pyang_result(e.stdout, directory)
+            result_pyang = f'Problem occurred while running command "{bash_command}":\n{result_pyang}'
 
         return result_pyang
+
+    def _clean_pyang_result(self, result: str, directory: str) -> str:
+        result = result.strip().replace('\n\n', '\n').replace('\n', '\n\n')
+        # Remove absolute path from output
+        result = result.replace(f'{directory}/', '')
+        for mod_dir in self._modules_directories:
+            result = result.replace(f'{mod_dir}/', '')
+        return result
