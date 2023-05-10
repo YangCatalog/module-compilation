@@ -19,6 +19,7 @@ __email__ = 'slavomir.mazur@pantheon.tech'
 
 import glob
 import os
+import subprocess
 from configparser import ConfigParser
 
 from create_config import create_config
@@ -52,32 +53,49 @@ class ConfdcParser:
         workdir = os.path.dirname(yang_file_path)
         os.chdir(workdir)
 
-        file_command = '-c {}'.format(yang_file_path)
+        file_command = f'-c {yang_file_path}'
 
         if allinclusive:
-            path_command = '--yangpath {}'.format(rootdir)
+            path_command = f'--yangpath {rootdir}'
         else:
             subdir_paths = self.list_all_subdirs(rootdir)
             paths_list = self._symlink_paths + subdir_paths
 
-            path_command = '--yangpath {}'.format(':'.join(paths_list))
+            path_command = f'--yangpath {":".join(paths_list)}'
 
-        bash_command = [self._confdc_exec, path_command, self._tail_warning, file_command, '2>&1']
+        bash_command = f'{self._confdc_exec} {path_command} {self._tail_warning} {file_command} 2>&1'
         if self._debug_level > 0:
-            print('DEBUG: running command {}'.format(' '.join(bash_command)))
+            print(f'DEBUG: running command {bash_command}')
 
         try:
-            result_confdc = os.popen(' '.join(bash_command)).read()
-            result_confdc = result_confdc.strip()
-            result_confdc = result_confdc.replace('\n\n', '\n').replace('\n', '\n\n')
-            # Remove absolute path from output
-            result_confdc = result_confdc.replace(yang_file_path, os.path.basename(yang_file_path))
-            for sym_link in self._symlink_paths:
-                result_confdc = result_confdc.replace('{}/'.format(sym_link), '')
-        except Exception:
-            result_confdc = 'Problem occured while running command: {}'.format(' '.join(bash_command))
+            result_confdc = subprocess.run(
+                bash_command,
+                capture_output=True,
+                text=True,
+                shell=True,
+                check=True,
+                timeout=60,
+            )
+            result_confdc = self._clean_confdc_result(result_confdc.stdout, yang_file_path)
+        except subprocess.TimeoutExpired:
+            if self._debug_level > 0:
+                print(f'confdc timed out for: {yang_file_path}')
+            result_confdc = f'Timeout exception occurred while running command: {bash_command}'
+        except subprocess.CalledProcessError as e:
+            # This error is raised if the bash command's return code isn't equal to 0 and a non-zero status can be
+            # returned by confdc itself if there are any Errors in the file, so we should still check the output
+            result_confdc = self._clean_confdc_result(e.stdout, yang_file_path)
+            result_confdc = f'Problem occurred while running command "{bash_command}":\n{result_confdc}'
 
         return result_confdc
+
+    def _clean_confdc_result(self, result: str, yang_file_path: str) -> str:
+        result = result.strip().replace('\n\n', '\n').replace('\n', '\n\n')
+        # Remove absolute path from output
+        result = result.replace(yang_file_path, os.path.basename(yang_file_path))
+        for sym_link in self._symlink_paths:
+            result = result.replace(f'{sym_link}/', '')
+        return result
 
     def get_symlink_paths(self):
         """
@@ -87,8 +105,8 @@ class ConfdcParser:
         symlink_paths = []
         for _, dirs, _ in os.walk(self._modules_directory, followlinks=True):
             for direc in dirs:
-                path = '{}/{}'.format(self._modules_directory, direc)
-                if os.path.islink(path) and path != '{}/YANG'.format(self._modules_directory):
+                path = f'{self._modules_directory}/{direc}'
+                if os.path.islink(path) and path != f'{self._modules_directory}/YANG':
                     symlink_paths.append(path)
 
         return symlink_paths
@@ -102,7 +120,7 @@ class ConfdcParser:
         :return: list of subdirectories of the given directory
         """
         subdirs = []
-        for direc in glob.glob('{}/*/'.format(directory)):
+        for direc in glob.glob(f'{directory}/*/'):
             subdirs.append(direc)
             subdirs.extend(self.list_all_subdirs(direc))
 

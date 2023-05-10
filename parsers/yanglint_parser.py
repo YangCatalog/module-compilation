@@ -18,6 +18,7 @@ __license__ = 'Apache License, Version 2.0'
 __email__ = 'slavomir.mazur@pantheon.tech'
 
 import os
+import subprocess
 from configparser import ConfigParser
 
 from create_config import create_config
@@ -54,23 +55,38 @@ class YanglintParser:
         os.chdir(workdir)
 
         if allinclusive:
-            path_command = '-p {}'.format(workdir)
+            path_command = f'-p {workdir}'
         else:
-            path_command = '-p {}/'.format(self._modules_directory)
+            path_command = f'-p {self._modules_directory}/'
 
-        bash_command = [self._yanglint_exec, '-i', path_command, yang_file_path, '2>&1']
+        bash_command = f'{self._yanglint_exec} -i {path_command} {yang_file_path} 2>&1'
 
         if self._debug_level > 0:
-            print('DEBUG: running command {}'.format(' '.join(bash_command)))
+            print(f'DEBUG: running command {bash_command}')
 
         try:
-            result_yanglint = os.popen(' '.join(bash_command)).read()
-            result_yanglint = result_yanglint.strip()
-            result_yanglint = result_yanglint.replace('\n\n', '\n').replace('\n', '\n\n')
-            result_yanglint = result_yanglint.replace(yang_file_path, os.path.basename(yang_file_path))
-
-            final_result = _remove_duplicate_messages(result_yanglint)
-        except Exception:
-            final_result = 'libyang err : Problem occured while running command: {}'.format(' '.join(bash_command))
+            result_yanglint = subprocess.run(
+                bash_command,
+                capture_output=True,
+                text=True,
+                shell=True,
+                check=True,
+                timeout=60,
+            )
+            final_result = self._clean_yanglint_result(result_yanglint.stdout, yang_file_path)
+        except subprocess.TimeoutExpired:
+            if self._debug_level > 0:
+                print(f'yanglint timed out for: {yang_file_path}')
+            final_result = f'Timeout exception occurred while running command: {bash_command}'
+        except subprocess.CalledProcessError as e:
+            # This error is raised if the bash command's return code isn't equal to 0 and a non-zero status can be
+            # returned by yangdump-pro itself if there are any Errors in the file, so we should still check the output
+            final_result = self._clean_yanglint_result(e.stdout, yang_file_path)
+            final_result = f'libyang err : Problem occurred while running command "{bash_command}":\n{final_result}'
 
         return final_result
+
+    def _clean_yanglint_result(self, result: str, yang_file_path: str) -> str:
+        result = result.strip().replace('\n\n', '\n').replace('\n', '\n\n')
+        result = result.replace(yang_file_path, os.path.basename(yang_file_path))
+        return _remove_duplicate_messages(result)
