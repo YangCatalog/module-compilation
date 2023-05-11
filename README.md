@@ -1,6 +1,6 @@
 # Module Compilation
 
-<img src=".github/images/coverage.svg" alt="">
+[![codecov](https://codecov.io/gh/YangCatalog/module-compilation/branch/develop/graph/badge.svg?token=09TJME38HB)](https://codecov.io/gh/YangCatalog/module-compilation)
 
 ---
 
