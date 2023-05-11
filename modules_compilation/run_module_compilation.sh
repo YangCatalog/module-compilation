@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-MAX_PROCESSES=4
+MAX_PROCESSES=3
 
 # make sure the compilation isn't disturbed by updates
 STATIC_COPIES="$TMP/module_compilation"

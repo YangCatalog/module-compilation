@@ -1,5 +1,10 @@
 ## Module Compilation Release Notes
 
+* ##### v5.11.1 - 2023-05-03
+
+  * Unit tests covering compile_modules.py [#272](https://github.com/YangCatalog/module-compilation/issues/272)
+  * Added timeout to the yangump-pro validator calls
+
 * ##### v5.11.0 - 2023-04-13
 
   * Bugfix: matplotlib image size in pixels is too large [#271](https://github.com/YangCatalog/module-compilation/issues/271)
