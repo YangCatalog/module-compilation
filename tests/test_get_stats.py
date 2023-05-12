@@ -46,7 +46,7 @@ class TestGetStats(unittest.TestCase):
         cls.config.set('Directory-Section', 'ietf-directory', cls.resource('ietf'))
         cls.config.set('Web-Section', 'private-directory', cls.resource('private'))
         cls.web_private_directory = cls.config.get('Web-Section', 'private-directory')
-        cls.directory_to_store_backup_files = os.path.join('tests/resources/yang_get_stats', uuid4().hex)
+        cls.directory_to_store_backup_files = cls.resource(uuid4().hex)
         cls.stats_directory = os.path.join(cls.web_private_directory, 'stats')
         os.makedirs(cls.directory_to_store_backup_files, exist_ok=True)
         for filename in os.listdir(cls.backup_directory):

@@ -73,9 +73,7 @@ class CompileModulesABC(abc.ABC):
     @dataclass
     class ModuleInfoForCompilation:
         yang_file_path: str
-        module_hash: str
-        module_hash_changed: bool
-        changed_validator_versions: t.Optional[list[str]]
+        module_hash_info: FileHasher.ModuleHashCheckForParsing
         yang_file_compilation_data: t.Optional[dict]
         previous_compilation_results: t.Optional[dict]
 
@@ -175,15 +173,20 @@ class CompileModulesABC(abc.ABC):
             module_info_for_compilation = self._get_module_info_for_compilation(yang_file_path, file_name_and_revision)
             yang_file_path = module_info_for_compilation.yang_file_path
             yang_file_compilation_data = module_info_for_compilation.yang_file_compilation_data
+            module_hash_info = module_info_for_compilation.module_hash_info
+            changed_validator_versions = module_hash_info.get_changed_validator_versions(
+                self.validator_versions,
+            )
+            module_content_changed = module_hash_info.hash_changed and not module_hash_info.only_formatting_changed
             if (
                 not module_info_for_compilation.previous_compilation_results
-                or module_info_for_compilation.module_hash_changed
-                or module_info_for_compilation.changed_validator_versions
+                or module_content_changed
+                or changed_validator_versions
             ):
                 parsers_to_use, module_compilation_results = self._get_parsers_to_use_and_previous_compilation_results(
                     module_info_for_compilation.previous_compilation_results,
-                    module_info_for_compilation.module_hash_changed,
-                    module_info_for_compilation.changed_validator_versions,
+                    module_content_changed,
+                    changed_validator_versions,
                 )
                 compilation_status, module_compilation_results = self._parse_module(
                     parsers_to_use,
@@ -210,9 +213,19 @@ class CompileModulesABC(abc.ABC):
                 # Revert to previous hash if compilation status is 'UNKNOWN' -> try to parse model again next time
                 if compilation_status != 'UNKNOWN':
                     self.file_hasher.updated_hashes[yang_file_path] = {
-                        'hash': module_info_for_compilation.module_hash,
+                        'hash': module_hash_info.hash,
                         'validator_versions': self.validator_versions,
+                        'normalized_file_hash': module_hash_info.normalized_file_hash,
                     }
+            elif (module_hash_info.hash_changed and module_hash_info.only_formatting_changed) or (
+                not module_hash_info.hash_changed
+                and not self.file_hasher.files_hashes.get(yang_file_path, {}).get('normalized_file_hash')
+            ):
+                self.file_hasher.updated_hashes[yang_file_path] = {
+                    'hash': module_hash_info.hash,
+                    'validator_versions': self.validator_versions,
+                    'normalized_file_hash': module_hash_info.normalized_file_hash,
+                }
             aggregated_results['all'][file_name_and_revision] = yang_file_compilation_data
             if module_or_submodule(yang_file_path) == 'module':
                 aggregated_results['no_submodules'][file_name_and_revision] = yang_file_compilation_data
@@ -224,35 +237,35 @@ class CompileModulesABC(abc.ABC):
         file_name_and_revision: str,
     ) -> ModuleInfoForCompilation:
         all_modules_dir_yang_file_path = os.path.join(self.all_modules_dir, file_name_and_revision)
-        all_modules_dir_yang_file_hash_info = (
-            self.file_hasher.should_parse(all_modules_dir_yang_file_path)
-            if os.path.exists(all_modules_dir_yang_file_path)
-            else None
-        )
         yang_file_compilation_data = self.cached_compilation_results.get(file_name_and_revision, {})
         module_hash_info = self.file_hasher.should_parse(yang_file_path)
-        if all_modules_dir_yang_file_hash_info:
+        if os.path.exists(all_modules_dir_yang_file_path):
             if yang_file_compilation_data.get('yang_file_path') == all_modules_dir_yang_file_path:
-                # the file has been already re-compiled with the path in all_modules_dir
+                # the file has been already re-compiled with the path in all_modules_dir,
                 # so this path is the right one for this file compilation
                 yang_file_path = all_modules_dir_yang_file_path
-                module_hash_info = all_modules_dir_yang_file_hash_info
-            elif module_hash_info.hash != all_modules_dir_yang_file_hash_info.hash:
-                # the file in yang_file_path isn't the right one
-                # and should be re-compiled with the path in all_modules_dir
+                module_hash_info = self.file_hasher.should_parse(all_modules_dir_yang_file_path)
+            elif (
+                all_modules_dir_yang_file_hash := self.file_hasher.hash_file(all_modules_dir_yang_file_path)
+            ) != module_hash_info.hash:
+                # the file in yang_file_path has different content with the file in all_modules_dir,
+                # and should be re-compiled with the path in all_modules_dir. Normalized hashes aren't being compared
+                # in this situation to avoid such a case when the hashes of the yang_file_path and
+                # all_modules_dir_yang_file_path are different, but they are equivalent in the normalized form,
+                # and the hash of the all_modules_dir_yang_file_path in the normalized form is calculated everytime,
+                # so it's better to just use the all_modules_dir_yang_file_path and re-compile the module
                 return self.ModuleInfoForCompilation(
                     yang_file_path=all_modules_dir_yang_file_path,
-                    module_hash=all_modules_dir_yang_file_hash_info.hash,
-                    module_hash_changed=True,
-                    changed_validator_versions=None,
+                    module_hash_info=self.file_hasher.should_parse(
+                        all_modules_dir_yang_file_path,
+                        already_calculated_hash=all_modules_dir_yang_file_hash,
+                    ),
                     yang_file_compilation_data=None,
                     previous_compilation_results=None,
                 )
         return self.ModuleInfoForCompilation(
             yang_file_path=yang_file_path,
-            module_hash=module_hash_info.hash,
-            module_hash_changed=module_hash_info.hash_changed,
-            changed_validator_versions=module_hash_info.get_changed_validator_versions(self.validator_versions),
+            module_hash_info=module_hash_info,
             yang_file_compilation_data=yang_file_compilation_data,
             previous_compilation_results=(
                 yang_file_compilation_data.get('compilation_results')
@@ -320,10 +333,10 @@ class CompileModulesABC(abc.ABC):
     def _get_parsers_to_use_and_previous_compilation_results(
         self,
         previous_compilation_results: t.Optional[dict],
-        module_hash_changed: bool,
+        module_content_changed: bool,
         changed_validator_versions: t.Optional[list[str]],
     ) -> tuple[dict, dict]:
-        if previous_compilation_results and not module_hash_changed and changed_validator_versions:
+        if previous_compilation_results and not module_content_changed and changed_validator_versions:
             parsers_to_use = {
                 parser_name: parser_object
                 for parser_name, parser_object in self.parsers.items()

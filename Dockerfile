@@ -22,32 +22,8 @@ ENV GIT_PYTHON_GIT_EXECUTABLE=/usr/bin/git
 ENV VIRTUAL_ENV=/module-compilation
 ENV PYTHONPATH=$VIRTUAL_ENV
 ENV CONF=$VIRTUAL_ENV/conf
-ENV YANGVAR="get_config.py --section Directory-Section --key var"
-ENV BACKUPDIR="get_config.py --section Directory-Section --key backup"
-ENV CONFD_DIR="get_config.py --section Tool-Section --key confd-dir"
-ENV PYANG="get_config.py --section Tool-Section --key pyang-exec"
 ENV PYANG_PLUGINPATH="/module-compilation/utility/pyang_plugin"
-ENV IS_PROD="get_config.py --section General-Section --key is-prod"
 
-#
-# Repositories
-#
-ENV NONIETFDIR="get_config.py --section Directory-Section --key non-ietf-directory"
-ENV IETFDIR="get_config.py --section Directory-Section --key ietf-directory"
-ENV MODULES="get_config.py --section Directory-Section --key modules-directory"
-
-#
-# Working directories
-#
-ENV LOGS="get_config.py --section Directory-Section --key logs"
-ENV TMP="get_config.py --section Directory-Section --key temp"
-
-#
-# Where the HTML pages lie
-#
-ENV WEB_PRIVATE="get_config.py --section Web-Section --key private-directory"
-ENV WEB_DOWNLOADABLES="get_config.py --section Web-Section --key downloadables-directory"
-ENV WEB="get_config.py --section Web-Section --key public-directory"
 
 RUN groupadd -g ${YANG_GID} -r yang && useradd --no-log-init -r -g yang -u ${YANG_ID} -d $VIRTUAL_ENV yang
 
