@@ -20,6 +20,7 @@ __email__ = 'slavomir.mazur@pantheon.tech'
 import json
 import os
 import shutil
+from dataclasses import dataclass
 
 from xym import xym
 
@@ -27,27 +28,30 @@ from extractors.extract_elem import extract_elem
 from extractors.helper import check_after_xym_extraction, invert_yang_modules_dict, remove_invalid_files
 
 
+@dataclass
+class RFCExtractorPaths:
+    rfc_path: str
+    rfc_yang_path: str
+    rfc_extraction_yang_path: str
+    code_snippets_directory: str
+
+
 class RFCExtractor:
-    def __init__(
-        self,
-        rfc_path: str,
-        rfc_yang_path: str,
-        rfc_extraction_yang_path: str,
-        code_snippets_directory: str,
-        debug_level: int,
-    ):
-        self.rfc_path = rfc_path
-        self.rfc_yang_path = rfc_yang_path
-        self.rfc_extraction_yang_path = rfc_extraction_yang_path
+    def __init__(self, rfc_extractor_paths: RFCExtractorPaths, debug_level: int):
+        self.rfc_extractor_paths = rfc_extractor_paths
         self.debug_level = debug_level
-        self.code_snippets_directory = code_snippets_directory
+        self.code_snippets_directory = rfc_extractor_paths.code_snippets_directory
         self.ietf_rfcs = []
         self.rfc_yang_dict = {}
         self.inverted_rfc_yang_dict = {}
         self.__create_ietf_rfcs_list()
 
     def __create_ietf_rfcs_list(self):
-        self.ietf_rfcs = [f for f in os.listdir(self.rfc_path) if os.path.isfile(os.path.join(self.rfc_path, f))]
+        self.ietf_rfcs = [
+            f
+            for f in os.listdir(self.rfc_extractor_paths.rfc_path)
+            if os.path.isfile(os.path.join(self.rfc_extractor_paths.rfc_path, f))
+        ]
         self.ietf_rfcs.sort()
         print('IETF RFCs list created')
 
@@ -73,17 +77,17 @@ class RFCExtractor:
                 for extracted_model in extracted_yang_models:
                     if not extracted_model.startswith('example-'):
                         print(f'Identifier definition extraction for {extracted_model}')
-                        module_fname = os.path.join(self.rfc_yang_path, extracted_model)
-                        extract_elem(module_fname, self.rfc_extraction_yang_path, 'typedef')
-                        extract_elem(module_fname, self.rfc_extraction_yang_path, 'grouping')
-                        extract_elem(module_fname, self.rfc_extraction_yang_path, 'identity')
+                        module_fname = os.path.join(self.rfc_extractor_paths.rfc_yang_path, extracted_model)
+                        extract_elem(module_fname, self.rfc_extractor_paths.rfc_extraction_yang_path, 'typedef')
+                        extract_elem(module_fname, self.rfc_extractor_paths.rfc_extraction_yang_path, 'grouping')
+                        extract_elem(module_fname, self.rfc_extractor_paths.rfc_extraction_yang_path, 'identity')
                 self.rfc_yang_dict[rfc_file] = extracted_yang_models
 
-    def extract_from_rfc_file(self, rfc_file: str):
+    def extract_from_rfc_file(self, rfc_file: str) -> list[str]:
         return xym.xym(
             rfc_file,
-            self.rfc_path,
-            self.rfc_yang_path,
+            self.rfc_extractor_paths.rfc_path,
+            self.rfc_extractor_paths.rfc_yang_path,
             strict=True,
             strict_examples=False,
             debug_level=self.debug_level,
@@ -98,7 +102,7 @@ class RFCExtractor:
         self.inverted_rfc_yang_dict = invert_yang_modules_dict(self.rfc_yang_dict, self.debug_level)
 
     def remove_invalid_files(self):
-        remove_invalid_files(self.rfc_yang_path, self.inverted_rfc_yang_dict)
+        remove_invalid_files(self.rfc_extractor_paths.rfc_yang_path, self.inverted_rfc_yang_dict)
 
     def clean_old_rfc_yang_modules(self, srcdir: str, dstdir: str):
         """

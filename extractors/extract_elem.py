@@ -20,7 +20,7 @@ __email__ = 'evyncke@cisco.com'
 import re
 
 
-def extract_elem(module_fname, extract_dir, elem_type):
+def extract_elem(module_fname: str, extract_dir: str, elem_type: str):
     # Let's parse the module, we will create files when seeing the keywords such as
     # 'identity-networking-instance-type.txt'
     open_bracket_count = 0

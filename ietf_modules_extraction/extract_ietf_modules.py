@@ -23,8 +23,8 @@ import json
 import os
 
 from create_config import create_config
-from extractors.draft_extractor import DraftExtractor
-from extractors.rfc_extractor import RFCExtractor
+from extractors.draft_extractor import DraftExtractor, DraftExtractorPaths
+from extractors.rfc_extractor import RFCExtractor, RFCExtractorPaths
 from utility.utility import remove_directory_content
 
 file_basename = os.path.basename(__file__)
@@ -145,18 +145,6 @@ def main():
     custom_print(f'Start of {os.path.basename(__file__)} job in {draft_path}')
     debug_level = args.debug
 
-    draft_extractor_paths = {
-        'draft_path': draft_path,
-        'yang_path': args.yangpath,
-        'draft_elements_path': args.draftelementspath,
-        'draft_path_strict': args.draftpathstrict,
-        'all_yang_example_path': args.allyangexamplepath,
-        'draft_path_only_example': args.draftpathonlyexample,
-        'all_yang_path': args.allyangpath,
-        'draft_path_no_strict': args.draftpathnostrict,
-        'code_snippets_dir': args.code_snippets_directory,
-    }
-
     # Remove directories content
     for dir in [
         args.yangpath,
@@ -174,19 +162,30 @@ def main():
         remove_directory_content(dir, debug_level)
 
     # Extract YANG models from IETF RFCs files
-    rfc_extractor = RFCExtractor(
-        rfc_path,
-        args.rfcyangpath,
-        args.rfcextractionyangpath,
-        args.code_snippets_directory,
-        debug_level,
+    rfc_extractor_paths = RFCExtractorPaths(
+        rfc_path=rfc_path,
+        rfc_yang_path=args.rfcyangpath,
+        rfc_extraction_yang_path=args.rfcextractionyangpath,
+        code_snippets_directory=args.code_snippets_directory,
     )
+    rfc_extractor = RFCExtractor(rfc_extractor_paths, debug_level)
     rfc_extractor.extract()
     rfc_extractor.clean_old_rfc_yang_modules(args.rfcyangpath, args.yangexampleoldrfcpath)
     custom_print('Old examples YANG modules moved')
     custom_print('All IETF RFCs pre-processed')
 
     # Extract YANG models from IETF draft files
+    draft_extractor_paths = DraftExtractorPaths(
+        draft_path=draft_path,
+        yang_path=args.yangpath,
+        draft_elements_path=args.draftelementspath,
+        draft_path_strict=args.draftpathstrict,
+        all_yang_example_path=args.allyangexamplepath,
+        draft_path_only_example=args.draftpathonlyexample,
+        all_yang_path=args.allyangpath,
+        draft_path_no_strict=args.draftpathnostrict,
+        code_snippets_dir=args.code_snippets_directory,
+    )
     draft_extractor = DraftExtractor(draft_extractor_paths, debug_level)
     draft_extractor.extract()
     draft_extractor.dump_incorrect_drafts(

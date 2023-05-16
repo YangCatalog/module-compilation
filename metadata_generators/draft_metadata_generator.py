@@ -1,8 +1,8 @@
 import os
 
 from create_config import create_config
+from extractors.extract_emails import extract_email_string
 from metadata_generators.base_metadata_generator import BaseMetadataGenerator
-from metadata_generators.extract_emails import extract_email_string
 
 config = create_config()
 ietf_directory = config.get('Directory-Section', 'ietf-directory')

@@ -29,7 +29,7 @@ from configparser import ConfigParser
 import requests
 
 from create_config import create_config
-from extractors.draft_extractor import DraftExtractor
+from extractors.draft_extractor import DraftExtractor, DraftExtractorPaths
 from job_log import job_log
 from message_factory.message_factory import MessageFactory
 from utility.utility import remove_directory_content
@@ -62,12 +62,12 @@ class CheckArchivedDrafts:
         self.yang_path = os.path.join(ietf_directory, 'archived-drafts-modules')
         os.makedirs(self.all_yang_path, exist_ok=True)
 
-        self.draft_extractor_paths = {
-            'draft_path': self.archived_draft_path,
-            'yang_path': self.yang_path,
-            'draft_path_strict': self.all_yang_drafts_strict,
-            'all_yang_path': self.all_yang_path,
-        }
+        self.draft_extractor_paths = DraftExtractorPaths(
+            draft_path=self.archived_draft_path,
+            yang_path=self.yang_path,
+            draft_path_strict=self.all_yang_drafts_strict,
+            all_yang_path=self.all_yang_path,
+        )
         self.draft_extractor = DraftExtractor(
             self.draft_extractor_paths,
             self.debug,

@@ -17,8 +17,6 @@ __copyright__ = 'Copyright The IETF Trust 2021, All Rights Reserved'
 __license__ = 'Apache License, Version 2.0'
 __email__ = 'slavomir.mazur@pantheon.tech'
 
-
-import glob
 import os
 
 
@@ -53,15 +51,18 @@ def invert_yang_modules_dict(in_dict: dict, debug_level: int = 0):
 def remove_invalid_files(directory: str, yang_dict: dict):
     """
     Remove YANG modules in directory having invalid filenames.
-    The root cause may be that XYM extracting YANG modules with non valid filename.
+    The root cause may be that XYM extracting YANG modules with non-valid filename.
 
     Arguments:
         :param directory    (str) the directory to analyze for invalid filenames of extracted modules
-        :param yang_dict    (dict) dictionary of key:extracted YANG modul name, value:RFC/Draft file name
+        :param yang_dict    (dict) dictionary of key - extracted YANG modul name, value - RFC/Draft file name
     """
-    path = f'{directory}*.yang'
-    for full_path in glob.glob(path):
-        filename = os.path.basename(full_path)
+    if not os.path.exists(directory):
+        return
+    for filename in os.listdir(directory):
+        if not filename.endswith('.yang'):
+            continue
+        full_path = os.path.join(directory, filename)
         if ' ' in filename:
             os.remove(full_path)
             if yang_dict.get(filename):
@@ -84,7 +85,7 @@ def remove_invalid_files(directory: str, yang_dict: dict):
             print(f'Invalid YANG module removed: {full_path}')
 
 
-def check_after_xym_extraction(filename: str, extracted_yang_models: list):
+def check_after_xym_extraction(filename: str, extracted_yang_models: list[str]):
     """
     Check whether name of the extracted yang model is valid.
 
