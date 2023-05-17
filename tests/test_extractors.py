@@ -245,7 +245,7 @@ class TestDraftExtractor(unittest.TestCase):
             {'draft-eastlake-fnv-19.txt': ['example-module@2022-08-01.yang']},
         )
 
-    @mock.patch('message_factory.message_factory.MessageFactory')
+    @mock.patch('message_factory.MessageFactory')
     def test_dump_incorrect_drafts(self, message_factory_mock: mock.MagicMock):
         incorrect_drafts_dir = os.path.dirname(self.problematic_drafts_dir)
         extractor = draft_extractor.DraftExtractor(
