@@ -30,7 +30,7 @@ GREETINGS = 'Hello from yang-catalog'
 
 
 class MessageFactory:
-    """This class serves to automatically email a group of admin/developers."""
+    """This class serves to automatically email a group of admins/developers."""
 
     def __init__(
         self,

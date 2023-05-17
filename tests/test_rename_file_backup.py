@@ -59,7 +59,7 @@ class TestRenameFileBackup(unittest.TestCase):
 
     def test_rename_file_backup_source_not_exists(self) -> None:
         """Method should not fail even if the source directory does not exist."""
-        src_dir = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/non-existing-dir')
+        src_dir = os.path.join(os.environ['TESTS_RESOURCES_DIR'], 'non-existing-dir')
         result = rfb.rename_file_backup(src_dir, self.backup_directory, 1)
 
         self.assertEqual(result, None)

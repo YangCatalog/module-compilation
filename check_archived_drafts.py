@@ -31,7 +31,7 @@ import requests
 from create_config import create_config
 from extractors.draft_extractor import DraftExtractor, DraftExtractorPaths
 from job_log import job_log
-from message_factory.message_factory import MessageFactory
+from message_factory import MessageFactory
 from utility.utility import remove_directory_content
 
 file_basename = os.path.basename(__file__)

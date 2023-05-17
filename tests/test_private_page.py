@@ -27,7 +27,7 @@ from main_page_generation import private_page as pp
 class TestPrivatePage(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.resources = os.path.join(os.environ['VIRTUAL_ENV'], 'tests/resources/private_page')
+        cls.resources = os.path.join(os.environ['TESTS_RESOURCES_DIR'], 'private_page')
 
     def resource(self, file: str):
         return os.path.join(self.resources, file)
