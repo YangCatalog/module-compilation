@@ -18,6 +18,7 @@ __copyright__ = 'Copyright The IETF Trust 2022, All Rights Reserved'
 __license__ = 'Apache License, Version 2.0'
 __email__ = 'richard.zilincik@pantheon.tech'
 
+import dataclasses
 import filecmp
 import json
 import os
@@ -165,7 +166,7 @@ class TestDraftExtractor(unittest.TestCase):
             draft_path_no_strict=os.path.join(cls.draft_extraction_paths, 'draft_no_strict'),
             code_snippets_dir=os.path.join(cls.draft_extraction_paths, 'code_snippets'),
         )
-        for path in cls.draft_extractor_paths.__dict__.values():
+        for path in dataclasses.asdict(cls.draft_extractor_paths).values():
             os.makedirs(path, exist_ok=True)
         cls.problematic_drafts_dir = os.path.join(cls.resource_path, 'incorrect_drafts/drafts')
         os.makedirs(cls.problematic_drafts_dir, exist_ok=True)
@@ -284,7 +285,7 @@ class TestRFCExtractor(unittest.TestCase):
             rfc_extraction_yang_path=os.path.join(cls.rfc_extraction_paths, 'rfc_extraction'),
             code_snippets_directory=os.path.join(cls.rfc_extraction_paths, 'code_snippets'),
         )
-        for path in cls.rfc_extractor_paths.__dict__.values():
+        for path in dataclasses.asdict(cls.rfc_extractor_paths).values():
             os.makedirs(path, exist_ok=True)
         cls.old_rfc_modules_dir = os.path.join(cls.resource_path, 'old_rfcs_modules')
         cls.old_rfc_modules_move_to_dir = os.path.join(cls.resource_path, 'old_rfcs_modules_move_to')
