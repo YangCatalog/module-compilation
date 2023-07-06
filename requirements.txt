@@ -8,4 +8,4 @@ xym==0.7.0
 filelock==3.4.0
 redis==4.5.4
 pytest==7.0.1
-scipy==1.8.1
+scipy==1.10.0
