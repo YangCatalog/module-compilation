@@ -1,5 +1,9 @@
 ## Module Compilation Release Notes
 
+* ##### v5.15.0 - 2023-10-04
+
+  * No changes - released with other [deployment submodules](https://github.com/YangCatalog/deployment)
+
 * ##### v5.14.0 - 2023-08-09
 
   * Improved readability of redis related code [#797](https://github.com/YangCatalog/backend/issues/797)
