@@ -101,19 +101,22 @@ RUN sed -i "/imklog/s/^/#/" /etc/rsyslog.conf
 
 RUN rm -rf /usr/bin/python
 RUN ln -s /usr/bin/python3 /usr/bin/python
-COPY ./module-compilation $VIRTUAL_ENV
-RUN cd /module-compilation/resources/HTML && python setup.py install
 
-RUN chmod 0777 conf/configure.sh
+COPY --chown=${YANG_ID}:${YANG_GID} ./module-compilation $VIRTUAL_ENV
+RUN set -eux \
+    && cd /module-compilation/resources/HTML && python setup.py install \
+    && cd /module-compilation \
+    && chmod 0777 conf/configure.sh \
+    && chown -R yang:yang $VIRTUAL_ENV \
+    && chmod -R 700 $VIRTUAL_ENV \
+    && chmod -x rsync \
+    && crontab /etc/cron.d/ietf-cron \
+    && git config --global user.name miroslavKovacPantheon \
+    && git config --global user.email miroslav.kovac@panetheon.tech
 
-RUN chown -R yang:yang $VIRTUAL_ENV && chmod -R 700 $VIRTUAL_ENV && chmod -x rsync
+
 USER ${YANG_ID}:${YANG_GID}
 RUN crontab /etc/cron.d/ietf-cron
-
-WORKDIR /
-
-RUN git config --global user.name miroslavKovacPantheon
-RUN git config --global user.email miroslav.kovac@panetheon.tech
 
 WORKDIR $VIRTUAL_ENV
 
