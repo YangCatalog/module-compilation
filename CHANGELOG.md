@@ -1,5 +1,9 @@
 ## Module Compilation Release Notes
 
+* ##### v5.16.0 - 2023-11-08
+
+  * Updated docker image build for local deployment [#290](https://github.com/YangCatalog/module-compilation/commit/52379d903d8aa62afb644f26c5844891c4101df5)
+
 * ##### v5.15.0 - 2023-10-04
 
   * No changes - released with other [deployment submodules](https://github.com/YangCatalog/deployment)
