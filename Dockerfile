@@ -114,6 +114,7 @@ WORKDIR /
 
 RUN git config --global user.name miroslavKovacPantheon
 RUN git config --global user.email miroslav.kovac@panetheon.tech
+RUN git config --global pull.rebase true
 
 WORKDIR $VIRTUAL_ENV
 
