@@ -90,10 +90,10 @@ class DraftExtractor:
             (base, _) = os.path.splitext(filename)
             full_path = os.path.join(self.draft_extractor_paths.draft_path, filename)
             fname = filename
-            xml_file = os.path.join(self.draft_extractor_paths.draft_path, base + ".xml")
+            xml_file = os.path.join(self.draft_extractor_paths.draft_path, base + '.xml')
             if os.path.isfile(xml_file):
                 full_path = xml_file
-                fname = base + ".xml"
+                fname = base + '.xml'
 
             if os.path.isfile(full_path):
                 try:
@@ -213,7 +213,7 @@ class DraftExtractor:
                 add_line_refs=False,
                 force_revision_pyang=False,
                 force_revision_regexp=True,
-                rfcxml=(draft_file.endswith(".xml")),
+                rfcxml=(draft_file.endswith('.xml')),
                 extract_code_snippets=extract_code_snippets,
                 code_snippets_dir=os.path.join(
                     self.draft_extractor_paths.code_snippets_dir,

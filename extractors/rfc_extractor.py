@@ -48,16 +48,16 @@ class RFCExtractor:
 
     def __create_ietf_rfcs_list(self):
         for f in os.listdir(self.rfc_extractor_paths.rfc_path):
-            if not f.endswith(".txt"):
+            if not f.endswith('.txt'):
                 continue
 
             (base, _) = os.path.splitext(f)
             full_path = os.path.join(self.rfc_extractor_paths.rfc_path, f)
             fname = f
-            xml_file = os.path.join(self.rfc_extractor_paths.rfc_path, base + ".xml")
+            xml_file = os.path.join(self.rfc_extractor_paths.rfc_path, base + '.xml')
             if os.path.isfile(xml_file):
                 full_path = xml_file
-                fname = base + ".xml"
+                fname = base + '.xml'
 
             if os.path.isfile(full_path):
                 self.ietf_rfcs.append(fname)
@@ -105,7 +105,7 @@ class RFCExtractor:
             force_revision_pyang=False,
             force_revision_regexp=True,
             extract_code_snippets=True,
-            rfcxml=(rfc_file.endswith(".xml")),
+            rfcxml=(rfc_file.endswith('.xml')),
             code_snippets_dir=os.path.join(self.code_snippets_directory, os.path.splitext(rfc_file)[0]),
         )
 
