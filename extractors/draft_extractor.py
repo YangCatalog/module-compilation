@@ -89,16 +89,18 @@ class DraftExtractor:
 
             (base, _) = os.path.splitext(filename)
             full_path = os.path.join(self.draft_extractor_paths.draft_path, filename)
+            fname = filename
             xml_file = os.path.join(self.draft_extractor_paths.draft_path, base + ".xml")
             if os.path.isfile(xml_file):
                 full_path = xml_file
+                fname = base + ".xml"
 
             if os.path.isfile(full_path):
                 try:
                     with open(full_path, 'r', encoding='utf-8', errors='ignore') as f:
                         for line in f:
                             if '<CODE BEGINS>' in line:
-                                self.ietf_drafts.append(filename)
+                                self.ietf_drafts.append(fname)
                                 break
                 except Exception:
                     continue
