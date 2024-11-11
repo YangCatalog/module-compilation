@@ -94,20 +94,44 @@ class RFCExtractor:
                 self.rfc_yang_dict[rfc_file] = extracted_yang_models
 
     def extract_from_rfc_file(self, rfc_file: str) -> list[str]:
-        return xym.xym(
-            rfc_file,
-            self.rfc_extractor_paths.rfc_path,
-            self.rfc_extractor_paths.rfc_yang_path,
-            strict=True,
-            strict_examples=False,
-            debug_level=self.debug_level,
-            add_line_refs=False,
-            force_revision_pyang=False,
-            force_revision_regexp=True,
-            extract_code_snippets=True,
-            rfcxml=(rfc_file.endswith('.xml')),
-            code_snippets_dir=os.path.join(self.code_snippets_directory, os.path.splitext(rfc_file)[0]),
-        )
+        extracted = []
+        try:
+            extracted = xym.xym(
+                rfc_file,
+                self.rfc_extractor_paths.rfc_path,
+                self.rfc_extractor_paths.rfc_yang_path,
+                strict=True,
+                strict_examples=False,
+                debug_level=self.debug_level,
+                add_line_refs=False,
+                force_revision_pyang=False,
+                force_revision_regexp=True,
+                extract_code_snippets=True,
+                rfcxml=(rfc_file.endswith('.xml')),
+                code_snippets_dir=os.path.join(self.code_snippets_directory, os.path.splitext(rfc_file)[0]),
+            )
+        except Exception:
+            if rfc_file.endswith('.xml'):
+                (base, _) = os.path.splitext(rfc_file)
+                rfc_file = base + '.txt'
+                try:
+                    extracted = xym.xym(
+                        rfc_file,
+                        self.rfc_extractor_paths.rfc_path,
+                        self.rfc_extractor_paths.rfc_yang_path,
+                        strict=True,
+                        strict_examples=False,
+                        debug_level=self.debug_level,
+                        add_line_refs=False,
+                        force_revision_pyang=False,
+                        force_revision_regexp=True,
+                        extract_code_snippets=True,
+                        code_snippets_dir=os.path.join(self.code_snippets_directory, os.path.splitext(rfc_file)[0]),
+                    )
+                except Exception:
+                    pass
+
+        return extracted
 
     def invert_dict(self):
         self.inverted_rfc_yang_dict = invert_yang_modules_dict(self.rfc_yang_dict, self.debug_level)

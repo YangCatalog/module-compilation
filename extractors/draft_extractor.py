@@ -199,10 +199,11 @@ class DraftExtractor:
         extract_code_snippets: bool = True,
     ) -> list[str]:
         old_stderr = None
+        result = StringIO()
+        old_stderr = sys.stderr
+        sys.stderr = result
+        extracted = []
         try:
-            old_stderr = sys.stderr
-            result = StringIO()
-            sys.stderr = result
             extracted = xym.xym(
                 draft_file,
                 srcdir,
@@ -220,8 +221,31 @@ class DraftExtractor:
                     os.path.splitext(draft_file)[0],
                 ),
             )
-            result_string = result.getvalue()
+        except Exception:
+            if draft_file.endswith('.xml'):
+                (base, _) = os.path.splitext(draft_file)
+                draft_file = base + '.txt'
+                try:
+                    extracted = xym.xym(
+                        draft_file,
+                        srcdir,
+                        dstdir,
+                        strict=strict,
+                        strict_examples=strict_examples,
+                        debug_level=self.debug_level,
+                        add_line_refs=False,
+                        force_revision_pyang=False,
+                        force_revision_regexp=True,
+                        extract_code_snippets=extract_code_snippets,
+                        code_snippets_dir=os.path.join(
+                            self.draft_extractor_paths.code_snippets_dir,
+                            os.path.splitext(draft_file)[0],
+                        ),
+                    )
+                except Exception:
+                    pass
         finally:
+            result_string = result.getvalue()
             sys.stderr = old_stderr
         print(result_string, file=sys.stderr)
         if 'WARNING' in result_string or 'ERROR' in result_string:
