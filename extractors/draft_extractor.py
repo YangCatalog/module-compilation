@@ -101,7 +101,7 @@ class DraftExtractor:
                 try:
                     with open(full_path, 'r', encoding='utf-8', errors='ignore') as f:
                         for line in f:
-                            if fname.endswith('.xml') and '<sourcecode ' in line:
+                            if fname.endswith('.xml') and '<sourcecode' in line:
                                 is_xml3 = True
                             if '<CODE BEGINS>' in line or is_xml3:
                                 if is_xml3:
