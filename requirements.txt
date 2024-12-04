@@ -1,10 +1,10 @@
 configparser==5.2.0
-pyang==2.5.3
+pyang==2.6.1
 matplotlib==3.6.2
 networkx==2.8.4
 Jinja2==3.0.3
 requests==2.31.0
-xym==0.7.0
+xym==0.9.0
 filelock==3.4.0
 redis==4.5.4
 pytest==7.0.1

@@ -19,6 +19,7 @@ __email__ = 'miroslav.kovac@pantheon.tech'
 
 import os
 import shutil
+import sys
 from typing import Set
 
 import requests
@@ -42,10 +43,19 @@ def copy_modules(api_prefix: str, src_dir: str, dst_dir: str) -> Set[str]:
     for organization in ORGANIZATIONS:
         url = f'{api_prefix}/search-filter'
         body = {'input': {'organization': organization}}
+        response = None
 
-        response = requests.post(url, json=body)
-        resp_body = response.json()
-        modules = resp_body.get('yang-catalog:modules', {}).get('module', [])
+        try:
+            response = requests.post(url, json=body)
+            response.raise_for_status()
+        except Exception as e:
+            print('ERROR: Post to search-filter failed with %s:' % str(e), file=sys.stderr)
+            if response:
+                print('Response: "%s"' % response.text, file=sys.stderr)
+            modules = []
+        else:
+            resp_body = response.json()
+            modules = resp_body.get('yang-catalog:modules', {}).get('module', [])
 
         for module in modules:
             name = module['name']

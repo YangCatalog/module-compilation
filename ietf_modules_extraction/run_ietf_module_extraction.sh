@@ -33,7 +33,7 @@ if [ "$IS_PROD" = "True" ]; then
 	rsync -avz --include 'draft-*.txt' --include 'draft-*.xml' --exclude '*' --delete rsync.ietf.org::id-archive my-id-archive-mirror >>"$LOG" 2>&1
 fi
 date +"%c: Retrieving IETF RFCs" >>"$LOG"
-rsync -avlz --delete --include="rfc[0-9]*.txt" --exclude="*" ftp.rfc-editor.org::rfcs rfc >>"$LOG" 2>&1
+rsync -avlz --delete --include="rfc[0-9]*.txt" --include "rfc[0-9]*.xml" --exclude="*" ftp.rfc-editor.org::rfcs rfc >>"$LOG" 2>&1
 
 #copy the current content to the -old files
 if [ -f "$WEB_PRIVATE"/IETFDraftYANGPageCompilation.html ]; then

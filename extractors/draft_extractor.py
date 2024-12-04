@@ -86,13 +86,28 @@ class DraftExtractor:
         for filename in os.listdir(self.draft_extractor_paths.draft_path):
             if not filename.endswith('.txt'):
                 continue
+
+            (base, _) = os.path.splitext(filename)
             full_path = os.path.join(self.draft_extractor_paths.draft_path, filename)
+            fname = filename
+            txt_fname = filename
+            xml_file = os.path.join(self.draft_extractor_paths.draft_path, base + '.xml')
+            if os.path.isfile(xml_file):
+                full_path = xml_file
+                fname = base + '.xml'
+
             if os.path.isfile(full_path):
+                is_xml3 = False
                 try:
                     with open(full_path, 'r', encoding='utf-8', errors='ignore') as f:
                         for line in f:
-                            if '<CODE BEGINS>' in line:
-                                self.ietf_drafts.append(filename)
+                            if fname.endswith('.xml') and '<sourcecode' in line:
+                                is_xml3 = True
+                            if '<CODE BEGINS>' in line or is_xml3:
+                                if is_xml3:
+                                    self.ietf_drafts.append(fname)
+                                else:
+                                    self.ietf_drafts.append(txt_fname)
                                 break
                 except Exception:
                     continue
@@ -191,10 +206,11 @@ class DraftExtractor:
         extract_code_snippets: bool = True,
     ) -> list[str]:
         old_stderr = None
+        result = StringIO()
+        old_stderr = sys.stderr
+        sys.stderr = result
+        extracted = []
         try:
-            old_stderr = sys.stderr
-            result = StringIO()
-            sys.stderr = result
             extracted = xym.xym(
                 draft_file,
                 srcdir,
@@ -205,14 +221,38 @@ class DraftExtractor:
                 add_line_refs=False,
                 force_revision_pyang=False,
                 force_revision_regexp=True,
+                rfcxml=(draft_file.endswith('.xml')),
                 extract_code_snippets=extract_code_snippets,
                 code_snippets_dir=os.path.join(
                     self.draft_extractor_paths.code_snippets_dir,
                     os.path.splitext(draft_file)[0],
                 ),
             )
-            result_string = result.getvalue()
+        except Exception:
+            if draft_file.endswith('.xml'):
+                (base, _) = os.path.splitext(draft_file)
+                draft_file = base + '.txt'
+                try:
+                    extracted = xym.xym(
+                        draft_file,
+                        srcdir,
+                        dstdir,
+                        strict=strict,
+                        strict_examples=strict_examples,
+                        debug_level=self.debug_level,
+                        add_line_refs=False,
+                        force_revision_pyang=False,
+                        force_revision_regexp=True,
+                        extract_code_snippets=extract_code_snippets,
+                        code_snippets_dir=os.path.join(
+                            self.draft_extractor_paths.code_snippets_dir,
+                            os.path.splitext(draft_file)[0],
+                        ),
+                    )
+                except Exception:
+                    pass
         finally:
+            result_string = result.getvalue()
             sys.stderr = old_stderr
         print(result_string, file=sys.stderr)
         if 'WARNING' in result_string or 'ERROR' in result_string:
