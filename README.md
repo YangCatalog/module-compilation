@@ -5,7 +5,7 @@
 ---
 
 ## Overview
-This container's main purpose is to collect the outputs of several open source and proprietary validators run on YANG modules: [pyang](https://github.com/mbj4668/pyang), [yanglint](https://github.com/CESNET/libyang), [yumadump-pro](https://www.yumaworks.com/tools/yang-compiler/), and [confdc](https://www.tail-f.com/management-agent/). This data is then displayed on YANG Catalog's [statistics page](https://yangcatalog.org/private-page).
+This container's main purpose is to collect the outputs of several open source and proprietary validators run on YANG modules: [pyang](https://github.com/mbj4668/pyang), [yanglint](https://github.com/CESNET/libyang), [yumadump-pro](https://www.yumaworks.com/tools/yang-compiler/), and [confdc](https://www.tail-f.com/management-agent/). This data is then displayed on YANG Catalog's [statistics page](https://yangcatalog.org/module-stats).
 
 YANG modules are retrieved from several sources:
 - [YangModels/yang](https://github.com/YangModels/yang)
